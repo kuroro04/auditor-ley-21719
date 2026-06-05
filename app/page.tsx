@@ -47,11 +47,15 @@ export default function Home() {
         <AppShell
           companyName={state.companyName}
           role={state.role}
+          sector={state.sector}
           auditLog={state.auditLog}
           activeTab={state.activeTab}
           uploadedDocs={state.uploadedDocs}
           results={state.results}
+          previousResults={state.previousResults}
           analyzed={state.analyzed}
+          tourActive={state.tourActive}
+          tourStep={state.tourStep}
           onSwitchTab={tab => {
             const ok = state.switchTab(tab, state.analyzed);
             if (!ok) toast('Primero suba documentos y ejecute el análisis', 'yellow');
@@ -69,6 +73,8 @@ export default function Home() {
             state.logDownload(state.role, state.companyName);
             toast('📊 Generando informe PDF — funcionalidad en producción', 'blue');
           }}
+          onAdvanceTour={state.advanceTour}
+          onSkipTour={state.skipTour}
           onToast={toast}
         />
       )}

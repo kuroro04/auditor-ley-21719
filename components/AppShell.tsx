@@ -3,22 +3,29 @@ import UploadView from './UploadView';
 import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
 import RiesgosView from './RiesgosView';
-import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole } from '@/lib/types';
+import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole, Sector } from '@/lib/types';
+import OnboardingTour from './OnboardingTour';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
 
 interface AppShellProps {
   companyName: string;
   role: UserRole;
+  sector: Sector;
   auditLog: AuditEvent[];
   activeTab: ActiveTab;
   uploadedDocs: Record<string, UploadedDoc>;
   results: Record<string, RequisitoResult>;
+  previousResults: Record<string, RequisitoResult>;
   analyzed: boolean;
+  tourActive: boolean;
+  tourStep: number;
   onSwitchTab: (tab: ActiveTab) => void;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onStartAnalysis: () => void;
   onLogout: () => void;
   onDownload: () => void;
+  onAdvanceTour: () => void;
+  onSkipTour: () => void;
   onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
@@ -29,8 +36,10 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export default function AppShell({
-  companyName, role, auditLog, activeTab, uploadedDocs, results, analyzed,
-  onSwitchTab, onUpload, onStartAnalysis, onLogout, onDownload, onToast,
+  companyName, role, sector, auditLog, activeTab, uploadedDocs, results,
+  previousResults, analyzed, tourActive, tourStep,
+  onSwitchTab, onUpload, onStartAnalysis, onLogout, onDownload,
+  onAdvanceTour, onSkipTour, onToast,
 }: AppShellProps) {
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
   const canSeeRegistro = role === 'administrador' || role === 'auditor';
@@ -61,7 +70,11 @@ export default function AppShell({
         <div className={`nav-tab${activeTab === 'subir' ? ' active' : ''}`} onClick={() => onSwitchTab('subir')}>
           <FolderOpenIcon size={14} /> Subir documentos
         </div>
-        <div className={`nav-tab${activeTab === 'diagnostico' ? ' active' : ''}`} onClick={() => onSwitchTab('diagnostico')}>
+        <div
+          data-tour="tab-diagnostico"
+          className={`nav-tab${activeTab === 'diagnostico' ? ' active' : ''}`}
+          onClick={() => onSwitchTab('diagnostico')}
+        >
           <ClipboardListIcon size={14} /> Mi diagnóstico
           {analyzed && brechaCount > 0 && (
             <span className="nav-tab-badge">{brechaCount}</span>
@@ -96,8 +109,10 @@ export default function AppShell({
         {activeTab === 'diagnostico' && analyzed && (
           <DiagnosticoView
             results={results}
+            previousResults={previousResults}
             uploadedDocs={uploadedDocs}
             companyName={companyName}
+            sector={sector}
             role={role}
             onUpload={onUpload}
             onDownload={onDownload}
@@ -111,6 +126,15 @@ export default function AppShell({
           <RegistroView auditLog={auditLog} />
         )}
       </div>
+
+      {/* Tour guiado de onboarding — aparece en el primer acceso */}
+      {tourActive && (
+        <OnboardingTour
+          tourStep={tourStep}
+          onNext={onAdvanceTour}
+          onSkip={onSkipTour}
+        />
+      )}
     </div>
   );
 }

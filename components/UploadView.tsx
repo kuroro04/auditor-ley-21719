@@ -85,7 +85,7 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
       </div>
 
       {/* Grid */}
-      <div className="req-upload-grid">
+      <div className="req-upload-grid" data-tour="upload-zone">
         {REQUISITOS.map(r => {
           const doc = uploadedDocs[r.id];
           const isUploaded = !!doc;
@@ -151,11 +151,16 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
           </p>
         </div>
         {canEdit ? (
-          <button className="btn-analyze" disabled={count === 0} onClick={onStartAnalysis}>
+          <button
+            className="btn-analyze"
+            data-tour="analyze-btn"
+            disabled={count === 0}
+            onClick={onStartAnalysis}
+          >
             🔬 Analizar ahora →
           </button>
         ) : (
-          <div className="role-lock-btn" title={`El rol "${role}" no puede ejecutar el análisis`}>
+          <div className="role-lock-btn" data-tour="analyze-btn" title={`El rol "${role}" no puede ejecutar el análisis`}>
             🔒 Solo administrador puede analizar
           </div>
         )}
