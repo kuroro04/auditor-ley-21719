@@ -668,3 +668,45 @@ html, body {
   border-radius: var(--radius); font-size: 13px; font-weight: 500; color: var(--text3);
   cursor: default; white-space: nowrap;
 }
+
+/* ── SECTOR COMPARISON CARD ── */
+.sector-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+  margin-bottom: 16px; box-shadow: var(--shadow);
+  animation: fadeInUp 0.4s var(--ease-out) both;
+}
+.sector-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.sector-card-header h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 0; }
+.sector-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+  background: var(--blue-dim); color: var(--blue);
+  padding: 3px 10px; border-radius: 20px;
+  border: 1px solid rgba(37,99,235,0.18);
+}
+.sector-stat { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.sector-stat-label { font-size: 12px; color: var(--text2); width: 160px; flex-shrink: 0; }
+.sector-bar-track {
+  flex: 1; height: 10px; background: var(--surface);
+  border-radius: 5px; position: relative;
+}
+.sector-bar {
+  height: 10px; border-radius: 5px; position: absolute; top: 0; left: 0;
+  transition: width 0.9s var(--ease-out);
+}
+.sector-bar.empresa  { background: var(--blue); }
+.sector-bar.promedio { background: var(--border2); }
+.sector-bar-pct {
+  position: absolute; right: -42px; top: 50%; transform: translateY(-50%);
+  font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap;
+}
+.sector-delta {
+  font-size: 12px; font-weight: 600; padding: 7px 12px;
+  border-radius: 8px; margin-top: 14px;
+}
+.sector-delta.positivo { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.sector-delta.negativo { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
+.sector-desc { font-size: 11px; color: var(--text3); margin-top: 8px; }
