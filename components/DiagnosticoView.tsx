@@ -1,14 +1,17 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
-import type { RequisitoResult, UploadedDoc, UserRole } from '@/lib/types';
+import type { RequisitoResult, UploadedDoc, UserRole, Sector } from '@/lib/types';
 import LegalDetail from './LegalDetail';
 import TemplateDropdown from './TemplateDropdown';
+import SectorComparisonCard from './SectorComparisonCard';
 
 interface DiagnosticoViewProps {
   results: Record<string, RequisitoResult>;
+  previousResults: Record<string, RequisitoResult>;
   uploadedDocs: Record<string, UploadedDoc>;
   companyName: string;
+  sector: Sector;
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onDownload: () => void;
@@ -18,7 +21,8 @@ interface DiagnosticoViewProps {
 const CIRC = 2 * Math.PI * 44;
 
 export default function DiagnosticoView({
-  results, uploadedDocs, companyName, role, onUpload, onDownload, onToast,
+  results, previousResults, uploadedDocs, companyName, sector, role,
+  onUpload, onDownload, onToast,
 }: DiagnosticoViewProps) {
   const circleRef = useRef<SVGCircleElement>(null);
   const [openCards, setOpenCards] = useState<Set<string>>(new Set());
@@ -43,6 +47,16 @@ export default function DiagnosticoView({
   const pct = analyzable > 0
     ? Math.round((green * 100 + yellow * 50) / (analyzable * 100) * 100)
     : 0;
+
+  // Métricas de la versión anterior (solo si existe un snapshot previo)
+  const hasPrevResults = Object.keys(previousResults).length > 0;
+  const prevGreen   = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado === 'green').length : 0;
+  const prevYellow  = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado === 'yellow').length : 0;
+  const prevAnalyz  = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado !== 'unanalyzable').length : 0;
+  const prevPct     = prevAnalyz > 0
+    ? Math.round((prevGreen * 100 + prevYellow * 50) / (prevAnalyz * 100) * 100)
+    : 0;
+  const versionDelta = pct - prevPct;
 
   const title = pct >= 80 ? 'Cumplimiento solido' : pct >= 50 ? 'Cumplimiento parcial' : 'Brechas criticas detectadas';
   const desc  = pct >= 80
@@ -152,6 +166,16 @@ export default function DiagnosticoView({
         <div className="score-info">
           <h2>{title}</h2>
           <p>{desc}</p>
+          {hasPrevResults && (
+            <div className="score-version-compare">
+              <span className="score-version-prev">Versión anterior: {prevPct}%</span>
+              <span className="score-version-arrow">→</span>
+              <span className="score-version-curr">Versión actual: {pct}%</span>
+              <span className={`score-version-delta ${versionDelta >= 0 ? 'positivo' : 'negativo'}`}>
+                {versionDelta >= 0 ? '+' : ''}{versionDelta}%
+              </span>
+            </div>
+          )}
           {unanalyzable > 0 && (
             <div className="score-dual">
               <div className="score-dual-item confirmed">
@@ -202,6 +226,9 @@ export default function DiagnosticoView({
         </div>
       </div>
 
+      {/* Comparación con el sector */}
+      <SectorComparisonCard sector={sector} companyCumplimiento={pct} />
+
       {/* Detalle por requisito */}
       <div className="section-hdr">
         <h3>Detalle por requisito legal</h3>
@@ -219,6 +246,16 @@ export default function DiagnosticoView({
           const icon       = estado === 'green' ? '✓' : estado === 'yellow' ? '⚠' : isScanned ? '⊘' : '✕';
           const gapColor   = estado === 'green' ? 'green' : estado === 'yellow' ? 'yellow' : isScanned ? 'gray' : 'red';
           const showTemplate = canDownload && (estado === 'red' || estado === 'yellow');
+
+          const prevRes            = previousResults[r.id];
+          const covDelta           = prevRes ? res.cobertura - prevRes.cobertura : 0;
+          const criteriosMejorados = prevRes
+            ? res.criterios.filter((c, i) =>
+                prevRes.criterios[i] &&
+                (prevRes.criterios[i].status === 'fail' || prevRes.criterios[i].status === 'warn') &&
+                c.status === 'ok'
+              )
+            : [];
 
           return (
             <div key={r.id} className={`brecha-card ${stateClass}${isOpen ? ' open' : ''}`}>
@@ -241,6 +278,29 @@ export default function DiagnosticoView({
 
               {isOpen && (
                 <div className="brecha-body">
+
+                  {prevRes && (
+                    <div className="version-comparison-banner">
+                      <div className="version-comparison-scores">
+                        <span className="version-prev-pct">Versión anterior: {prevRes.cobertura}%</span>
+                        <span className="version-arrow">→</span>
+                        <span className="version-curr-pct">Versión nueva: {res.cobertura}%</span>
+                        <span className={`version-delta ${covDelta >= 0 ? 'positivo' : 'negativo'}`}>
+                          {covDelta >= 0 ? '+' : ''}{covDelta}%
+                        </span>
+                      </div>
+                      {criteriosMejorados.length > 0 && (
+                        <div className="version-criterios-nuevos">
+                          {criteriosMejorados.map((c, i) => (
+                            <div key={i} className="version-criterio-check">
+                              <span className="check-verde-anim">✓</span>
+                              <span>{c.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {isScanned ? (
                     <div className="scanned-warning">

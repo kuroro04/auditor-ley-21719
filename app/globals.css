@@ -755,3 +755,49 @@ html, body {
 @media (prefers-reduced-motion: reduce) {
   .tour-spotlight, .tour-tooltip { transition: none; animation: none; }
 }
+
+/* ── COMPARADOR DE VERSIONES ── */
+.score-version-compare {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; margin-top: 10px;
+  background: rgba(255,255,255,0.07); border-radius: 8px; padding: 7px 12px;
+}
+.score-version-prev  { color: rgba(255,255,255,0.5); }
+.score-version-arrow { color: rgba(255,255,255,0.3); }
+.score-version-curr  { color: rgba(255,255,255,0.85); font-weight: 600; }
+.score-version-delta {
+  font-weight: 700; padding: 2px 8px; border-radius: 10px;
+}
+.score-version-delta.positivo { background: rgba(74,222,128,0.2); color: #4ade80; }
+.score-version-delta.negativo { background: rgba(248,113,113,0.2); color: #f87171; }
+
+.version-comparison-banner {
+  background: rgba(37,99,235,0.05); border: 1px solid rgba(37,99,235,0.15);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;
+}
+.version-comparison-scores {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px;
+}
+.version-prev-pct { color: var(--text3); }
+.version-arrow    { color: var(--text3); }
+.version-curr-pct { color: var(--text); font-weight: 600; }
+.version-delta {
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+}
+.version-delta.positivo { background: var(--green-bg); color: var(--green); }
+.version-delta.negativo { background: var(--red-bg);   color: var(--red); }
+.version-criterios-nuevos {
+  display: flex; flex-direction: column; gap: 4px; margin-top: 8px;
+}
+.version-criterio-check {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--green); font-weight: 500;
+}
+.check-verde-anim {
+  display: inline-block; font-weight: 700;
+  animation: checkIn 0.4s var(--ease-out) both;
+}
+@keyframes checkIn {
+  from { transform: scale(0) rotate(-30deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
