@@ -69,10 +69,7 @@ export default function Home() {
             state.startAnalysis();
           }}
           onLogout={state.logout}
-          onDownload={() => {
-            state.logDownload(state.role, state.companyName);
-            toast('📊 Generando informe PDF — funcionalidad en producción', 'blue');
-          }}
+          onDownload={() => state.logDownload(state.role, state.companyName)}
           onAdvanceTour={state.advanceTour}
           onSkipTour={state.skipTour}
           onToast={toast}

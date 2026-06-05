@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector } from '@/lib/types';
 import { REQUISITOS } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
+import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
 
 const DEMO_DOCS: Record<string, UploadedDoc> = {
   politica_privacidad: {
@@ -131,7 +132,7 @@ export function useAppState() {
 
   const advanceTour = useCallback(() => {
     setTourStep(prev => {
-      if (prev >= 2) {
+      if (prev >= TOUR_STEP_COUNT - 1) {
         setTourActive(false);
         return 0;
       }

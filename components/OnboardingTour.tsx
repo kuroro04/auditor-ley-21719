@@ -74,7 +74,11 @@ export default function OnboardingTour({ tourStep, onNext, onSkip }: OnboardingT
   useEffect(() => {
     calcularPosicion();
     window.addEventListener('resize', calcularPosicion);
-    return () => window.removeEventListener('resize', calcularPosicion);
+    window.addEventListener('scroll', calcularPosicion, true);
+    return () => {
+      window.removeEventListener('resize', calcularPosicion);
+      window.removeEventListener('scroll', calcularPosicion, true);
+    };
   }, [calcularPosicion]);
 
   if (!paso) return null;
