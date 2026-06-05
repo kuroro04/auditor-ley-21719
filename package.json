@@ -1,0 +1,30 @@
+{
+  "name": "datashield",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "npx rimraf .next && next dev",
+    "build": "npx rimraf .next && next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "docx": "^9.7.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "mammoth": "^1.7.1",
+    "next": "14.2.29",
+    "pdfjs-dist": "3.11.174",
+    "react": "^18",
+    "react-dom": "^18",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10",
+    "postcss": "^8",
+    "tailwindcss": "^3",
+    "typescript": "^5"
+  }
+}
