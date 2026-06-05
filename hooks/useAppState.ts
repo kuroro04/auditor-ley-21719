@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent } from '@/lib/types';
+import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector } from '@/lib/types';
 import { REQUISITOS } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
 
@@ -31,6 +31,10 @@ export function useAppState() {
   const [results, setResults] = useState<Record<string, RequisitoResult>>({});
   const [analyzed, setAnalyzed] = useState(false);
   const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
+  const [sector, setSector]                   = useState<Sector>('otro');
+  const [previousResults, setPreviousResults] = useState<Record<string, RequisitoResult>>({});
+  const [tourActive, setTourActive]           = useState(false);
+  const [tourStep, setTourStep]               = useState(0);
 
   // Registra un evento en el audit log (más reciente primero)
   const addAuditEvent = useCallback((
@@ -49,9 +53,12 @@ export function useAppState() {
     }, ...prev]);
   }, []);
 
-  const login = useCallback((rut: string, selectedRole: UserRole) => {
+  const login = useCallback((rut: string, selectedRole: UserRole, selectedSector: Sector = 'otro') => {
     setCompanyName(rut);
     setRole(selectedRole);
+    setSector(selectedSector);
+    setTourActive(true);
+    setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
   }, []);
@@ -59,7 +66,10 @@ export function useAppState() {
   const demo = useCallback(() => {
     setCompanyName('Empresa Demo S.A.');
     setRole('administrador');
+    setSector('tecnologia');
     setUploadedDocs(DEMO_DOCS);
+    setTourActive(true);
+    setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
   }, []);
@@ -67,12 +77,16 @@ export function useAppState() {
   const logout = useCallback(() => {
     setCompanyName('');
     setRole('administrador');
+    setSector('otro');
     setUploadedDocs({});
     setResults({});
+    setPreviousResults({});
     setAnalyzed(false);
     setScreen('landing');
     setActiveTab('subir');
     setAuditLog([]);
+    setTourActive(false);
+    setTourStep(0);
     auditCounter = 0;
   }, []);
 
@@ -82,8 +96,12 @@ export function useAppState() {
   }, [addAuditEvent]);
 
   const startAnalysis = useCallback(() => {
+    // Guardar resultados actuales como "versión anterior" antes de re-analizar
+    if (analyzed) {
+      setPreviousResults(results);
+    }
     setScreen('analyzing');
-  }, []);
+  }, [analyzed, results]);
 
   const finishAnalysis = useCallback((
     docs: Record<string, UploadedDoc>,
@@ -111,8 +129,25 @@ export function useAppState() {
     return true;
   }, []);
 
+  const advanceTour = useCallback(() => {
+    setTourStep(prev => {
+      if (prev >= 2) {
+        setTourActive(false);
+        return 0;
+      }
+      return prev + 1;
+    });
+  }, []);
+
+  const skipTour = useCallback(() => {
+    setTourActive(false);
+    setTourStep(0);
+  }, []);
+
   return {
-    screen, activeTab, companyName, role, uploadedDocs, results, analyzed, auditLog,
-    login, demo, logout, uploadDoc, startAnalysis, finishAnalysis, switchTab, logDownload,
+    screen, activeTab, companyName, role, sector, uploadedDocs, results,
+    previousResults, analyzed, auditLog, tourActive, tourStep,
+    login, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
+    switchTab, logDownload, advanceTour, skipTour,
   };
 }
