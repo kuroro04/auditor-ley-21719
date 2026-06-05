@@ -16,3 +16,4 @@ public/pdf.worker.min.js
 # OS
 .DS_Store
 Thumbs.db
+tsconfig.tsbuildinfo
