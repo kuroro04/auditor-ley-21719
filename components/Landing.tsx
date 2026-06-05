@@ -1,10 +1,10 @@
 'use client';
 import LoginCard from './LoginCard';
 import { ScaleIcon, FileTextIcon, SearchCheckIcon, AlertCircleIcon, BarChart2Icon } from './Icons';
-import type { UserRole } from '@/lib/types';
+import type { UserRole, Sector } from '@/lib/types';
 
 interface LandingProps {
-  onLogin: (rut: string, role: UserRole) => void;
+  onLogin: (rut: string, role: UserRole, sector: Sector) => void;
   onDemo: () => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }

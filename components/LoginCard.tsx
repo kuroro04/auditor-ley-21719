@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
+import { SECTORES_OPCIONES } from '@/lib/sectorData';
 import type { UserRole } from '@/lib/types';
+import type { Sector } from '@/lib/types';
 
 const ROLES: { value: UserRole; label: string; desc: string }[] = [
   { value: 'administrador', label: 'Administrador', desc: 'Acceso total' },
@@ -9,7 +11,7 @@ const ROLES: { value: UserRole; label: string; desc: string }[] = [
 ];
 
 interface LoginCardProps {
-  onLogin: (rut: string, role: UserRole) => void;
+  onLogin: (rut: string, role: UserRole, sector: Sector) => void;
   onDemo: () => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
@@ -19,6 +21,7 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [role, setRole] = useState<UserRole>('administrador');
+  const [sector, setSector] = useState<Sector>('otro');
 
   const formatRut = (raw: string): string => {
     const clean = raw.replace(/[^0-9kK]/g, '').toUpperCase().slice(0, 9);
@@ -40,7 +43,7 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
       onToast('Formato de RUT inválido — use 12.345.678-9', 'yellow');
       return;
     }
-    onLogin(rut.trim(), role);
+    onLogin(rut.trim(), role, sector);
   };
 
   return (
@@ -71,6 +74,19 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
           onChange={e => setRole(e.target.value as UserRole)}>
           {ROLES.map(r => (
             <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label className="form-label">Sector de su empresa</label>
+        <select
+          className="form-input form-select"
+          value={sector}
+          onChange={e => setSector(e.target.value as Sector)}
+        >
+          {SECTORES_OPCIONES.map(s => (
+            <option key={s.value} value={s.value}>{s.label} — {s.desc}</option>
           ))}
         </select>
       </div>

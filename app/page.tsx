@@ -21,8 +21,8 @@ export default function Home() {
     <>
       {state.screen === 'landing' && (
         <Landing
-          onLogin={(rut, role) => {
-            state.login(rut, role);
+          onLogin={(rut, role, sector) => {
+            state.login(rut, role, sector);
             toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
           }}
           onDemo={() => {
