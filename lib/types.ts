@@ -76,3 +76,5 @@ export interface ToastItem {
   msg: string;
   type: 'blue' | 'green' | 'yellow' | 'red';
 }
+
+export type Sector = 'retail' | 'salud' | 'finanzas' | 'tecnologia' | 'otro';
