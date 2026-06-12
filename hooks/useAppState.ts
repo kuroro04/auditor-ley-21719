@@ -1,6 +1,6 @@
 'use client';
 import { useState, useCallback } from 'react';
-import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector } from '@/lib/types';
+import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
 import { REQUISITOS } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
 import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
@@ -36,6 +36,7 @@ export function useAppState() {
   const [previousResults, setPreviousResults] = useState<Record<string, RequisitoResult>>({});
   const [tourActive, setTourActive]           = useState(false);
   const [tourStep, setTourStep]               = useState(0);
+  const [snapshots, setSnapshots] = useState<HistorialSnapshot[]>([]);
 
   // Registra un evento en el audit log (más reciente primero)
   const addAuditEvent = useCallback((
@@ -86,6 +87,7 @@ export function useAppState() {
     setScreen('landing');
     setActiveTab('subir');
     setAuditLog([]);
+    setSnapshots([]);
     setTourActive(false);
     setTourStep(0);
     auditCounter = 0;
@@ -101,6 +103,7 @@ export function useAppState() {
     if (analyzed) {
       setPreviousResults(results);
     }
+    setTourActive(false);
     setScreen('analyzing');
   }, [analyzed, results]);
 
@@ -113,8 +116,28 @@ export function useAppState() {
     REQUISITOS.forEach(r => {
       newResults[r.id] = analyzeDocument(r.id, docs);
     });
+
+    // Calcular métricas para el snapshot histórico
+    const unanalyzable = REQUISITOS.filter(r => newResults[r.id]?.estado === 'unanalyzable').length;
+    const analyzable   = REQUISITOS.length - unanalyzable;
+    const greenCount   = REQUISITOS.filter(r => newResults[r.id]?.estado === 'green').length;
+    const yellowCount  = REQUISITOS.filter(r => newResults[r.id]?.estado === 'yellow').length;
+    const redCount     = REQUISITOS.filter(r => newResults[r.id]?.estado === 'red').length;
+    const pct = analyzable > 0
+      ? Math.round((greenCount * 100 + yellowCount * 50) / (analyzable * 100) * 100)
+      : 0;
+
+    setSnapshots(prev => [...prev, {
+      fecha: new Date().toISOString(),
+      pct,
+      green: greenCount,
+      yellow: yellowCount,
+      red: redCount,
+    }]);
+
     setResults(newResults);
     setAnalyzed(true);
+    setTourActive(false);
     setScreen('app');
     setActiveTab('diagnostico');
     addAuditEvent('ejecutó análisis', currentRole, currentUser);
@@ -127,6 +150,8 @@ export function useAppState() {
   const switchTab = useCallback((tab: ActiveTab, isAnalyzed: boolean): boolean => {
     if (tab === 'diagnostico' && !isAnalyzed) return false;
     setActiveTab(tab);
+    // Cerrar el tour al cambiar de pestaña: no debe seguir en Riesgos, Registro, etc.
+    setTourActive(false);
     return true;
   }, []);
 
@@ -147,7 +172,7 @@ export function useAppState() {
 
   return {
     screen, activeTab, companyName, role, sector, uploadedDocs, results,
-    previousResults, analyzed, auditLog, tourActive, tourStep,
+    previousResults, analyzed, auditLog, snapshots, tourActive, tourStep,
     login, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
     switchTab, logDownload, advanceTour, skipTour,
   };
