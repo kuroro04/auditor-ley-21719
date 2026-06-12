@@ -218,4 +218,248 @@ export const TEMPLATES: Record<string, ContenidoPlantilla> = {
       },
     ],
   },
+
+  // ─── Registro de actividades de tratamiento ───────────────────────────────
+  registro_actividades: {
+    reqId: 'registro_actividades',
+    titulo: 'Registro de Actividades de Tratamiento de Datos Personales',
+    articulo: 'Artículo 16 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este registro interno documenta todas las actividades en las que la empresa trata datos personales, conforme al deber de registro establecido en el Art. 16 de la Ley 21.719.',
+    notas: [
+      'Este registro es de uso interno y debe mantenerse actualizado.',
+      'Debe estar disponible para la APDP si lo solicita en el marco de una fiscalización.',
+      'Actualice el registro cada vez que incorpore una nueva actividad de tratamiento.',
+    ],
+    secciones: [
+      {
+        titulo: '1. Identificación del Responsable',
+        instruccion: 'Complete los datos del responsable del tratamiento de datos.',
+        placeholder: 'Razón social: [COMPLETAR]\nRUT: [COMPLETAR]\nDomicilio: [COMPLETAR]\nCorreo de contacto: [COMPLETAR]\nRepresentante legal: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Actividades de Tratamiento',
+        instruccion: 'Para cada actividad de tratamiento, complete una fila del siguiente registro. Copie y pegue la fila según la cantidad de actividades.',
+        placeholder: 'Nombre de la actividad: [COMPLETAR]\nCategorías de datos tratados: [COMPLETAR — ej: datos de identificación, datos financieros, datos sensibles]\nFinalidad del tratamiento: [COMPLETAR]\nBase legal: [COMPLETAR — ej: consentimiento / interés legítimo / obligación legal]\nDestinatarios o terceros receptores: [COMPLETAR — ej: proveedores de nube, entidades financieras]\nTransferencias internacionales: [COMPLETAR — Sí/No; si Sí, indicar país y garantías]\nPlazo de supresión: [COMPLETAR — ej: 5 años desde el término de la relación comercial]',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Medidas de Seguridad Aplicadas',
+        instruccion: 'Describa las medidas técnicas y organizativas que protegen los datos en cada actividad.',
+        placeholder: 'Cifrado en tránsito: [COMPLETAR — ej: TLS 1.2+]\nCifrado en reposo: [COMPLETAR — ej: AES-256]\nControl de acceso: [COMPLETAR — ej: autenticación de dos factores]\nRespaldo y recuperación: [COMPLETAR — ej: backups diarios cifrados]\nOtras medidas: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '4. Historial de Actualizaciones',
+        instruccion: 'Registre cada vez que actualice este documento.',
+        placeholder: 'Fecha: [COMPLETAR] — Cambio: [COMPLETAR] — Responsable: [COMPLETAR]',
+        obligatorio: false,
+      },
+    ],
+  },
+
+  // ─── Evaluación de Impacto en Privacidad (EIPD) ──────────────────────────
+  evaluacion_impacto: {
+    reqId: 'evaluacion_impacto',
+    titulo: 'Evaluación de Impacto en Protección de Datos (EIPD)',
+    articulo: 'Artículo 38 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este informe documenta el análisis formal de riesgos realizado antes de iniciar tratamientos de alto riesgo (datos sensibles, vigilancia a gran escala, biometría, IA), según exige el Art. 38 de la Ley 21.719.',
+    notas: [
+      'La EIPD debe realizarse ANTES de iniciar el tratamiento, no después.',
+      'Si el riesgo residual es alto, debe consultarse a la APDP antes de proceder.',
+      'El documento debe actualizarse si cambia la naturaleza, alcance o finalidad del tratamiento.',
+    ],
+    secciones: [
+      {
+        titulo: '1. Descripción Sistemática del Tratamiento',
+        instruccion: 'Describa en detalle qué datos se tratan, cómo, con qué tecnología y a qué escala.',
+        placeholder: 'Nombre del tratamiento: [COMPLETAR]\nTipos de datos involucrados: [COMPLETAR — ej: datos biométricos, datos de salud]\nEscala estimada de titulares afectados: [COMPLETAR — ej: 50.000 clientes]\nTecnologías o sistemas utilizados: [COMPLETAR]\nFlujo de datos (origen → almacenamiento → uso → eliminación): [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Evaluación de Necesidad y Proporcionalidad',
+        instruccion: 'Justifique que el tratamiento es necesario, adecuado y no excesivo para la finalidad declarada.',
+        placeholder: 'Finalidad específica del tratamiento: [COMPLETAR]\n¿Es el tratamiento necesario para esa finalidad?: [COMPLETAR — justificación]\n¿Se podría lograr la misma finalidad con menos datos?: [COMPLETAR]\nMedidas de minimización aplicadas: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Identificación y Evaluación de Riesgos',
+        instruccion: 'Liste los riesgos para los titulares de datos y evalúe su probabilidad e impacto.',
+        placeholder: 'Riesgo 1: [COMPLETAR — descripción]\n  Probabilidad (alta/media/baja): [COMPLETAR]\n  Impacto (alto/medio/bajo): [COMPLETAR]\n\nRiesgo 2: [COMPLETAR]\n  Probabilidad: [COMPLETAR]\n  Impacto: [COMPLETAR]\n\n(Agregue tantos riesgos como sea necesario)',
+        obligatorio: true,
+      },
+      {
+        titulo: '4. Medidas de Mitigación',
+        instruccion: 'Para cada riesgo identificado, defina las medidas que reducirán su probabilidad o impacto.',
+        placeholder: 'Medida 1 (para Riesgo 1): [COMPLETAR — ej: cifrado de extremo a extremo]\nMedida 2 (para Riesgo 2): [COMPLETAR]\nRiesgo residual estimado tras medidas: [COMPLETAR — alto/medio/bajo]\nConclusión: ¿Se puede proceder con el tratamiento?: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '5. Aprobación y Firma',
+        instruccion: 'La EIPD debe ser aprobada por el responsable del tratamiento o el DPO.',
+        placeholder: 'Elaborado por: [COMPLETAR]\nCargo: [COMPLETAR]\nFecha de elaboración: [COMPLETAR]\nAprobado por (DPO o responsable): [COMPLETAR]\nFecha de aprobación: [COMPLETAR]',
+        obligatorio: true,
+      },
+    ],
+  },
+
+  // ─── Política de Retención y Eliminación ─────────────────────────────────
+  politica_retencion: {
+    reqId: 'politica_retencion',
+    titulo: 'Política de Retención y Eliminación de Datos Personales',
+    articulo: 'Artículo 7 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este documento establece los plazos máximos de conservación para cada categoría de dato personal y los procedimientos de destrucción segura, en cumplimiento del principio de limitación del plazo de conservación del Art. 7.',
+    notas: [
+      'Los datos deben eliminarse tan pronto como dejen de ser necesarios para la finalidad que justificó su recopilación.',
+      'La destrucción debe ser irreversible: borrado seguro, trituración o anonimización efectiva.',
+      'Conserve registros de cada proceso de eliminación como evidencia de cumplimiento.',
+    ],
+    secciones: [
+      {
+        titulo: '1. Alcance y Responsable',
+        instruccion: 'Indique a qué datos aplica esta política y quién es responsable de su cumplimiento.',
+        placeholder: 'Esta política aplica a: [COMPLETAR — ej: todos los datos personales tratados por la empresa]\nResponsable del proceso de eliminación: [COMPLETAR — nombre y cargo]\nFrecuencia de revisión de la política: [COMPLETAR — ej: anual]',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Tabla de Plazos por Categoría de Dato',
+        instruccion: 'Complete la tabla con los plazos de retención para cada tipo de dato que trate su empresa.',
+        placeholder: 'Categoría: Datos de clientes — Plazo: [COMPLETAR — ej: 5 años tras el término de la relación] — Base legal: [COMPLETAR]\nCategoría: Datos de empleados — Plazo: [COMPLETAR] — Base legal: [COMPLETAR]\nCategoría: Datos de marketing — Plazo: [COMPLETAR] — Base legal: [COMPLETAR]\nCategoría: Datos de proveedores — Plazo: [COMPLETAR] — Base legal: [COMPLETAR]\n(Agregue filas según las categorías de datos que trate)',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Proceso de Revisión Periódica',
+        instruccion: 'Describa cómo y cuándo se revisa si los datos siguen siendo necesarios.',
+        placeholder: 'Frecuencia de auditoría de datos almacenados: [COMPLETAR — ej: trimestral]\nResponsable de la auditoría: [COMPLETAR]\nCriterio para decidir eliminación: [COMPLETAR — ej: si han transcurrido X meses desde el último uso activo]\nRegistro de revisiones: [COMPLETAR — ej: planilla interna de auditoría]',
+        obligatorio: true,
+      },
+      {
+        titulo: '4. Método de Destrucción Segura',
+        instruccion: 'Especifique el método de eliminación irreversible para cada soporte.',
+        placeholder: 'Datos digitales: [COMPLETAR — ej: borrado seguro con herramienta certificada, sobreescritura de 7 pasadas]\nDocumentos físicos: [COMPLETAR — ej: trituración con corte en partículas]\nSoportes físicos (discos, USB): [COMPLETAR — ej: destrucción física certificada]\nDatos en la nube: [COMPLETAR — ej: eliminación mediante API del proveedor con confirmación escrita]',
+        obligatorio: true,
+      },
+    ],
+  },
+
+  // ─── Inscripción en el RNPA ───────────────────────────────────────────────
+  registro_rnpa: {
+    reqId: 'registro_rnpa',
+    titulo: 'Acreditación de Inscripción en el Registro Nacional de Protección de Datos (RNPA)',
+    articulo: 'Artículo 55 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este documento acredita la inscripción vigente de la empresa como responsable de tratamiento en el Registro Nacional de Protección de Datos (RNPA) administrado por la APDP, conforme al Art. 55 de la Ley 21.719.',
+    notas: [
+      'La inscripción en el RNPA es obligatoria para toda empresa que trate datos personales.',
+      'Debe realizarse directamente en el portal de la APDP (www.apdp.cl).',
+      'Guarde el certificado o comprobante de inscripción como evidencia de cumplimiento.',
+      'Renueve la inscripción según los plazos que establezca la APDP.',
+    ],
+    secciones: [
+      {
+        titulo: '1. Instrucciones para Inscribirse',
+        instruccion: 'Siga estos pasos para completar la inscripción en el RNPA.',
+        placeholder: 'Paso 1: Ingrese al portal oficial de la APDP en www.apdp.cl\nPaso 2: Seleccione "Registro Nacional de Protección de Datos (RNPA)"\nPaso 3: Complete el formulario con los datos de la empresa\nPaso 4: Adjunte los documentos requeridos\nPaso 5: Envíe la solicitud y guarde el número de inscripción asignado',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Datos de la Inscripción Obtenida',
+        instruccion: 'Una vez completada la inscripción, registre aquí los datos del certificado.',
+        placeholder: 'Número de inscripción RNPA: [COMPLETAR]\nFecha de inscripción: [COMPLETAR]\nFecha de vencimiento (si aplica): [COMPLETAR]\nRUT del responsable inscrito: [COMPLETAR]\nNombre del responsable inscrito: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Responsable de Mantener la Inscripción Vigente',
+        instruccion: 'Designe a la persona responsable de renovar y actualizar la inscripción.',
+        placeholder: 'Responsable de la inscripción RNPA: [COMPLETAR — nombre y cargo]\nCorreo electrónico: [COMPLETAR]\nFrecuencia de verificación de vigencia: [COMPLETAR — ej: semestral]\nFecha de próxima revisión: [COMPLETAR]',
+        obligatorio: true,
+      },
+    ],
+  },
+
+  // ─── Consentimiento Informado ─────────────────────────────────────────────
+  consentimiento: {
+    reqId: 'consentimiento',
+    titulo: 'Formulario y Procedimiento de Obtención de Consentimiento Informado',
+    articulo: 'Artículo 12 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este documento establece el mecanismo formal de obtención del consentimiento libre, específico, informado e inequívoco de los titulares de datos, y el registro de evidencia de dicho consentimiento, según el Art. 12 de la Ley 21.719.',
+    notas: [
+      'El consentimiento debe ser libre: no puede ser condición para acceder a un servicio si no es necesario.',
+      'Debe ser específico: un consentimiento para una finalidad no vale para otras.',
+      'El titular puede retirar el consentimiento en cualquier momento sin consecuencias negativas.',
+      'Guarde evidencia del consentimiento con fecha y medio de obtención.',
+    ],
+    secciones: [
+      {
+        titulo: '1. Texto del Consentimiento Informado',
+        instruccion: 'Redacte el texto que el titular leerá y aceptará. Debe ser claro y sin tecnicismos.',
+        placeholder: 'Al aceptar, usted autoriza a [COMPLETAR — nombre empresa], RUT [COMPLETAR], con domicilio en [COMPLETAR], a tratar sus datos personales con la siguiente finalidad:\n\nFinalidad: [COMPLETAR — ej: envío de comunicaciones comerciales, gestión de su cuenta]\n\nDatos que se tratarán: [COMPLETAR — ej: nombre, correo electrónico, RUT]\n\nBase legal: Su consentimiento expreso (Art. 12, Ley 21.719).\n\nSus derechos: Puede acceder, rectificar, cancelar u oponerse al tratamiento escribiendo a [COMPLETAR — correo ARCO].\n\nPlazo de conservación: [COMPLETAR — ej: mientras mantenga su cuenta activa o hasta que retire su consentimiento].\n\nPuede retirar su consentimiento en cualquier momento sin consecuencias negativas enviando un correo a [COMPLETAR].',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Mecanismo de Obtención del Consentimiento',
+        instruccion: 'Describa cómo y dónde se obtiene el consentimiento (checkbox, firma, etc.).',
+        placeholder: 'Medio de obtención: [COMPLETAR — ej: checkbox en formulario web / firma en papel / confirmación por correo]\nURL o ubicación del formulario: [COMPLETAR]\nRegistro generado al aceptar: [COMPLETAR — ej: log con IP, fecha y hora, versión del texto aceptado]',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Procedimiento de Retiro del Consentimiento',
+        instruccion: 'Defina cómo un titular puede retirar su consentimiento de forma sencilla.',
+        placeholder: 'Canal para retirar el consentimiento: [COMPLETAR — ej: correo a privacidad@empresa.cl o formulario en www.empresa.cl/privacidad]\nPlazo máximo de procesamiento: [COMPLETAR — ej: 5 días hábiles]\nAcción resultante: [COMPLETAR — ej: eliminación del dato o cese del tratamiento específico]\nConfirmación al titular: [COMPLETAR — ej: correo de confirmación con acuse de recibo]',
+        obligatorio: true,
+      },
+      {
+        titulo: '4. Registro de Consentimientos',
+        instruccion: 'Indique cómo se almacena la evidencia del consentimiento.',
+        placeholder: 'Sistema de registro: [COMPLETAR — ej: base de datos CRM, planilla cifrada]\nCampos registrados: [COMPLETAR — ej: RUT, correo, fecha, hora, versión del texto, medio]\nResponsable del registro: [COMPLETAR]\nPlazo de conservación del registro: [COMPLETAR — ej: durante toda la relación y 5 años adicionales]',
+        obligatorio: true,
+      },
+    ],
+  },
+
+  // ─── Designación del DPO ──────────────────────────────────────────────────
+  designacion_dpo: {
+    reqId: 'designacion_dpo',
+    titulo: 'Acta de Designación del Delegado de Protección de Datos (DPO)',
+    articulo: 'Artículo 49 — Ley 21.719 de Protección de Datos Personales',
+    proposito: 'Este documento formaliza la designación del Delegado de Protección de Datos (DPO) de la empresa, establece sus funciones, garantiza su independencia y acredita la comunicación de la designación a la APDP, conforme al Art. 49 de la Ley 21.719.',
+    notas: [
+      'El DPO debe tener conocimientos especializados en derecho y prácticas de protección de datos.',
+      'Debe gozar de independencia funcional: no puede recibir instrucciones respecto del ejercicio de sus funciones.',
+      'La designación debe comunicarse a la APDP dentro del plazo legal.',
+      'El DPO puede ser interno (empleado) o externo (proveedor de servicios).',
+    ],
+    secciones: [
+      {
+        titulo: '1. Datos del DPO Designado',
+        instruccion: 'Complete los datos de identificación y contacto del Delegado de Protección de Datos.',
+        placeholder: 'Nombre completo: [COMPLETAR]\nRUT: [COMPLETAR]\nCargo dentro de la empresa (si es interno): [COMPLETAR]\nCorreo electrónico de contacto DPO: [COMPLETAR]\nTeléfono de contacto: [COMPLETAR]\nTipo de designación: [COMPLETAR — Interno / Externo]\nSi es externo — nombre de la empresa prestadora: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '2. Funciones y Responsabilidades del DPO',
+        instruccion: 'Detalle las funciones asignadas al DPO dentro de la organización.',
+        placeholder: 'El DPO tendrá las siguientes responsabilidades:\n1. Informar y asesorar al responsable y a los empleados sobre las obligaciones de la Ley 21.719.\n2. Supervisar el cumplimiento de la política de protección de datos.\n3. Asesorar en la realización de Evaluaciones de Impacto (EIPD).\n4. Actuar como punto de contacto con la APDP.\n5. Atender consultas de los titulares de datos sobre el ejercicio de sus derechos.\n6. [COMPLETAR — funciones adicionales específicas de la empresa]',
+        obligatorio: true,
+      },
+      {
+        titulo: '3. Independencia y Recursos Asignados',
+        instruccion: 'Declare las garantías de independencia y los recursos asignados al DPO.',
+        placeholder: 'Garantías de independencia:\n• El DPO no recibirá instrucciones respecto del ejercicio de sus funciones de protección de datos.\n• No será sancionado ni destituido por el ejercicio de sus funciones.\n• Reportará directamente al nivel directivo superior de la organización.\n\nRecursos asignados:\n• Acceso a: [COMPLETAR — ej: todos los sistemas de tratamiento de datos, documentación interna]\n• Tiempo dedicado: [COMPLETAR — ej: 50% de jornada / tiempo completo]\n• Presupuesto para formación continua: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '4. Notificación a la APDP',
+        instruccion: 'Registre los datos de la comunicación formal de la designación a la APDP.',
+        placeholder: 'Fecha de notificación a la APDP: [COMPLETAR]\nMedio de notificación: [COMPLETAR — ej: formulario portal APDP / correo oficial]\nNúmero de referencia o acuse de recibo: [COMPLETAR]\nFecha de acuse de recibo de la APDP: [COMPLETAR]',
+        obligatorio: true,
+      },
+      {
+        titulo: '5. Aprobación de la Designación',
+        instruccion: 'La designación debe ser firmada por el representante legal de la empresa.',
+        placeholder: 'En [COMPLETAR — ciudad], a [COMPLETAR — fecha], el representante legal de [COMPLETAR — nombre empresa], RUT [COMPLETAR], designa formalmente a [COMPLETAR — nombre DPO] como Delegado de Protección de Datos.\n\nFirma representante legal: _______________________\nNombre: [COMPLETAR]\nRUT: [COMPLETAR]\nFecha: [COMPLETAR]',
+        obligatorio: true,
+      },
+    ],
+  },
+
 };

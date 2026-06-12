@@ -9,7 +9,7 @@ interface UploadViewProps {
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onStartAnalysis: () => void;
-  onToast: (msg: string, type: 'green' | 'yellow') => void;
+  onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
 export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalysis, onToast }: UploadViewProps) {

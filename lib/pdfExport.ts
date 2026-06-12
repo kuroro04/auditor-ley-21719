@@ -294,7 +294,9 @@ export async function generarInformePDF(
     doc.text(`Pág. ${i} / ${totalPages}`, PW - margin, PH - 7, { align: 'right' });
   }
 
-  doc.save(`informe_cumplimiento_${companyName.replace(/[^a-z0-9]/gi, '_') || 'empresa'}_${new Date().toISOString().slice(0,10)}.pdf`);
+  const rut = companyName.replace(/[^a-z0-9]/gi, '_') || 'empresa';
+  const fechaArchivo = new Date().toISOString().slice(0, 10);
+  doc.save(`Diagnostico_DataShield_${rut}_${fechaArchivo}.pdf`);
 }
 
 // ────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
 
 interface TourStep {
   target: string;        // valor de data-tour del elemento
@@ -48,9 +49,11 @@ export default function OnboardingTour({ tourStep, onNext, onSkip }: OnboardingT
     const el = document.querySelector<HTMLElement>(`[data-tour="${paso.target}"]`);
     if (!el) return;
 
-    const rect    = el.getBoundingClientRect();
-    const PADDING = 8;
+    const rect      = el.getBoundingClientRect();
+    const PADDING   = 8;
     const TOOLTIP_W = 308;
+    // Altura estimada del tooltip: indicador + título + descripción + acciones + padding
+    const TOOLTIP_H = 220;
 
     setSpotlightRect({
       top:    rect.top    - PADDING,
@@ -64,11 +67,29 @@ export default function OnboardingTour({ tourStep, onNext, onSkip }: OnboardingT
       window.innerWidth - TOOLTIP_W - 16
     );
 
-    setTooltipPos(
-      paso.posicionAbajo
-        ? { top: rect.bottom + PADDING + 14, left }
-        : { top: Math.max(16, rect.top - 190), left }
-    );
+    // Espacio disponible arriba y abajo del elemento resaltado
+    const espacioAbajo  = window.innerHeight - rect.bottom - PADDING - 14;
+    const espacioArriba = rect.top - PADDING - 14;
+
+    let top: number;
+    if (paso.posicionAbajo && espacioAbajo >= TOOLTIP_H) {
+      // Preferencia abajo y hay espacio suficiente: colocar bajo el elemento
+      top = rect.bottom + PADDING + 14;
+    } else if (!paso.posicionAbajo && espacioArriba >= TOOLTIP_H) {
+      // Preferencia arriba y hay espacio suficiente: colocar sobre el elemento
+      top = rect.top - TOOLTIP_H - PADDING - 14;
+    } else if (espacioArriba >= espacioAbajo) {
+      // No cabe en el lado preferido: voltear al lado con más margen (arriba)
+      top = Math.max(16, rect.top - TOOLTIP_H - PADDING - 14);
+    } else {
+      // No cabe en el lado preferido: voltear al lado con más margen (abajo)
+      top = rect.bottom + PADDING + 14;
+    }
+
+    // Acotar siempre dentro del viewport para evitar recorte por cualquier lado
+    top = Math.max(16, Math.min(top, window.innerHeight - TOOLTIP_H - 16));
+
+    setTooltipPos({ top, left });
   }, [paso]);
 
   useEffect(() => {
@@ -106,7 +127,7 @@ export default function OnboardingTour({ tourStep, onNext, onSkip }: OnboardingT
         <div className="tour-actions">
           <button className="tour-btn-skip" onClick={onSkip}>Saltar tour</button>
           <button className="tour-btn-next" onClick={onNext}>
-            {tourStep < PASOS.length - 1 ? 'Siguiente →' : 'Empezar →'}
+            {tourStep < TOUR_STEP_COUNT - 1 ? 'Siguiente →' : 'Empezar →'}
           </button>
         </div>
       </div>

@@ -88,7 +88,7 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
   if (file.size > MAX_FILE_SIZE_BYTES) {
     return {
       name: file.name,
-      text: file.name.toLowerCase(),
+      text: '',
       wordCount: 0,
       extractedFully: false,
       extractMethod: `archivo demasiado grande (máx. 10 MB)`,
@@ -99,7 +99,7 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
   if (!allowedMimes || (!allowedMimes.includes(file.type) && file.type !== '')) {
     return {
       name: file.name,
-      text: file.name.toLowerCase(),
+      text: '',
       wordCount: 0,
       extractedFully: false,
       extractMethod: 'tipo no soportado',
@@ -158,7 +158,7 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
   } catch {
     return {
       name: file.name,
-      text: file.name.toLowerCase(),
+      text: '',
       wordCount: 0,
       extractedFully: false,
       extractMethod: 'error al leer el archivo',

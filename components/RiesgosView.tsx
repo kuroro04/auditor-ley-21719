@@ -89,10 +89,11 @@ export default function RiesgosView({ results, analyzed }: RiesgosViewProps) {
                 <div className="riesgo-multa-value">{r.multa}</div>
                 <div className="riesgo-multa-label">multa máx.</div>
               </div>
-              <div className={`riesgo-plazo-tag ${r.plazo.urgency}`}>
+              {/* Urgencia y fecha en columnas separadas para evitar solapamiento */}
+              <div className={`riesgo-plazo-urgencia ${r.plazo.urgency}`}>
                 {r.plazo.urgency === 'urgent' ? '⚠ Urgente' : r.plazo.urgency === 'pronto' ? '◷ Pronto' : '✓ Vigente'}
-                <span style={{ marginLeft: 4, opacity: 0.7 }}>{r.plazo.date}</span>
               </div>
+              <div className="riesgo-plazo-fecha">{r.plazo.date}</div>
               {analyzed && estado && (
                 <div className={`riesgo-estado-chip ${estado}`}>
                   {estado === 'green' ? '✓ Cumple' : estado === 'yellow' ? '⚠ Parcial' : '✕ Falta'}

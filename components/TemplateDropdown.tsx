@@ -11,21 +11,51 @@ interface TemplateDropdownProps {
 export default function TemplateDropdown({ reqId, companyName, onToast }: TemplateDropdownProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState<'docx' | 'pdf' | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
+  // Coordenadas del menú en el viewport (necesarias para position:fixed)
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
 
-  // Cerrar al hacer clic fuera del dropdown
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef    = useRef<HTMLDivElement>(null);
+
+  // Calcula la posición del menú relativa al viewport
+  const calcPos = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 6, left: rect.left });
+  };
+
+  // Cerrar al hacer clic fuera: comprueba tanto el trigger como el menú
   useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+    if (!open) return;
+    const onMouseDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (!triggerRef.current?.contains(t) && !menuRef.current?.contains(t)) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [open]);
+
+  // Reubicar el menú si el usuario hace scroll o redimensiona la ventana
+  useEffect(() => {
+    if (!open) return;
+    const update = () => calcPos();
+    window.addEventListener('scroll', update, true);
+    window.addEventListener('resize', update);
+    return () => {
+      window.removeEventListener('scroll', update, true);
+      window.removeEventListener('resize', update);
+    };
+  }, [open]);
 
   // Solo mostrar si existe plantilla para este requisito
   if (!TEMPLATES[reqId]) return null;
+
+  const handleToggle = () => {
+    if (!open) calcPos();
+    setOpen(o => !o);
+  };
 
   const handleDocx = async () => {
     setLoading('docx');
@@ -56,10 +86,11 @@ export default function TemplateDropdown({ reqId, companyName, onToast }: Templa
   };
 
   return (
-    <div className="tpl-dropdown" ref={ref}>
+    <div className="tpl-dropdown">
       <button
+        ref={triggerRef}
         className="btn-tpl-trigger"
-        onClick={() => setOpen(o => !o)}
+        onClick={handleToggle}
         disabled={loading !== null}
       >
         {loading ? <span className="spin">↻</span> : '📄'}
@@ -67,8 +98,13 @@ export default function TemplateDropdown({ reqId, companyName, onToast }: Templa
         {!loading && <span className="tpl-chevron">{open ? '▲' : '▼'}</span>}
       </button>
 
-      {open && (
-        <div className="tpl-menu">
+      {/* Menú renderizado con position:fixed para escapar del overflow:hidden de .brecha-card */}
+      {open && menuPos && (
+        <div
+          ref={menuRef}
+          className="tpl-menu"
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+        >
           <button className="tpl-menu-item" onClick={handleDocx}>
             <span className="tpl-menu-icon">📝</span>
             <div>

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx rimraf .next && next dev",
-    "build": "npx rimraf .next && next build",
+    "dev": "node -e \"const fs=require('fs');try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next dev",
+    "build": "node -e \"const fs=require('fs');try{fs.rmSync('.next',{recursive:true,force:true})}catch(e){}\" && next build",
     "start": "next start"
   },
   "dependencies": {
