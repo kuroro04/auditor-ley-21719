@@ -53,6 +53,7 @@ export default function Home() {
           uploadedDocs={state.uploadedDocs}
           results={state.results}
           previousResults={state.previousResults}
+          snapshots={state.snapshots}
           analyzed={state.analyzed}
           tourActive={state.tourActive}
           tourStep={state.tourStep}
