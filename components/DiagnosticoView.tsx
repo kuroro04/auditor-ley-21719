@@ -1,10 +1,12 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
+import { extractDocumentText } from '@/lib/extractText';
 import type { RequisitoResult, UploadedDoc, UserRole, Sector } from '@/lib/types';
 import LegalDetail from './LegalDetail';
 import TemplateDropdown from './TemplateDropdown';
 import SectorComparisonCard from './SectorComparisonCard';
+import ActionPlan from './ActionPlan';
 
 interface DiagnosticoViewProps {
   results: Record<string, RequisitoResult>;
@@ -94,22 +96,14 @@ export default function DiagnosticoView({
     if (fileInputRef.current) { fileInputRef.current.value = ''; fileInputRef.current.click(); }
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     const reqId = pendingReqId.current;
     if (!file || !reqId) return;
-    const finish = (text: string) => {
-      onUpload(reqId, { name: file.name, text: text.toLowerCase() });
-      onToast(`"${file.name}" actualizado`, 'green');
-      pendingReqId.current = null;
-    };
-    if (file.type === 'text/plain') {
-      const reader = new FileReader();
-      reader.onload = ev => finish((ev.target?.result as string) || '');
-      reader.readAsText(file);
-    } else {
-      setTimeout(() => finish(file.name), 800);
-    }
+    const doc = await extractDocumentText(file);
+    onUpload(reqId, doc);
+    onToast(`"${file.name}" actualizado`, 'green');
+    pendingReqId.current = null;
   };
 
   // Ordenar: red -> yellow -> unanalyzable -> green
@@ -199,7 +193,7 @@ export default function DiagnosticoView({
               </div>
             )}
             <div className="doc-chip" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)' }}>
-              10 requisitos legales
+              {REQUISITOS.length} requisitos legales
             </div>
           </div>
         </div>
@@ -312,6 +306,12 @@ export default function DiagnosticoView({
                     </div>
                   ) : (
                     <>
+                      {criterios.some(c => c.confianza !== 'alta') && (
+                        <p className="confianza-nota">
+                          La confianza indica qué tan segura es la detección automática.
+                          Recomendamos validación legal en criterios de confianza media o baja.
+                        </p>
+                      )}
                       <div className="criterios-list">
                         {criterios.map((c, i) => (
                           <div key={i} className="criterio-item">
@@ -320,6 +320,16 @@ export default function DiagnosticoView({
                             </div>
                             <div className="criterio-name">{c.name}</div>
                             <div className={`criterio-found ${c.status}`}>{c.found}</div>
+                            <span
+                              className={`confianza-dot ${c.confianza}`}
+                              title={`Confianza ${c.confianza}: ${
+                                c.confianza === 'alta'
+                                  ? 'keyword exacta encontrada'
+                                  : c.confianza === 'media'
+                                  ? 'detectado vía sinónimo'
+                                  : 'no encontrado'
+                              }`}
+                            />
                           </div>
                         ))}
                       </div>
@@ -328,31 +338,32 @@ export default function DiagnosticoView({
                           {estado === 'green' ? 'Cumple' : estado === 'yellow' ? 'Brecha detectada' : 'Documento faltante'}:
                         </strong>{' '}{gap}
                       </div>
+
+                      {/* Plan de acción de 3 pasos: solo para brechas roja o amarilla */}
+                      {(estado === 'red' || estado === 'yellow') && canDownload && (
+                        <ActionPlan
+                          reqId={r.id}
+                          companyName={companyName}
+                          criterios={criterios}
+                          onToast={onToast}
+                          onTriggerUpload={() => triggerUpload(r.id)}
+                          canEdit={canEdit}
+                        />
+                      )}
                     </>
                   )}
 
                   {/* Ficha legal siempre visible al expandir */}
                   <LegalDetail requisito={r} />
 
-                  {/* Acciones: solo si el estado no es verde */}
-                  {estado !== 'green' && (
+                  {/* Acciones compactas: solo para escaneados o visualizadores sin plan */}
+                  {estado !== 'green' && (isScanned || !canDownload) && (
                     <div className="brecha-actions">
-                      {canEdit ? (
+                      {isScanned && canEdit && (
                         <button className="btn-upload-req"
                           onClick={e => { e.stopPropagation(); triggerUpload(r.id); }}>
-                          ⬆ {isScanned ? 'Reemplazar con documento de texto' : 'Subir documento actualizado'}
+                          ⬆ Reemplazar con documento de texto
                         </button>
-                      ) : (
-                        <div className="role-lock-tag" title={`El rol "${role}" no puede subir documentos`}>
-                          🔒 Solo Admin puede subir
-                        </div>
-                      )}
-                      {showTemplate && (
-                        <TemplateDropdown
-                          reqId={r.id}
-                          companyName={companyName}
-                          onToast={onToast}
-                        />
                       )}
                       {!canDownload && (estado === 'red' || estado === 'yellow') && (
                         <div className="role-lock-tag" title="El rol visualizador no puede generar plantillas">
