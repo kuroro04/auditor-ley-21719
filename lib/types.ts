@@ -68,8 +68,16 @@ export interface RequisitoResult {
   gap: string;
 }
 
+export interface HistorialSnapshot {
+  fecha: string;    // ISO 8601 — momento en que se ejecutó el análisis
+  pct: number;      // porcentaje de cumplimiento global (0–100)
+  green: number;    // cantidad de requisitos en estado verde
+  yellow: number;   // cantidad de requisitos en estado amarillo
+  red: number;      // cantidad de requisitos en estado rojo
+}
+
 export type Screen = 'landing' | 'app' | 'analyzing';
-export type ActiveTab = 'subir' | 'diagnostico' | 'registro' | 'riesgos';
+export type ActiveTab = 'subir' | 'diagnostico' | 'registro' | 'riesgos' | 'historial';
 
 export interface ToastItem {
   id: number;
