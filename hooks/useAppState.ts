@@ -1,9 +1,10 @@
-'use client';
+﻿'use client';
 import { useState, useCallback } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
 import { REQUISITOS } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
 import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
+import { calcPct } from '@/lib/metrics';
 
 const DEMO_DOCS: Record<string, UploadedDoc> = {
   politica_privacidad: {
@@ -117,15 +118,8 @@ export function useAppState() {
       newResults[r.id] = analyzeDocument(r.id, docs);
     });
 
-    // Calcular métricas para el snapshot histórico
-    const unanalyzable = REQUISITOS.filter(r => newResults[r.id]?.estado === 'unanalyzable').length;
-    const analyzable   = REQUISITOS.length - unanalyzable;
-    const greenCount   = REQUISITOS.filter(r => newResults[r.id]?.estado === 'green').length;
-    const yellowCount  = REQUISITOS.filter(r => newResults[r.id]?.estado === 'yellow').length;
-    const redCount     = REQUISITOS.filter(r => newResults[r.id]?.estado === 'red').length;
-    const pct = analyzable > 0
-      ? Math.round((greenCount * 100 + yellowCount * 50) / (analyzable * 100) * 100)
-      : 0;
+    // Calcular métricas para el snapshot histórico usando la función centralizada
+    const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(newResults);
 
     setSnapshots(prev => [...prev, {
       fecha: new Date().toISOString(),
@@ -177,3 +171,5 @@ export function useAppState() {
     switchTab, logDownload, advanceTour, skipTour,
   };
 }
+
+

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import type { HistorialSnapshot } from '@/lib/types';
 
 interface HistorialViewProps {
@@ -153,7 +153,7 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
                   textAnchor="middle" fontSize="9"
                   fill="rgba(138,150,184,1)"
                 >
-                  {snapshots.length <= 6 ? fechaCorta(s.fecha) : `#${i + 1}`}
+                  {snapshots.length <= 5 ? fechaCorta(s.fecha) : `#${i + 1}`}
                 </text>
               </g>
             );
@@ -192,3 +192,4 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
     </div>
   );
 }
+
