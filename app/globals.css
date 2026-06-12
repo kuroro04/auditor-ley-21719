@@ -538,6 +538,8 @@ html, body {
 .riesgo-nivel-badge {
   font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 4px;
   white-space: nowrap; flex-shrink: 0;
+  /* Ancho mínimo para que "Crítico" no se trunque en filas ajustadas */
+  min-width: 56px; text-align: center;
 }
 .riesgo-nivel-badge.critico { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
 .riesgo-nivel-badge.alto    { background: var(--yellow-bg); color: var(--yellow); border: 1px solid var(--yellow-border); }
@@ -548,13 +550,31 @@ html, body {
 .riesgo-multa { text-align: right; flex-shrink: 0; }
 .riesgo-multa-value { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; color: var(--red); }
 .riesgo-multa-label { font-size: 9px; color: var(--text3); text-align: right; }
-.riesgo-plazo-tag {
+/* Columna de urgencia (pill): separada de la fecha para evitar solapamiento */
+.riesgo-plazo-urgencia {
   font-size: 10px; font-weight: 600; padding: 4px 9px; border-radius: 6px;
   white-space: nowrap; flex-shrink: 0;
+  min-width: 74px; text-align: center;
 }
-.riesgo-plazo-tag.urgent { background: var(--red-bg); color: var(--red); }
-.riesgo-plazo-tag.pronto { background: var(--yellow-bg); color: var(--yellow); }
-.riesgo-plazo-tag.ok     { background: var(--green-bg); color: var(--green); }
+.riesgo-plazo-urgencia.urgent { background: var(--red-bg);    color: var(--red);    }
+.riesgo-plazo-urgencia.pronto { background: var(--yellow-bg); color: var(--yellow); }
+.riesgo-plazo-urgencia.ok     { background: var(--green-bg);  color: var(--green);  }
+
+/* Columna de fecha del plazo: contenedor propio con ancho fijo */
+.riesgo-plazo-fecha {
+  font-size: 10px; font-family: 'JetBrains Mono', monospace;
+  color: var(--text3); white-space: nowrap; flex-shrink: 0;
+  min-width: 46px; text-align: right;
+}
+
+/* Reducir fuente en pantallas angostas para mantener columnas legibles */
+@media (max-width: 680px) {
+  .riesgo-nivel-badge,
+  .riesgo-plazo-urgencia,
+  .riesgo-plazo-fecha,
+  .riesgo-estado-chip { font-size: 9px; padding: 3px 6px; }
+  .riesgo-row { gap: 8px; }
+}
 .riesgo-estado-chip {
   font-size: 10px; font-weight: 600; padding: 4px 9px; border-radius: 6px;
   white-space: nowrap; flex-shrink: 0;
@@ -639,9 +659,11 @@ html, body {
 .btn-tpl-trigger:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .tpl-chevron { font-size: 8px; margin-left: 2px; }
 .tpl-menu {
-  position: absolute; top: calc(100% + 6px); left: 0; z-index: 200;
+  /* position:fixed se aplica vía inline style; z-index alto para superar .brecha-card y el tour */
+  z-index: 2000;
   background: var(--white); border: 1.5px solid var(--border); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg); min-width: 230px; overflow: hidden;
+  box-shadow: 0 8px 32px rgba(15,30,61,0.18), 0 2px 8px rgba(15,30,61,0.10);
+  min-width: 230px; overflow: hidden;
   animation: fadeInUp 0.18s var(--ease-out);
 }
 .tpl-menu-item {
@@ -725,6 +747,9 @@ html, body {
   background: var(--white); border-radius: 14px; padding: 20px;
   box-shadow: 0 8px 32px rgba(15,30,61,0.2), 0 2px 8px rgba(15,30,61,0.1);
   animation: cardIn 0.25s var(--ease-out) both;
+  /* Nunca desbordar el viewport; scroll interno si el contenido supera la pantalla */
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 .tour-step-indicator {
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
@@ -800,4 +825,313 @@ html, body {
 @keyframes checkIn {
   from { transform: scale(0) rotate(-30deg); opacity: 0; }
   to   { transform: scale(1) rotate(0deg);   opacity: 1; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ACTION PLAN — Mini plan de acción 3 pasos por brecha
+   ══════════════════════════════════════════════════════════════ */
+.action-plan {
+  margin-top: 14px;
+  border: 1.5px solid var(--blue-dim);
+  border-left: 3px solid var(--blue);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(37,99,235,0.04) 0%, rgba(37,99,235,0.02) 100%);
+  overflow: hidden;
+  animation: fadeInUp 0.3s var(--ease-out) both;
+}
+
+.action-plan-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(37,99,235,0.1);
+}
+.action-plan-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+.action-plan-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.action-plan-steps {
+  padding: 10px 0 4px;
+}
+
+/* Cada paso del plan */
+.action-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 14px;
+  position: relative;
+}
+/* Línea conectora vertical entre pasos */
+.action-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 25px;
+  top: 38px;
+  bottom: -10px;
+  width: 2px;
+  background: rgba(37,99,235,0.15);
+}
+
+/* Número del paso */
+.action-step-number {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+  box-shadow: 0 2px 6px rgba(37,99,235,0.3);
+}
+
+.action-step-content {
+  flex: 1;
+  min-width: 0;
+}
+.action-step-titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 3px;
+  line-height: 1.35;
+}
+.action-step-desc {
+  font-size: 11.5px;
+  color: var(--text2);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+/* Lista de criterios faltantes en el Paso 2 */
+.action-step-criterios {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.action-criterio-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text2);
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.6);
+}
+.action-criterio-item.fail {
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+}
+.action-criterio-item.warn {
+  background: var(--yellow-bg);
+  border: 1px solid var(--yellow-border);
+}
+.action-criterio-dot {
+  font-size: 10px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.action-criterio-item.fail .action-criterio-dot { color: var(--red); }
+.action-criterio-item.warn .action-criterio-dot { color: var(--yellow); }
+
+/* Botón de subida del Paso 3 */
+.action-step-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  border: 1.5px solid var(--blue);
+  background: rgba(37,99,235,0.08);
+  color: var(--blue);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  margin-top: 4px;
+}
+.action-step-upload-btn:hover {
+  background: rgba(37,99,235,0.15);
+  transform: translateY(-1px);
+}
+.action-step-upload-btn:active {
+  transform: translateY(0);
+}
+
+/* Modo oscuro: dentro de .brecha-card.state-red o state-yellow (fondo claro) */
+/* el action-plan ya hereda los colores correctos vía variables CSS */
+
+/* ─────────────────────────────────────────────────────────
+   INDICADORES DE CONFIANZA (Mejora 2)
+   ───────────────────────────────────────────────────────── */
+.confianza-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.confianza-dot.alta  { background: #4ade80; }
+.confianza-dot.media { background: #fcd34d; }
+.confianza-dot.baja  { background: #f87171; }
+
+.confianza-nota {
+  font-size: 11px;
+  color: var(--text3);
+  background: rgba(15,30,61,0.04);
+  border-left: 2px solid var(--border2);
+  padding: 6px 10px;
+  border-radius: 0 6px 6px 0;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────────────
+   HISTORIAL VIEW (Mejora 3)
+   ───────────────────────────────────────────────────────── */
+.historial-view {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.historial-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.historial-header p {
+  font-size: 13px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+.historial-empty {
+  text-align: center;
+  padding: 64px 20px;
+  color: var(--text3);
+}
+.historial-empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+.historial-empty h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.historial-empty p {
+  font-size: 14px;
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.historial-tendencia {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+}
+.historial-tendencia.positiva {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--green-border);
+}
+.historial-tendencia.negativa {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.historial-tendencia.neutra {
+  background: var(--surface);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.historial-tendencia-icono {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.historial-chart-wrap {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 16px 12px;
+  box-shadow: var(--shadow);
+}
+.historial-single-msg {
+  font-size: 12px;
+  color: var(--text3);
+  text-align: center;
+  margin-bottom: 8px;
+  font-style: italic;
+}
+.historial-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.historial-tabla-wrap {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.historial-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.historial-tabla th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.historial-tabla td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+.historial-tabla tr:last-child td {
+  border-bottom: none;
+}
+.historial-row-last td {
+  background: rgba(37,99,235,0.04);
+  font-weight: 500;
 }
