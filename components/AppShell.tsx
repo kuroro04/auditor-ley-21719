@@ -3,8 +3,9 @@ import UploadView from './UploadView';
 import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
 import RiesgosView from './RiesgosView';
-import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole, Sector } from '@/lib/types';
+import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole, Sector, HistorialSnapshot } from '@/lib/types';
 import OnboardingTour from './OnboardingTour';
+import HistorialView from './HistorialView';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
 
 interface AppShellProps {
@@ -16,6 +17,7 @@ interface AppShellProps {
   uploadedDocs: Record<string, UploadedDoc>;
   results: Record<string, RequisitoResult>;
   previousResults: Record<string, RequisitoResult>;
+  snapshots: HistorialSnapshot[];
   analyzed: boolean;
   tourActive: boolean;
   tourStep: number;
@@ -37,7 +39,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 export default function AppShell({
   companyName, role, sector, auditLog, activeTab, uploadedDocs, results,
-  previousResults, analyzed, tourActive, tourStep,
+  previousResults, snapshots, analyzed, tourActive, tourStep,
   onSwitchTab, onUpload, onStartAnalysis, onLogout, onDownload,
   onAdvanceTour, onSkipTour, onToast,
 }: AppShellProps) {
@@ -93,6 +95,14 @@ export default function AppShell({
             )}
           </div>
         )}
+        <div className={`nav-tab${activeTab === 'historial' ? ' active' : ''}`} onClick={() => onSwitchTab('historial')}>
+          <span style={{ fontSize: 14 }}>📈</span> Historial
+          {snapshots.length >= 2 && (
+            <span className="nav-tab-badge" style={{ background: 'rgba(37,99,235,0.12)', color: 'var(--blue)' }}>
+              {snapshots.length}
+            </span>
+          )}
+        </div>
       </nav>
 
       {/* Content */}
@@ -125,10 +135,13 @@ export default function AppShell({
         {activeTab === 'registro' && canSeeRegistro && (
           <RegistroView auditLog={auditLog} />
         )}
+        {activeTab === 'historial' && (
+          <HistorialView snapshots={snapshots} />
+        )}
       </div>
 
-      {/* Tour guiado de onboarding — aparece en el primer acceso */}
-      {tourActive && (
+      {/* Tour guiado: solo activo en la pestaña inicial; desaparece al cambiar de sección */}
+      {tourActive && activeTab === 'subir' && (
         <OnboardingTour
           tourStep={tourStep}
           onNext={onAdvanceTour}
