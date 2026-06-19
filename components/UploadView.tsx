@@ -103,10 +103,16 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
               </div>
               <div className="req-upload-action">
                 {isUploading ? (
-                  <div className="uploading-tag"><span className="spin">↻</span> Extrayendo texto...</div>
+                  <div className="uploading-tag">
+                    <div className="uploading-spinner" aria-hidden="true" />
+                    Extrayendo texto...
+                  </div>
                 ) : isUploaded ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                    <div className="upload-file-tag">✓ {doc.name}</div>
+                    <div className="upload-file-tag">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+                      {doc.name}
+                    </div>
                     <div style={{ fontSize: 10, color: doc.extractedFully ? 'var(--green)' : 'var(--yellow)', fontFamily: 'JetBrains Mono, monospace' }}>
                       {doc.extractedFully
                         ? `${(doc.wordCount ?? 0).toLocaleString('es-CL')} palabras · ${doc.extractMethod}`
@@ -115,16 +121,33 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
                     {canEdit && (
                       <button className="btn-upload-req" style={{ fontSize: 10, padding: '3px 10px' }}
                         onClick={() => triggerUpload(r.id)}>
-                        ↺ Reemplazar
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                          <path d="M21 3v5h-5"/>
+                          <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                          <path d="M8 16H3v5"/>
+                        </svg>
+                        Reemplazar
                       </button>
                     )}
                   </div>
                 ) : canEdit ? (
                   <button className="btn-upload-req" onClick={() => triggerUpload(r.id)}>
-                    ⬆ Subir archivo
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="17 8 12 3 7 8"/>
+                      <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    Subir archivo
                   </button>
                 ) : (
-                  <div className="role-lock-tag" title="Solo el administrador puede subir documentos">🔒 Sin acceso</div>
+                  <div className="role-lock-tag" title="Solo el administrador puede subir documentos">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    Sin acceso
+                  </div>
                 )}
               </div>
             </div>
@@ -157,11 +180,21 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
             disabled={count === 0}
             onClick={onStartAnalysis}
           >
-            🔬 Analizar ahora →
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+              <line x1="11" y1="8" x2="11" y2="14"/>
+              <line x1="8" y1="11" x2="14" y2="11"/>
+            </svg>
+            Analizar ahora
           </button>
         ) : (
           <div className="role-lock-btn" data-tour="analyze-btn" title={`El rol "${role}" no puede ejecutar el análisis`}>
-            🔒 Solo administrador puede analizar
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Solo administrador puede analizar
           </div>
         )}
       </div>

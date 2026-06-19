@@ -52,7 +52,14 @@ export default function AnalyzingScreen({ docCount, onFinish }: AnalyzingScreenP
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="analyzing-wrap">
-        <div className="analyzing-icon">🔬</div>
+        <div className="analyzing-icon">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+            <line x1="11" y1="8" x2="11" y2="14"/>
+            <line x1="8" y1="11" x2="14" y2="11"/>
+          </svg>
+        </div>
         <div className="analyzing-title">Analizando su documentación</div>
         <div className="analyzing-sub">
           Estamos contrastando sus documentos contra los{' '}

@@ -290,7 +290,12 @@ export default function DiagnosticoView({
 
                   {isScanned ? (
                     <div className="scanned-warning">
-                      <div className="scanned-warning-icon">⚠️</div>
+                      <div className="scanned-warning-icon" aria-hidden="true">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                      </div>
                       <div className="scanned-warning-text">
                         <strong>Este documento parece ser escaneado o una imagen.</strong> No pudimos extraer su texto para el analisis.
                         Por favor subalo en un formato con texto seleccionable (PDF con texto, Word o TXT).
@@ -355,12 +360,21 @@ export default function DiagnosticoView({
                       {isScanned && canEdit && (
                         <button className="btn-upload-req"
                           onClick={e => { e.stopPropagation(); triggerUpload(r.id); }}>
-                          ⬆ Reemplazar con documento de texto
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                          </svg>
+                          Reemplazar con documento de texto
                         </button>
                       )}
                       {!canDownload && (estado === 'red' || estado === 'yellow') && (
                         <div className="role-lock-tag" title="El rol visualizador no puede generar plantillas">
-                          🔒 Solo Admin/Auditor puede generar plantillas
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="3" y="11" width="18" height="11" rx="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                          Solo Admin/Auditor puede generar plantillas
                         </div>
                       )}
                     </div>
@@ -417,7 +431,11 @@ export default function DiagnosticoView({
           </button>
         ) : (
           <div className="role-lock-btn" title="El rol visualizador no puede descargar informes">
-            🔒 Solo Admin/Auditor puede descargar
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            Solo Admin/Auditor puede descargar
           </div>
         )}
       </div>

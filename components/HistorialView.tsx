@@ -27,13 +27,24 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
   if (snapshots.length === 0) {
     return (
       <div className="historial-view">
-        <div className="historial-empty">
-          <div className="historial-empty-icon">📈</div>
-          <h3>Aún no hay análisis registrados</h3>
-          <p>
-            Suba sus documentos en la pestaña <strong>Subir documentos</strong> y ejecute
-            el análisis para comenzar a registrar la evolución del cumplimiento de su empresa.
-          </p>
+        <div className="historial-header">
+          <h2>Progreso histórico de cumplimiento</h2>
+          <p>Los análisis ejecutados aparecerán aquí</p>
+        </div>
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6"  y1="20" x2="6"  y2="14"/>
+              <line x1="2"  y1="20" x2="22" y2="20"/>
+            </svg>
+          </div>
+          <div className="empty-state-title">Aún no hay análisis registrados</div>
+          <div className="empty-state-sub">
+            Suba sus documentos en <strong>Subir documentos</strong> y ejecute el análisis
+            para comenzar a registrar la evolución del cumplimiento.
+          </div>
         </div>
       </div>
     );
@@ -67,8 +78,14 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
       {/* Indicador de tendencia (solo cuando hay ≥2 análisis) */}
       {penultimo && (
         <div className={`historial-tendencia ${delta > 0 ? 'positiva' : delta < 0 ? 'negativa' : 'neutra'}`}>
-          <span className="historial-tendencia-icono">
-            {delta > 0 ? '↑' : delta < 0 ? '↓' : '→'}
+          <span className="historial-tendencia-icono" aria-hidden="true">
+            {delta > 0 ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            ) : delta < 0 ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            )}
           </span>
           <span>
             {delta > 0

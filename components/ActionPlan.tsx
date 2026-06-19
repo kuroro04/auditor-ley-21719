@@ -29,7 +29,11 @@ export default function ActionPlan({
   return (
     <div className="action-plan">
       <div className="action-plan-header">
-        <span className="action-plan-icon">🎯</span>
+        <span className="action-plan-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+        </span>
         <span className="action-plan-title">Cómo corregir esto</span>
       </div>
 
@@ -88,11 +92,20 @@ export default function ActionPlan({
                 className="action-step-upload-btn"
                 onClick={e => { e.stopPropagation(); onTriggerUpload(); }}
               >
-                ⬆ Subir documento actualizado
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Subir documento actualizado
               </button>
             ) : (
               <div className="role-lock-tag" style={{ marginTop: 6 }}>
-                🔒 Solo Admin puede subir documentos
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                Solo Admin puede subir documentos
               </div>
             )}
           </div>

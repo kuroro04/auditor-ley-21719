@@ -38,33 +38,40 @@ export default function RiesgosView({ results, analyzed }: RiesgosViewProps) {
     <div className="riesgos-view">
       {/* Summary cards */}
       <div className="riesgos-summary">
-        <div className="riesgo-stat-card">
+        <div className="riesgo-stat-card exposure">
           <div className="riesgo-stat-label">Exposición total a multas</div>
           <div className="riesgo-stat-value red">{totalExposure.toLocaleString('es-CL')} UTM</div>
           <div className="riesgo-stat-sub">
             {analyzed ? `basado en ${incumplidos} requisitos incumplidos` : 'si no cumple ningún requisito'}
           </div>
         </div>
-        <div className="riesgo-stat-card">
+        <div className="riesgo-stat-card critico">
           <div className="riesgo-stat-label">Requisitos críticos</div>
-          <div className="riesgo-stat-value" style={{ color: '#dc2626' }}>{criticos}</div>
+          <div className="riesgo-stat-value critico">{criticos}</div>
           <div className="riesgo-stat-sub">Multas de 3.000–5.000 UTM</div>
         </div>
-        <div className="riesgo-stat-card">
+        <div className="riesgo-stat-card alto">
           <div className="riesgo-stat-label">Requisitos de alto riesgo</div>
-          <div className="riesgo-stat-value" style={{ color: '#d97706' }}>{altos}</div>
+          <div className="riesgo-stat-value alto">{altos}</div>
           <div className="riesgo-stat-sub">Multas de 1.000–2.000 UTM</div>
         </div>
-        <div className="riesgo-stat-card">
+        <div className="riesgo-stat-card medio">
           <div className="riesgo-stat-label">Requisitos de riesgo medio</div>
-          <div className="riesgo-stat-value" style={{ color: '#2563eb' }}>{medios}</div>
+          <div className="riesgo-stat-value medio">{medios}</div>
           <div className="riesgo-stat-sub">Multas de 500–1.000 UTM</div>
         </div>
       </div>
 
       {!analyzed && (
         <div className="riesgos-notice">
-          ℹ Ejecute el análisis para ver su exposición real según los documentos subidos.
+          <span className="riesgos-notice-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </span>
+          Ejecute el análisis para ver su exposición real según los documentos subidos.
         </div>
       )}
 
