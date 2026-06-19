@@ -50,7 +50,7 @@ export default function AnalyzingScreen({ docCount, onFinish }: AnalyzingScreenP
   }, [onFinish]);
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div className="analyzing-wrap">
         <div className="analyzing-icon">🔬</div>
         <div className="analyzing-title">Analizando su documentación</div>

@@ -55,7 +55,8 @@ export default function AppShell({
             <ScaleIcon size={16} color="#fff" />
           </div>
           <div className="header-brand-name">DataShield</div>
-          <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>Ley 21.719</span>
+          <span style={{ fontSize: 10.5, color: 'var(--border2)', marginLeft: 2 }}>|</span>
+          <span style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: '0.02em' }}>Ley 21.719</span>
         </div>
         <div className="header-right">
           <div className="header-role-badge">{ROLE_LABELS[role]}</div>
@@ -83,22 +84,25 @@ export default function AppShell({
           )}
         </div>
         <div className={`nav-tab${activeTab === 'riesgos' ? ' active' : ''}`} onClick={() => onSwitchTab('riesgos')}>
-          <span style={{ fontSize: 14 }}>⚠</span> Riesgos
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Riesgos
         </div>
         {canSeeRegistro && (
           <div className={`nav-tab${activeTab === 'registro' ? ' active' : ''}`} onClick={() => onSwitchTab('registro')}>
-            <span style={{ fontSize: 14 }}>📋</span> Registro de auditoría
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Registro de auditoría
             {auditLog.length > 0 && (
-              <span className="nav-tab-badge" style={{ background: 'var(--blue-dim)', color: 'var(--blue)' }}>
+              <span className="nav-tab-badge" style={{ background: 'var(--blue-dim)', color: 'var(--blue)', border: '1px solid rgba(37,99,235,0.18)' }}>
                 {auditLog.length}
               </span>
             )}
           </div>
         )}
         <div className={`nav-tab${activeTab === 'historial' ? ' active' : ''}`} onClick={() => onSwitchTab('historial')}>
-          <span style={{ fontSize: 14 }}>📈</span> Historial
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Historial
           {snapshots.length >= 2 && (
-            <span className="nav-tab-badge" style={{ background: 'rgba(37,99,235,0.12)', color: 'var(--blue)' }}>
+            <span className="nav-tab-badge" style={{ background: 'var(--blue-dim)', color: 'var(--blue)', border: '1px solid rgba(37,99,235,0.18)' }}>
               {snapshots.length}
             </span>
           )}

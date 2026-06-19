@@ -99,10 +99,20 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
         Ver demostración con datos de ejemplo
       </button>
 
-      <p className="login-legal">
-        Sus documentos se procesan localmente en su navegador.<br />
-        Ningún archivo es enviado a servidores externos.
-      </p>
+      <div className="login-security">
+        <div className="login-security-item">
+          <span>🔒</span>
+          <span>Procesamiento local</span>
+        </div>
+        <div className="login-security-item">
+          <span>🛡</span>
+          <span>Sin servidores externos</span>
+        </div>
+        <div className="login-security-item">
+          <span>🔑</span>
+          <span>AES-256</span>
+        </div>
+      </div>
     </div>
   );
 }
