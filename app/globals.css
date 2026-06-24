@@ -329,6 +329,32 @@ html, body {
 }
 .login-security-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--text3); font-weight: 500; }
 
+/* --- Validación de formulario --- */
+.form-input--error {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.10) !important;
+}
+.form-error-msg {
+  font-size: 11.5px; color: #dc2626; margin-top: 4px; font-weight: 500;
+}
+.pass-req-list {
+  margin-top: 6px; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.req-item {
+  font-size: 11.5px; display: flex; align-items: center; gap: 5px;
+  color: var(--text3); transition: color 0.18s;
+}
+.req-item--ok   { color: #16a34a; }
+.req-item--fail { color: #6b7280; }
+.req-icon { font-size: 11px; width: 14px; text-align: center; }
+.btn-login:disabled {
+  opacity: 0.45; cursor: not-allowed;
+}
+.btn-login:disabled:hover {
+  background: var(--navy); transform: none; box-shadow: none;
+}
+
 /* ═══════════════════════════════════════════════════════════
    APP SHELL
    ═══════════════════════════════════════════════════════════ */
