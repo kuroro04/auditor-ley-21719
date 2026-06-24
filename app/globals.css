@@ -354,6 +354,19 @@ html, body {
 .btn-login:disabled:hover {
   background: var(--navy); transform: none; box-shadow: none;
 }
+.pass-input-wrap {
+  position: relative;
+}
+.pass-input-wrap .form-input {
+  padding-right: 40px;
+}
+.pass-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; padding: 2px; cursor: pointer;
+  color: var(--text3); display: flex; align-items: center;
+  transition: color 0.15s;
+}
+.pass-toggle:hover { color: var(--text2); }
 
 /* ═══════════════════════════════════════════════════════════
    APP SHELL
