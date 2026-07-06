@@ -312,22 +312,48 @@ export default function DiagnosticoView({
                       <div className="criterios-list">
                         {criterios.map((c, i) => (
                           <div key={i} className="criterio-item">
-                            <div className={`criterio-badge ${c.status}`}>
-                              {c.status === 'ok' ? '✓' : c.status === 'warn' ? '~' : '✕'}
+                            <div className="criterio-main-row">
+                              <div className={`criterio-badge ${c.status}`}>
+                                {c.status === 'ok' ? '✓' : c.status === 'warn' ? '~' : '✕'}
+                              </div>
+                              <div className="criterio-name">{c.name}</div>
+                              <div className={`criterio-found ${c.status}`}>{c.found}</div>
+                              {c.densidad > 1 && (
+                                <span
+                                  className="criterio-densidad"
+                                  title={`Concepto mencionado ${c.densidad} veces en el documento`}
+                                >
+                                  ×{c.densidad}
+                                </span>
+                              )}
+                              <span
+                                className={`confianza-dot ${c.confianza}`}
+                                title={`Confianza ${c.confianza}: ${
+                                  c.confianza === 'alta'
+                                    ? c.frasesLegalesEncontradas?.length > 0
+                                      ? 'frase legal exacta encontrada'
+                                      : 'keyword con buena densidad o proximidad'
+                                    : c.confianza === 'media'
+                                    ? c.requiereRevisionManual
+                                      ? 'término detectado en contexto negativo — revisar manualmente'
+                                      : 'detectado vía sinónimo o keyword aislada'
+                                    : 'no encontrado en el documento'
+                                }`}
+                                aria-label={`Confianza ${c.confianza}`}
+                              />
                             </div>
-                            <div className="criterio-name">{c.name}</div>
-                            <div className={`criterio-found ${c.status}`}>{c.found}</div>
-                            <span
-                              className={`confianza-dot ${c.confianza}`}
-                              title={`Confianza ${c.confianza}: ${
-                                c.confianza === 'alta'
-                                  ? 'keyword exacta encontrada'
-                                  : c.confianza === 'media'
-                                  ? 'detectado vía sinónimo'
-                                  : 'no encontrado'
-                              }`}
-                              aria-label={`Confianza ${c.confianza}`}
-                            />
+                            {(c.frasesLegalesEncontradas?.length > 0 || c.requiereRevisionManual) && (
+                              <div className="criterio-indicators">
+                                {c.frasesLegalesEncontradas?.map((f, fi) => (
+                                  <span key={fi} className="criterio-frase-tag">⚖ {f}</span>
+                                ))}
+                                {c.requiereRevisionManual && (
+                                  <span className="criterio-revision-tag">
+                                    ⚠ Revisión manual — término en contexto negativo
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

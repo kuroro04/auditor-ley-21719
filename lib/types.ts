@@ -13,6 +13,7 @@ export interface Criterio {
   name: string;
   keywords: string[];
   synonyms: string[];
+  frasesLegales: string[];
   validado: boolean;
 }
 
@@ -58,6 +59,11 @@ export interface CriterioResult {
   kwTotal: number;
   confianza: 'alta' | 'media' | 'baja';
   validado: boolean;
+  // Campos de explicabilidad del motor v2
+  negaciones: string[];
+  frasesLegalesEncontradas: string[];
+  requiereRevisionManual: boolean;
+  densidad: number;
 }
 
 export interface RequisitoResult {

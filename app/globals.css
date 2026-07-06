@@ -666,11 +666,12 @@ html, body {
 
 .criterios-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
 .criterio-item {
-  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  display: flex; flex-direction: column; gap: 3px; padding: 7px 10px;
   border-radius: 7px; font-size: 12px; background: var(--surface);
   transition: background var(--dur);
 }
 .criterio-item:hover { background: var(--surface2); }
+.criterio-main-row { display: flex; align-items: center; gap: 8px; }
 .criterio-badge {
   width: 18px; height: 18px; border-radius: 5px;
   display: flex; align-items: center; justify-content: center;
@@ -684,6 +685,24 @@ html, body {
 .criterio-found.ok   { color: var(--green); }
 .criterio-found.warn { color: var(--yellow); }
 .criterio-found.fail { color: var(--red); }
+/* Indicadores del motor v2 */
+.criterio-indicators { display: flex; flex-wrap: wrap; gap: 4px; padding-left: 26px; }
+.criterio-frase-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(59,130,246,0.08); color: #2563eb;
+  border: 1px solid rgba(59,130,246,0.22);
+  font-family: var(--font-jetbrains),'JetBrains Mono',monospace;
+}
+.criterio-revision-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: var(--yellow-bg); color: #92400e;
+  border: 1px solid var(--yellow-border);
+}
+.criterio-densidad {
+  font-size: 9.5px; color: var(--text3); background: var(--surface2);
+  border-radius: 4px; padding: 1px 5px; border: 1px solid var(--border);
+  font-weight: 600; flex-shrink: 0; cursor: default;
+}
 
 .gap-box { border-radius: 8px; padding: 11px 13px; font-size: 12px; line-height: 1.7; }
 .gap-box.yellow { background: var(--yellow-bg); border: 1px solid var(--yellow-border); color: #92400e; }
