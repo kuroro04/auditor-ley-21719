@@ -23,3 +23,52 @@ describe('createTenantContext', () => {
     expect(ctx.usuario).toBe('ana@empresa.cl');
   });
 });
+
+import {
+  assertTenantAccess,
+  filterByTenant,
+  getSecurityAuditLog,
+  resetSecurityAuditLog,
+  TenantAccessError,
+} from '../lib/tenant/guard';
+
+describe('assertTenantAccess', () => {
+  const empresaA = createTenantContext('11.111.111-1', 'administrador', 'admin@a.cl');
+  const empresaB = createTenantContext('22.222.222-2', 'administrador', 'admin@b.cl');
+
+  it('permite el acceso cuando el recurso pertenece a la misma empresa', () => {
+    resetSecurityAuditLog();
+    expect(() => assertTenantAccess(empresaA, empresaA.companyId)).not.toThrow();
+  });
+
+  it('rechaza el acceso cuando el recurso pertenece a otra empresa', () => {
+    resetSecurityAuditLog();
+    expect(() => assertTenantAccess(empresaB, empresaA.companyId)).toThrow(TenantAccessError);
+  });
+
+  it('registra el intento denegado en el log de seguridad global', () => {
+    resetSecurityAuditLog();
+    try {
+      assertTenantAccess(empresaB, empresaA.companyId);
+    } catch {
+      // esperado: la aserción del test siguiente valida el registro
+    }
+    const log = getSecurityAuditLog();
+    expect(log).toHaveLength(1);
+    expect(log[0].companyIdSolicitante).toBe(empresaB.companyId);
+    expect(log[0].companyIdRecurso).toBe(empresaA.companyId);
+  });
+});
+
+describe('filterByTenant', () => {
+  it('nunca deja pasar recursos de otra empresa aunque estén mezclados', () => {
+    const empresaA = createTenantContext('11.111.111-1', 'administrador', 'admin@a.cl');
+    const mixed = [
+      { id: 1, companyId: empresaA.companyId },
+      { id: 2, companyId: 'OTRAEMPRESA' },
+      { id: 3, companyId: empresaA.companyId },
+    ];
+    const result = filterByTenant(empresaA, mixed);
+    expect(result.map(r => r.id)).toEqual([1, 3]);
+  });
+});
