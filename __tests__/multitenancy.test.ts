@@ -72,3 +72,46 @@ describe('filterByTenant', () => {
     expect(result.map(r => r.id)).toEqual([1, 3]);
   });
 });
+
+import { getDocument, listDocuments, resetRepository, saveDocument } from '../lib/tenant/repository';
+
+describe('tenantRepository', () => {
+  const empresaA = createTenantContext('11.111.111-1', 'administrador', 'admin@a.cl');
+  const empresaB = createTenantContext('22.222.222-2', 'administrador', 'admin@b.cl');
+  const doc = { name: 'politica_privacidad.pdf', text: 'contenido confidencial de empresa A' };
+
+  it('una empresa puede guardar y leer su propio documento', () => {
+    resetRepository();
+    saveDocument(empresaA, 'req-1', doc);
+    expect(getDocument(empresaA, empresaA.companyId, 'req-1')).toEqual(doc);
+  });
+
+  it('rechaza que la empresa B lea un documento de la empresa A (acceso cruzado)', () => {
+    resetRepository();
+    saveDocument(empresaA, 'req-1', doc);
+    expect(() => getDocument(empresaB, empresaA.companyId, 'req-1')).toThrow(TenantAccessError);
+  });
+
+  it('el intento de acceso cruzado queda registrado en el log de seguridad', () => {
+    resetRepository();
+    resetSecurityAuditLog();
+    saveDocument(empresaA, 'req-1', doc);
+    try {
+      getDocument(empresaB, empresaA.companyId, 'req-1');
+    } catch {
+      // esperado
+    }
+    const log = getSecurityAuditLog();
+    expect(
+      log.some(e => e.companyIdSolicitante === empresaB.companyId && e.companyIdRecurso === empresaA.companyId),
+    ).toBe(true);
+  });
+
+  it('listDocuments nunca devuelve documentos de otra empresa', () => {
+    resetRepository();
+    saveDocument(empresaA, 'req-1', doc);
+    saveDocument(empresaB, 'req-2', { name: 'otro.pdf', text: 'contenido de empresa B' });
+    const docsDeA = listDocuments(empresaA);
+    expect(Object.keys(docsDeA)).toEqual(['req-1']);
+  });
+});
