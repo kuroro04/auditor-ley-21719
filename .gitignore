@@ -20,3 +20,6 @@ tsconfig.tsbuildinfo
 
 # worktrees aislados
 .worktrees/
+
+# estado de scratch de subagent-driven-development
+.superpowers/
