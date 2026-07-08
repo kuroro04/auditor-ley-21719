@@ -5,6 +5,13 @@ import { REQUISITOS } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
 import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
 import { calcPct } from '@/lib/metrics';
+import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
+import { saveDocument, listDocuments } from '@/lib/tenant/repository';
+import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
+
+// RUT sintético y estable usado solo para el modo demo: permite que los
+// documentos de ejemplo también queden aislados bajo un companyId propio.
+const DEMO_RUT = '99.999.999-9';
 
 const DEMO_DOCS: Record<string, UploadedDoc> = {
   politica_privacidad: {
@@ -28,11 +35,15 @@ export function useAppState() {
   const [screen, setScreen] = useState<Screen>('landing');
   const [activeTab, setActiveTab] = useState<ActiveTab>('subir');
   const [companyName, setCompanyName] = useState('');
+  const [companyId, setCompanyId] = useState('');
   const [role, setRole] = useState<UserRole>('administrador');
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDoc>>({});
   const [results, setResults] = useState<Record<string, RequisitoResult>>({});
   const [analyzed, setAnalyzed] = useState(false);
   const [auditLog, setAuditLog] = useState<AuditEvent[]>([]);
+  // Espejo, para la UI, del log de seguridad global de lib/tenant/guard.ts.
+  // Se sincroniza tras cada operación que pase por el guard de acceso.
+  const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [sector, setSector]                   = useState<Sector>('otro');
   const [previousResults, setPreviousResults] = useState<Record<string, RequisitoResult>>({});
   const [tourActive, setTourActive]           = useState(false);
@@ -58,6 +69,7 @@ export function useAppState() {
 
   const login = useCallback((rut: string, selectedRole: UserRole, selectedSector: Sector = 'otro') => {
     setCompanyName(rut);
+    setCompanyId(buildCompanyId(rut));
     setRole(selectedRole);
     setSector(selectedSector);
     setTourActive(true);
@@ -68,8 +80,19 @@ export function useAppState() {
 
   const demo = useCallback(() => {
     setCompanyName('Empresa Demo S.A.');
+    setCompanyId(buildCompanyId(DEMO_RUT));
     setRole('administrador');
     setSector('tecnologia');
+    // Los documentos de ejemplo también deben quedar en el almacén aislado por
+    // empresa (no solo en el estado de React), para que finishAnalysis --que
+    // ahora siempre lee desde listDocuments()-- pueda encontrarlos.
+    const demoCtx: TenantContext = {
+      companyId: buildCompanyId(DEMO_RUT),
+      companyName: 'Empresa Demo S.A.',
+      role: 'administrador',
+      usuario: 'Empresa Demo S.A.',
+    };
+    Object.entries(DEMO_DOCS).forEach(([reqId, doc]) => saveDocument(demoCtx, reqId, doc));
     setUploadedDocs(DEMO_DOCS);
     setTourActive(true);
     setTourStep(0);
@@ -79,6 +102,8 @@ export function useAppState() {
 
   const logout = useCallback(() => {
     setCompanyName('');
+    setCompanyId('');
+    setSecurityEvents([]);
     setRole('administrador');
     setSector('otro');
     setUploadedDocs({});
@@ -95,9 +120,18 @@ export function useAppState() {
   }, []);
 
   const uploadDoc = useCallback((reqId: string, doc: UploadedDoc, currentRole: UserRole, currentUser: string) => {
+    // Todo documento se persiste en el almacén aislado por empresa (lib/tenant/repository),
+    // etiquetado con el companyId de la sesión activa, nunca con uno provisto por el llamador.
+    const ctx: TenantContext = { companyId, companyName: currentUser, role: currentRole, usuario: currentUser };
+    saveDocument(ctx, reqId, doc);
     setUploadedDocs(prev => ({ ...prev, [reqId]: doc }));
     addAuditEvent('subió documento', currentRole, currentUser, doc.name);
-  }, [addAuditEvent]);
+    // Refleja en la UI cualquier evento de seguridad relacionado con esta empresa
+    // (quedará vacío mientras no exista ningún intento de acceso cruzado).
+    setSecurityEvents(getSecurityAuditLog().filter(
+      e => e.companyIdSolicitante === ctx.companyId || e.companyIdRecurso === ctx.companyId,
+    ));
+  }, [addAuditEvent, companyId]);
 
   const startAnalysis = useCallback(() => {
     // Guardar resultados actuales como "versión anterior" antes de re-analizar
@@ -109,14 +143,21 @@ export function useAppState() {
   }, [analyzed, results]);
 
   const finishAnalysis = useCallback((
-    docs: Record<string, UploadedDoc>,
     currentRole: UserRole,
     currentUser: string,
   ) => {
+    const ctx: TenantContext = { companyId, companyName: currentUser, role: currentRole, usuario: currentUser };
+    // El motor de análisis nunca recibe documentos "tal cual" desde el llamador:
+    // siempre se re-obtienen desde el almacén aislado por empresa, así ningún
+    // componente puede saltarse el filtro por companyId ni analizar datos ajenos.
+    const docsAislados = listDocuments(ctx);
     const newResults: Record<string, RequisitoResult> = {};
     REQUISITOS.forEach(r => {
-      newResults[r.id] = analyzeDocument(r.id, docs);
+      newResults[r.id] = analyzeDocument(r.id, docsAislados);
     });
+    setSecurityEvents(getSecurityAuditLog().filter(
+      e => e.companyIdSolicitante === ctx.companyId || e.companyIdRecurso === ctx.companyId,
+    ));
 
     // Calcular métricas para el snapshot histórico usando la función centralizada
     const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(newResults);
@@ -135,7 +176,10 @@ export function useAppState() {
     setScreen('app');
     setActiveTab('diagnostico');
     addAuditEvent('ejecutó análisis', currentRole, currentUser);
-  }, [addAuditEvent]);
+    // companyId debe estar en las dependencias: de lo contrario este callback queda
+    // memorizado con el companyId inicial ('') y listDocuments() nunca encontraría
+    // los documentos guardados bajo el companyId real de la sesión.
+  }, [addAuditEvent, companyId]);
 
   const logDownload = useCallback((currentRole: UserRole, currentUser: string) => {
     addAuditEvent('descargó informe', currentRole, currentUser, 'informe_cumplimiento.pdf');
@@ -165,8 +209,8 @@ export function useAppState() {
   }, []);
 
   return {
-    screen, activeTab, companyName, role, sector, uploadedDocs, results,
-    previousResults, analyzed, auditLog, snapshots, tourActive, tourStep,
+    screen, activeTab, companyName, companyId, role, sector, uploadedDocs, results,
+    previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
     login, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
     switchTab, logDownload, advanceTour, skipTour,
   };

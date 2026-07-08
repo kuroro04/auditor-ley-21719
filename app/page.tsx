@@ -37,7 +37,7 @@ export default function Home() {
         <AnalyzingScreen
           docCount={Object.keys(state.uploadedDocs).length}
           onFinish={() => {
-            state.finishAnalysis(state.uploadedDocs, state.role, state.companyName);
+            state.finishAnalysis(state.role, state.companyName);
             toast('✓ Análisis completado. Revise su diagnóstico.', 'green');
           }}
         />
