@@ -1,6 +1,7 @@
 'use client';
 
 import type { UploadedDoc } from './types';
+import { checkFileSecurity, sanitizeFileName } from './fileSecurity';
 
 function readAsText(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -71,46 +72,33 @@ function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+export async function extractDocumentText(
+  file: File,
+  onPhase?: (phase: 'security' | 'extracting') => void,
+): Promise<UploadedDoc> {
+  const safeName = sanitizeFileName(file.name);
 
-const ALLOWED_TYPES: Record<string, string[]> = {
-  txt:  ['text/plain', ''],
-  pdf:  ['application/pdf'],
-  docx: ['application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/octet-stream', ''],
-  doc:  ['application/msword', 'application/octet-stream', ''],
-  xlsx: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/octet-stream', ''],
-  xls:  ['application/vnd.ms-excel', 'application/octet-stream', ''],
-};
+  onPhase?.('security');
+  const security = await checkFileSecurity(file);
+  if (!security.accepted) {
+    return {
+      name: safeName,
+      text: '',
+      wordCount: 0,
+      extractedFully: false,
+      extractMethod: security.reason,
+      rejected: true,
+    };
+  }
 
-export async function extractDocumentText(file: File): Promise<UploadedDoc> {
+  onPhase?.('extracting');
   const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
-
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return {
-      name: file.name,
-      text: '',
-      wordCount: 0,
-      extractedFully: false,
-      extractMethod: `archivo demasiado grande (máx. 10 MB)`,
-    };
-  }
-
-  const allowedMimes = ALLOWED_TYPES[ext];
-  if (!allowedMimes || (!allowedMimes.includes(file.type) && file.type !== '')) {
-    return {
-      name: file.name,
-      text: '',
-      wordCount: 0,
-      extractedFully: false,
-      extractMethod: 'tipo no soportado',
-    };
-  }
 
   try {
     let rawText = '';
     let method = '';
 
-    if (ext === 'txt' || file.type === 'text/plain') {
+    if (ext === 'txt') {
       rawText = await readAsText(file);
       method = 'texto plano';
     } else if (ext === 'pdf') {
@@ -122,22 +110,16 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
     } else if (ext === 'xlsx' || ext === 'xls') {
       rawText = await extractXlsxText(file);
       method = 'Excel';
-    } else {
-      return {
-        name: file.name,
-        text: file.name.toLowerCase(),
-        wordCount: 0,
-        extractedFully: false,
-        extractMethod: 'tipo no soportado',
-      };
     }
 
     const wordCount = countWords(rawText);
 
-    // Detectar PDF escaneado: si es PDF y casi no tiene texto, probablemente es una imagen
+    // Detectar PDF escaneado: si es PDF y casi no tiene texto, probablemente es una
+    // imagen. Este es un documento aceptado (pasó la validación de seguridad), solo
+    // que no se puede analizar su contenido.
     if (ext === 'pdf' && wordCount < 20) {
       return {
-        name: file.name,
+        name: safeName,
         text: '',
         wordCount: 0,
         extractedFully: false,
@@ -147,7 +129,7 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
     }
 
     return {
-      name: file.name,
+      name: safeName,
       text: rawText.toLowerCase(),
       wordCount,
       extractedFully: true,
@@ -157,11 +139,12 @@ export async function extractDocumentText(file: File): Promise<UploadedDoc> {
 
   } catch {
     return {
-      name: file.name,
+      name: safeName,
       text: '',
       wordCount: 0,
       extractedFully: false,
-      extractMethod: 'error al leer el archivo',
+      extractMethod: 'error al leer el archivo — puede estar corrupto o dañado',
+      rejected: true,
     };
   }
 }

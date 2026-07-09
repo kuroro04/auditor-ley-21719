@@ -49,6 +49,7 @@ export interface UploadedDoc {
   extractedFully?: boolean;
   extractMethod?: string;
   scanned?: boolean; // true cuando el PDF no tiene texto seleccionable
+  rejected?: boolean; // true cuando la capa de seguridad rechazó el archivo (no debe persistirse)
 }
 
 export interface CriterioResult {
