@@ -23,3 +23,9 @@ tsconfig.tsbuildinfo
 
 # estado de scratch de subagent-driven-development
 .superpowers/
+
+# notas personales de Obsidian (no forman parte del proyecto)
+.obsidian/
+Inicio.md
+Notas/
+*.canvas
