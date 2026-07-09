@@ -14,6 +14,7 @@ interface DiagnosticoViewProps {
   previousResults: Record<string, RequisitoResult>;
   uploadedDocs: Record<string, UploadedDoc>;
   companyName: string;
+  companyId: string;
   sector: Sector;
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
@@ -24,7 +25,7 @@ interface DiagnosticoViewProps {
 const CIRC = 2 * Math.PI * 44;
 
 export default function DiagnosticoView({
-  results, previousResults, uploadedDocs, companyName, sector, role,
+  results, previousResults, uploadedDocs, companyName, companyId, sector, role,
   onUpload, onDownload, onToast,
 }: DiagnosticoViewProps) {
   const circleRef = useRef<SVGCircleElement>(null);
@@ -210,6 +211,15 @@ export default function DiagnosticoView({
             </div>
           )}
         </div>
+      </div>
+
+      {/* Nota de aislamiento multi-tenant: evidencia visible de la segregación por empresa */}
+      <div className="tenant-isolation-note">
+        <span className="tenant-isolation-icon" aria-hidden="true">🔒</span>
+        <span>
+          Sus documentos están aislados y cifrados bajo el identificador de empresa{' '}
+          <strong>{companyId}</strong>. Ninguna otra empresa puede acceder a ellos.
+        </span>
       </div>
 
       {/* Comparación con el sector */}

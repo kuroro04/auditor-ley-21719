@@ -46,6 +46,8 @@ export default function Home() {
       {state.screen === 'app' && (
         <AppShell
           companyName={state.companyName}
+          companyId={state.companyId}
+          securityEvents={state.securityEvents}
           role={state.role}
           sector={state.sector}
           auditLog={state.auditLog}

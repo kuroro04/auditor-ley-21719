@@ -1,9 +1,11 @@
 'use client';
 import { type ReactNode } from 'react';
 import type { AuditEvent, UserRole } from '@/lib/types';
+import type { SecurityEvent } from '@/lib/tenant/guard';
 
 interface RegistroViewProps {
   auditLog: AuditEvent[];
+  securityEvents: SecurityEvent[];
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -51,7 +53,7 @@ function formatTs(iso: string): { date: string; time: string } {
   };
 }
 
-export default function RegistroView({ auditLog }: RegistroViewProps) {
+export default function RegistroView({ auditLog, securityEvents }: RegistroViewProps) {
   return (
     <div className="registro-view">
       <div className="registro-hdr">
@@ -119,6 +121,52 @@ export default function RegistroView({ auditLog }: RegistroViewProps) {
           </table>
         </div>
       )}
+
+      {/* Eventos de seguridad: intentos detectados de acceso cruzado entre empresas */}
+      <div className="registro-security-section">
+        <h3>Eventos de seguridad — aislamiento multi-tenant</h3>
+        <p>
+          Intentos detectados de acceder a un recurso de otra empresa. El sistema los bloquea
+          automáticamente en el momento en que ocurren (ver <code>lib/tenant/guard.ts</code>).
+        </p>
+        {securityEvents.length === 0 ? (
+          <div className="registro-security-empty">
+            Sin intentos de acceso cruzado detectados en esta sesión.
+          </div>
+        ) : (
+          <div className="registro-table-wrap">
+            <table className="registro-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Fecha</th>
+                  <th>Hora</th>
+                  <th>Usuario</th>
+                  <th>Empresa solicitante</th>
+                  <th>Empresa del recurso</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {securityEvents.map(ev => {
+                  const { date, time } = formatTs(ev.timestamp);
+                  return (
+                    <tr key={ev.id} className="registro-row--security">
+                      <td className="registro-id">{ev.id}</td>
+                      <td className="registro-date">{date}</td>
+                      <td className="registro-time">{time}</td>
+                      <td className="registro-user">{ev.usuario}</td>
+                      <td>{ev.companyIdSolicitante}</td>
+                      <td>{ev.companyIdRecurso}</td>
+                      <td>{ev.detalle}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       <p className="registro-footer">
         Este registro es local a su sesión actual y no persiste al cerrar sesión.

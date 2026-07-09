@@ -4,12 +4,15 @@ import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
 import RiesgosView from './RiesgosView';
 import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole, Sector, HistorialSnapshot } from '@/lib/types';
+import type { SecurityEvent } from '@/lib/tenant/guard';
 import OnboardingTour from './OnboardingTour';
 import HistorialView from './HistorialView';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
 
 interface AppShellProps {
   companyName: string;
+  companyId: string;
+  securityEvents: SecurityEvent[];
   role: UserRole;
   sector: Sector;
   auditLog: AuditEvent[];
@@ -38,7 +41,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export default function AppShell({
-  companyName, role, sector, auditLog, activeTab, uploadedDocs, results,
+  companyName, companyId, securityEvents, role, sector, auditLog, activeTab, uploadedDocs, results,
   previousResults, snapshots, analyzed, tourActive, tourStep,
   onSwitchTab, onUpload, onStartAnalysis, onLogout, onDownload,
   onAdvanceTour, onSkipTour, onToast,
@@ -60,9 +63,10 @@ export default function AppShell({
         </div>
         <div className="header-right">
           <div className="header-role-badge">{ROLE_LABELS[role]}</div>
-          <div className="header-company">
+          <div className="header-company" title="Identificador de empresa (tenant) de la sesión actual">
             <div className="header-company-dot" />
             <span>{companyName}</span>
+            <span className="header-company-id">ID: {companyId}</span>
           </div>
           <button className="btn-logout" onClick={onLogout}>Salir</button>
         </div>
@@ -126,6 +130,7 @@ export default function AppShell({
             previousResults={previousResults}
             uploadedDocs={uploadedDocs}
             companyName={companyName}
+            companyId={companyId}
             sector={sector}
             role={role}
             onUpload={onUpload}
@@ -137,7 +142,7 @@ export default function AppShell({
           <RiesgosView results={results} analyzed={analyzed} />
         )}
         {activeTab === 'registro' && canSeeRegistro && (
-          <RegistroView auditLog={auditLog} />
+          <RegistroView auditLog={auditLog} securityEvents={securityEvents} />
         )}
         {activeTab === 'historial' && (
           <HistorialView snapshots={snapshots} />
