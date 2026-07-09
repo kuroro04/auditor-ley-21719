@@ -89,15 +89,6 @@ export function LockIcon({ size = 14, className = '', color = 'currentColor' }: 
   );
 }
 
-export function ShieldCheckIcon({ size = 14, className = '', color = 'currentColor' }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-      <path d="m9 12 2 2 4-4" />
-    </svg>
-  );
-}
-
 export function FileDownIcon({ size = 14, className = '', color = 'currentColor' }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
