@@ -406,6 +406,24 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
       y += instrLines.length * 4.5 + 3;
     }
 
+    // Recuadro "Por qué la ley lo exige": explica el riesgo legal que cubre la sección
+    if (seccion.porQue) {
+      const porQueLines = doc.splitTextToSize(seccion.porQue, PW - margin * 2 - 8);
+      const boxH = porQueLines.length * 4.2 + 8;
+      checkY(boxH + 4);
+      doc.setFillColor(247, 248, 252);
+      doc.setDrawColor(...C.lightGray);
+      doc.roundedRect(margin, y, PW - margin * 2, boxH, 1.5, 1.5, 'FD');
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.navy2);
+      doc.text('POR QUÉ LA LEY LO EXIGE', margin + 4, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...C.text2);
+      doc.text(porQueLines, margin + 4, y + 9.5);
+      y += boxH + 5;
+    }
+
     // Contenido placeholder
     const lineas = seccion.placeholder.split('\n');
     for (const linea of lineas) {
@@ -436,6 +454,30 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
     doc.line(margin, y + 3, PW - margin, y + 3);
     y += 10;
   }
+
+  // ── Checklist de verificación ──
+  checkY(20);
+  doc.setFillColor(240, 253, 244);
+  doc.setDrawColor(167, 243, 208);
+  doc.roundedRect(margin, y, PW - margin * 2, 8, 2, 2, 'FD');
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.text);
+  doc.text('Antes de usar este documento, confirme que:', margin + 4, y + 5.5);
+  y += 13;
+  for (const item of tpl.checklist) {
+    checkY(8);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.text2);
+    // Casilla de verificación dibujada (cuadro vacío) + texto del ítem
+    doc.setDrawColor(...C.gray);
+    doc.rect(margin, y - 3, 3.5, 3.5);
+    const itemLines = doc.splitTextToSize(item, PW - margin * 2 - 8);
+    doc.text(itemLines, margin + 6, y);
+    y += itemLines.length * 4.5 + 3;
+  }
+  y += 6;
 
   // ── Notas legales ──
   checkY(35);
