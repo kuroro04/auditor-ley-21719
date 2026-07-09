@@ -2,6 +2,7 @@
 
 import { REQUISITOS } from './requisitos';
 import { TEMPLATES } from './templateContent';
+import { calcPct } from './metrics';
 import type { RequisitoResult, UploadedDoc } from './types';
 
 // ── Paleta de colores (RGB) ──
@@ -20,13 +21,7 @@ const C = {
   text2:      [74,  88, 128]  as [number,number,number],
 };
 
-// ── Helpers de color para estados ──
-function estadoColor(estado: string): [number,number,number] {
-  if (estado === 'green')        return C.green;
-  if (estado === 'yellow')       return C.yellow;
-  if (estado === 'unanalyzable') return C.gray;
-  return C.red;
-}
+// ── Helper de etiqueta para estados ──
 function estadoLabel(estado: string): string {
   if (estado === 'green')        return 'Cumple';
   if (estado === 'yellow')       return 'Parcial';
@@ -51,13 +46,8 @@ export async function generarInformePDF(
   const margin = 20;
   let y = 0;
 
-  // ── Calcular métricas ──
-  const unanalyzable = REQUISITOS.filter(r => results[r.id]?.estado === 'unanalyzable').length;
-  const analyzable   = REQUISITOS.length - unanalyzable;
-  const green  = REQUISITOS.filter(r => results[r.id]?.estado === 'green').length;
-  const yellow = REQUISITOS.filter(r => results[r.id]?.estado === 'yellow').length;
-  const red    = REQUISITOS.filter(r => results[r.id]?.estado === 'red').length;
-  const pct    = analyzable > 0 ? Math.round((green * 100 + yellow * 50) / (analyzable * 100) * 100) : 0;
+  // ── Calcular métricas (fuente única: lib/metrics.ts) ──
+  const { pct, green, yellow, red, unanalyzable, analyzable } = calcPct(results);
   const totalWords = Object.values(uploadedDocs).reduce((acc, d) => acc + (d.wordCount ?? 0), 0);
 
   const totalExposure = REQUISITOS.reduce((acc, r) => {

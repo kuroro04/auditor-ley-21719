@@ -46,13 +46,8 @@ export default function DiagnosticoView({
 
   // Métricas de la versión anterior (solo si existe un snapshot previo)
   const hasPrevResults = Object.keys(previousResults).length > 0;
-  const prevGreen   = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado === 'green').length : 0;
-  const prevYellow  = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado === 'yellow').length : 0;
-  const prevAnalyz  = hasPrevResults ? REQUISITOS.filter(r => previousResults[r.id]?.estado !== 'unanalyzable').length : 0;
-  const prevPct     = prevAnalyz > 0
-    ? Math.round((prevGreen * 100 + prevYellow * 50) / (prevAnalyz * 100) * 100)
-    : 0;
-  const versionDelta = pct - prevPct;
+  const prevPct        = hasPrevResults ? calcPct(previousResults).pct : 0;
+  const versionDelta   = pct - prevPct;
 
   const title = pct >= 80 ? 'Cumplimiento solido' : pct >= 50 ? 'Cumplimiento parcial' : 'Brechas criticas detectadas';
   const desc  = pct >= 80
