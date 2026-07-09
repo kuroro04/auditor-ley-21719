@@ -64,6 +64,9 @@ export default function Home() {
             if (!ok) toast('Primero suba documentos y ejecute el análisis', 'yellow');
           }}
           onUpload={(reqId, doc) => state.uploadDoc(reqId, doc, state.role, state.companyName)}
+          onUploadRejected={(reqId, fileName, reason) =>
+            state.logUploadRejected(state.role, state.companyName, fileName, reason)
+          }
           onStartAnalysis={() => {
             if (Object.keys(state.uploadedDocs).length === 0) {
               toast('Suba al menos 1 documento primero', 'yellow');

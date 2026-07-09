@@ -43,6 +43,13 @@ const ACCION_ICONS: Record<AuditEvent['accion'], ReactNode> = {
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
     </svg>
   ),
+  'documento rechazado': (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+  ),
 };
 
 function formatTs(iso: string): { date: string; time: string } {
@@ -111,7 +118,14 @@ export default function RegistroView({ auditLog, securityEvents }: RegistroViewP
                     </td>
                     <td className="registro-archivo">
                       {ev.archivo
-                        ? <span className="registro-filename">{ev.archivo}</span>
+                        ? (
+                          <span className="registro-filename">
+                            {ev.archivo}
+                            {ev.detalle && (
+                              <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>{ev.detalle}</div>
+                            )}
+                          </span>
+                        )
                         : <span className="registro-na">—</span>}
                     </td>
                   </tr>

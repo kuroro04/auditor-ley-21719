@@ -5,8 +5,9 @@ export interface AuditEvent {
   timestamp: string;
   rol: UserRole;
   usuario: string;
-  accion: 'subió documento' | 'ejecutó análisis' | 'descargó informe' | 'eliminó documento';
+  accion: 'subió documento' | 'ejecutó análisis' | 'descargó informe' | 'eliminó documento' | 'documento rechazado';
   archivo?: string;
+  detalle?: string; // motivo, usado en 'documento rechazado' para explicar por qué
 }
 
 export interface Criterio {

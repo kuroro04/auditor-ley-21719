@@ -8,14 +8,15 @@ interface UploadViewProps {
   uploadedDocs: Record<string, UploadedDoc>;
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
+  onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onStartAnalysis: () => void;
   onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
-export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalysis, onToast }: UploadViewProps) {
+export default function UploadView({ uploadedDocs, role, onUpload, onUploadRejected, onStartAnalysis, onToast }: UploadViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingReqId = useRef<string | null>(null);
-  const [uploading, setUploading] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<{ reqId: string; phase: 'security' | 'extracting' } | null>(null);
 
   // Solo el administrador puede subir documentos y ejecutar el análisis
   const canEdit = role === 'administrador';
@@ -39,11 +40,18 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
     const reqId = pendingReqId.current;
     if (!file || !reqId) return;
 
-    setUploading(reqId);
-    const result = await extractDocumentText(file);
-    onUpload(reqId, result);
+    setUploading({ reqId, phase: 'security' });
+    const result = await extractDocumentText(file, phase => setUploading({ reqId, phase }));
     setUploading(null);
 
+    if (result.rejected) {
+      onToast(`"${file.name}" rechazado — ${result.extractMethod}`, 'yellow');
+      onUploadRejected(reqId, file.name, result.extractMethod ?? 'motivo desconocido');
+      pendingReqId.current = null;
+      return;
+    }
+
+    onUpload(reqId, result);
     const req = REQUISITOS.find(r => r.id === reqId);
     if (req) {
       const words = result.wordCount ?? 0;
@@ -89,7 +97,7 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
         {REQUISITOS.map(r => {
           const doc = uploadedDocs[r.id];
           const isUploaded = !!doc;
-          const isUploading = uploading === r.id;
+          const isUploading = uploading?.reqId === r.id;
           return (
             <div
               key={r.id}
@@ -105,7 +113,7 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
                 {isUploading ? (
                   <div className="uploading-tag">
                     <div className="uploading-spinner" aria-hidden="true" />
-                    Extrayendo texto...
+                    {uploading?.phase === 'security' ? 'Verificando seguridad del archivo...' : 'Extrayendo texto...'}
                   </div>
                 ) : isUploaded ? (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>

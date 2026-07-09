@@ -4,7 +4,6 @@ import { REQUISITOS } from '@/lib/requisitos';
 import { extractDocumentText } from '@/lib/extractText';
 import type { RequisitoResult, UploadedDoc, UserRole, Sector } from '@/lib/types';
 import LegalDetail from './LegalDetail';
-import TemplateDropdown from './TemplateDropdown';
 import SectorComparisonCard from './SectorComparisonCard';
 import ActionPlan from './ActionPlan';
 import { calcPct } from '@/lib/metrics';
@@ -19,6 +18,7 @@ interface DiagnosticoViewProps {
   sector: Sector;
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
+  onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onDownload: () => void;
   onToast: (msg: string, type: 'green' | 'blue' | 'yellow') => void;
 }
@@ -27,7 +27,7 @@ const CIRC = 2 * Math.PI * 44;
 
 export default function DiagnosticoView({
   results, previousResults, uploadedDocs, companyName, companyId, sector, role,
-  onUpload, onDownload, onToast,
+  onUpload, onUploadRejected, onDownload, onToast,
 }: DiagnosticoViewProps) {
   const circleRef = useRef<SVGCircleElement>(null);
   const [openCards, setOpenCards] = useState<Set<string>>(new Set());
@@ -94,7 +94,14 @@ export default function DiagnosticoView({
     const file = e.target.files?.[0];
     const reqId = pendingReqId.current;
     if (!file || !reqId) return;
+    onToast('Verificando seguridad del archivo...', 'blue');
     const doc = await extractDocumentText(file);
+    if (doc.rejected) {
+      onToast(`"${file.name}" rechazado — ${doc.extractMethod}`, 'yellow');
+      onUploadRejected(reqId, file.name, doc.extractMethod ?? 'motivo desconocido');
+      pendingReqId.current = null;
+      return;
+    }
     onUpload(reqId, doc);
     onToast(`"${file.name}" actualizado`, 'green');
     pendingReqId.current = null;
@@ -242,7 +249,6 @@ export default function DiagnosticoView({
           const stateClass = isScanned ? 'state-unanalyzable' : `state-${estado}`;
           const icon       = estado === 'green' ? '✓' : estado === 'yellow' ? '⚠' : isScanned ? '⊘' : '✕';
           const gapColor   = estado === 'green' ? 'green' : estado === 'yellow' ? 'yellow' : isScanned ? 'gray' : 'red';
-          const showTemplate = canDownload && (estado === 'red' || estado === 'yellow');
 
           const prevRes            = previousResults[r.id];
           const covDelta           = prevRes ? res.cobertura - prevRes.cobertura : 0;

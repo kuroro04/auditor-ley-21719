@@ -27,6 +27,7 @@ interface AppShellProps {
   tourStep: number;
   onSwitchTab: (tab: ActiveTab) => void;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
+  onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onStartAnalysis: () => void;
   onLogout: () => void;
   onDownload: () => void;
@@ -44,7 +45,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 export default function AppShell({
   companyName, companyId, securityEvents, role, sector, auditLog, activeTab, uploadedDocs, results,
   previousResults, snapshots, analyzed, tourActive, tourStep,
-  onSwitchTab, onUpload, onStartAnalysis, onLogout, onDownload,
+  onSwitchTab, onUpload, onUploadRejected, onStartAnalysis, onLogout, onDownload,
   onAdvanceTour, onSkipTour, onToast,
 }: AppShellProps) {
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
@@ -133,6 +134,7 @@ export default function AppShell({
             uploadedDocs={uploadedDocs}
             role={role}
             onUpload={onUpload}
+            onUploadRejected={onUploadRejected}
             onStartAnalysis={onStartAnalysis}
             onToast={(msg, type) => onToast(msg, type)}
           />
@@ -147,6 +149,7 @@ export default function AppShell({
             sector={sector}
             role={role}
             onUpload={onUpload}
+            onUploadRejected={onUploadRejected}
             onDownload={onDownload}
             onToast={(msg, type) => onToast(msg, type)}
           />

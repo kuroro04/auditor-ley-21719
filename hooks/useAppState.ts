@@ -56,6 +56,7 @@ export function useAppState() {
     currentRole: UserRole,
     currentUser: string,
     archivo?: string,
+    detalle?: string,
   ) => {
     setAuditLog(prev => [{
       id: ++auditCounter,
@@ -64,6 +65,7 @@ export function useAppState() {
       usuario: currentUser,
       accion,
       archivo,
+      detalle,
     }, ...prev]);
   }, []);
 
@@ -185,6 +187,15 @@ export function useAppState() {
     addAuditEvent('descargó informe', currentRole, currentUser, 'informe_cumplimiento.pdf');
   }, [addAuditEvent]);
 
+  const logUploadRejected = useCallback((
+    currentRole: UserRole,
+    currentUser: string,
+    fileName: string,
+    reason: string,
+  ) => {
+    addAuditEvent('documento rechazado', currentRole, currentUser, fileName, reason);
+  }, [addAuditEvent]);
+
   const switchTab = useCallback((tab: ActiveTab, isAnalyzed: boolean): boolean => {
     if (tab === 'diagnostico' && !isAnalyzed) return false;
     setActiveTab(tab);
@@ -212,7 +223,7 @@ export function useAppState() {
     screen, activeTab, companyName, companyId, role, sector, uploadedDocs, results,
     previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
     login, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
-    switchTab, logDownload, advanceTour, skipTour,
+    switchTab, logDownload, logUploadRejected, advanceTour, skipTour,
   };
 }
 
