@@ -202,6 +202,7 @@ export default function UploadView({ uploadedDocs, role, onUpload, onStartAnalys
       <input
         ref={fileInputRef}
         type="file"
+        aria-label="Seleccionar documento para subir"
         style={{ display: 'none' }}
         accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
         onChange={handleFileSelected}

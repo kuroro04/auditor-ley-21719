@@ -477,7 +477,7 @@ export default function DiagnosticoView({
         )}
       </div>
 
-      <input ref={fileInputRef} type="file" style={{ display: 'none' }}
+      <input ref={fileInputRef} type="file" aria-label="Seleccionar documento para subir" style={{ display: 'none' }}
         accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={handleFile} />
     </div>
   );

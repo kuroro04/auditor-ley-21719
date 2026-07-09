@@ -1,4 +1,5 @@
 'use client';
+import type { KeyboardEvent } from 'react';
 import UploadView from './UploadView';
 import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
@@ -49,6 +50,18 @@ export default function AppShell({
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
   const canSeeRegistro = role === 'administrador' || role === 'auditor';
 
+  // Props comunes para que cada tab de navegación sea accesible por teclado
+  // (los divs clicables no reciben foco ni Enter/Espacio por defecto).
+  const tabA11yProps = (tab: ActiveTab) => ({
+    role: 'tab' as const,
+    tabIndex: 0,
+    'aria-selected': activeTab === tab,
+    onClick: () => onSwitchTab(tab),
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSwitchTab(tab); }
+    },
+  });
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
@@ -74,25 +87,25 @@ export default function AppShell({
 
       {/* Nav */}
       <nav className="app-nav">
-        <div className={`nav-tab${activeTab === 'subir' ? ' active' : ''}`} onClick={() => onSwitchTab('subir')}>
+        <div className={`nav-tab${activeTab === 'subir' ? ' active' : ''}`} {...tabA11yProps('subir')}>
           <FolderOpenIcon size={14} /> Subir documentos
         </div>
         <div
           data-tour="tab-diagnostico"
           className={`nav-tab${activeTab === 'diagnostico' ? ' active' : ''}`}
-          onClick={() => onSwitchTab('diagnostico')}
+          {...tabA11yProps('diagnostico')}
         >
           <ClipboardListIcon size={14} /> Mi diagnóstico
           {analyzed && brechaCount > 0 && (
             <span className="nav-tab-badge">{brechaCount}</span>
           )}
         </div>
-        <div className={`nav-tab${activeTab === 'riesgos' ? ' active' : ''}`} onClick={() => onSwitchTab('riesgos')}>
+        <div className={`nav-tab${activeTab === 'riesgos' ? ' active' : ''}`} {...tabA11yProps('riesgos')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           Riesgos
         </div>
         {canSeeRegistro && (
-          <div className={`nav-tab${activeTab === 'registro' ? ' active' : ''}`} onClick={() => onSwitchTab('registro')}>
+          <div className={`nav-tab${activeTab === 'registro' ? ' active' : ''}`} {...tabA11yProps('registro')}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Registro de auditoría
             {auditLog.length > 0 && (
@@ -102,7 +115,7 @@ export default function AppShell({
             )}
           </div>
         )}
-        <div className={`nav-tab${activeTab === 'historial' ? ' active' : ''}`} onClick={() => onSwitchTab('historial')}>
+        <div className={`nav-tab${activeTab === 'historial' ? ' active' : ''}`} {...tabA11yProps('historial')}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
           Historial
           {snapshots.length >= 2 && (
