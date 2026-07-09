@@ -91,7 +91,7 @@ export async function descargarPlantillaDocx(reqId: string, companyName: string)
         new Paragraph({
           spacing: { after: 120 },
           children: [
-            new TextRun({ text: '📌 ', size: 18 }),
+            new TextRun({ text: '» ', size: 18 }),
             new TextRun({ text: seccion.instruccion, size: 18, color: '6B7A99', italics: true }),
           ],
         }),

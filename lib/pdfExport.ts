@@ -381,7 +381,7 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.blue);
-  doc.text('📋 Instrucción: Complete todos los campos marcados con [COMPLETAR] antes de usar este documento.', margin + 4, y + 8);
+  doc.text('INSTRUCCIÓN: Complete todos los campos marcados con [COMPLETAR] antes de usar este documento.', margin + 4, y + 8);
   y += 18;
 
   // ── Secciones ──
@@ -401,7 +401,7 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
       doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
       doc.setTextColor(...C.gray);
-      const instrLines = doc.splitTextToSize(`📌 ${seccion.instruccion}`, PW - margin * 2);
+      const instrLines = doc.splitTextToSize(`» ${seccion.instruccion}`, PW - margin * 2);
       doc.text(instrLines, margin, y);
       y += instrLines.length * 4.5 + 3;
     }
