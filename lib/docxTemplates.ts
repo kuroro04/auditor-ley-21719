@@ -98,6 +98,18 @@ export async function descargarPlantillaDocx(reqId: string, companyName: string)
       );
     }
 
+    if (seccion.porQue) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 160 },
+          children: [
+            new TextRun({ text: 'Por qué la ley lo exige: ', bold: true, size: 17, color: '1A2F5A' }),
+            new TextRun({ text: seccion.porQue, size: 17, color: '4A5880' }),
+          ],
+        }),
+      );
+    }
+
     // Convertir placeholder en líneas del documento
     const lineas = seccion.placeholder.split('\n');
     for (const linea of lineas) {
@@ -125,6 +137,26 @@ export async function descargarPlantillaDocx(reqId: string, companyName: string)
         );
       }
     }
+  }
+
+  // Checklist de verificación final
+  children.push(
+    new Paragraph({
+      text: 'Antes de usar este documento, confirme que:',
+      heading: HeadingLevel.HEADING_3,
+      spacing: { before: 300, after: 100 },
+    }),
+  );
+  for (const item of tpl.checklist) {
+    children.push(
+      new Paragraph({
+        spacing: { after: 60 },
+        children: [
+          new TextRun({ text: '☐ ', bold: true, size: 20 }),
+          new TextRun({ text: item, size: 19 }),
+        ],
+      }),
+    );
   }
 
   // Separador final y notas legales
