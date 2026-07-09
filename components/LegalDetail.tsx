@@ -1,5 +1,6 @@
 'use client';
 import type { Requisito } from '@/lib/types';
+import { FileTextIcon, FolderOpenIcon, ScaleBalanceIcon, MessageIcon } from './Icons';
 
 interface LegalDetailProps {
   requisito: Requisito;
@@ -12,7 +13,7 @@ export default function LegalDetail({ requisito }: LegalDetailProps) {
       <div className="legal-detail-grid">
 
         <div className="legal-item">
-          <span className="legal-item-icon">📜</span>
+          <span className="legal-item-icon"><FileTextIcon size={14} /></span>
           <div className="legal-item-body">
             <div className="legal-item-label">Artículo de la ley</div>
             <div className="legal-item-value">{requisito.legalDetail.articulo}</div>
@@ -20,7 +21,7 @@ export default function LegalDetail({ requisito }: LegalDetailProps) {
         </div>
 
         <div className="legal-item">
-          <span className="legal-item-icon">📂</span>
+          <span className="legal-item-icon"><FolderOpenIcon size={14} /></span>
           <div className="legal-item-body">
             <div className="legal-item-label">Documento que lo acredita</div>
             <div className="legal-item-value">{requisito.legalDetail.documentoEvidencia}</div>
@@ -28,7 +29,7 @@ export default function LegalDetail({ requisito }: LegalDetailProps) {
         </div>
 
         <div className="legal-item">
-          <span className="legal-item-icon">⚖</span>
+          <span className="legal-item-icon"><ScaleBalanceIcon size={14} /></span>
           <div className="legal-item-body">
             <div className="legal-item-label">Multa máxima aplicable</div>
             <div className="legal-item-value multa">{requisito.multa}</div>
@@ -36,7 +37,7 @@ export default function LegalDetail({ requisito }: LegalDetailProps) {
         </div>
 
         <div className="legal-item full">
-          <span className="legal-item-icon">💬</span>
+          <span className="legal-item-icon"><MessageIcon size={14} /></span>
           <div className="legal-item-body">
             <div className="legal-item-label">Qué exige la ley</div>
             <div className="legal-item-value">{requisito.legalDetail.exigenciaSimple}</div>

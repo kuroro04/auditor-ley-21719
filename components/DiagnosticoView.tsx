@@ -8,6 +8,7 @@ import TemplateDropdown from './TemplateDropdown';
 import SectorComparisonCard from './SectorComparisonCard';
 import ActionPlan from './ActionPlan';
 import { calcPct } from '@/lib/metrics';
+import { LockIcon } from './Icons';
 
 interface DiagnosticoViewProps {
   results: Record<string, RequisitoResult>;
@@ -215,7 +216,7 @@ export default function DiagnosticoView({
 
       {/* Nota de aislamiento multi-tenant: evidencia visible de la segregación por empresa */}
       <div className="tenant-isolation-note">
-        <span className="tenant-isolation-icon" aria-hidden="true">🔒</span>
+        <span className="tenant-isolation-icon"><LockIcon size={13} /></span>
         <span>
           Sus documentos están aislados y cifrados bajo el identificador de empresa{' '}
           <strong>{companyId}</strong>. Ninguna otra empresa puede acceder a ellos.

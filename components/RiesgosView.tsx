@@ -1,6 +1,7 @@
 'use client';
 import { REQUISITOS } from '@/lib/requisitos';
 import type { RequisitoResult } from '@/lib/types';
+import { AlertCircleIcon, ClockIcon, CheckCircleIcon, XCircleIcon } from './Icons';
 
 interface RiesgosViewProps {
   results: Record<string, RequisitoResult>;
@@ -98,12 +99,20 @@ export default function RiesgosView({ results, analyzed }: RiesgosViewProps) {
               </div>
               {/* Urgencia y fecha en columnas separadas para evitar solapamiento */}
               <div className={`riesgo-plazo-urgencia ${r.plazo.urgency}`}>
-                {r.plazo.urgency === 'urgent' ? '⚠ Urgente' : r.plazo.urgency === 'pronto' ? '◷ Pronto' : '✓ Vigente'}
+                {r.plazo.urgency === 'urgent'
+                  ? <><AlertCircleIcon size={11} /> Urgente</>
+                  : r.plazo.urgency === 'pronto'
+                    ? <><ClockIcon size={11} /> Pronto</>
+                    : <><CheckCircleIcon size={11} /> Vigente</>}
               </div>
               <div className="riesgo-plazo-fecha">{r.plazo.date}</div>
               {analyzed && estado && (
                 <div className={`riesgo-estado-chip ${estado}`}>
-                  {estado === 'green' ? '✓ Cumple' : estado === 'yellow' ? '⚠ Parcial' : '✕ Falta'}
+                  {estado === 'green'
+                    ? <><CheckCircleIcon size={11} /> Cumple</>
+                    : estado === 'yellow'
+                      ? <><AlertCircleIcon size={11} /> Parcial</>
+                      : <><XCircleIcon size={11} /> Falta</>}
                 </div>
               )}
             </div>

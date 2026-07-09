@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { TEMPLATES } from '@/lib/templateContent';
+import { FileDownIcon } from './Icons';
 
 interface TemplateDropdownProps {
   reqId: string;
@@ -93,7 +94,7 @@ export default function TemplateDropdown({ reqId, companyName, onToast }: Templa
         onClick={handleToggle}
         disabled={loading !== null}
       >
-        {loading ? <span className="spin">↻</span> : '📄'}
+        {loading ? <span className="spin">↻</span> : <FileDownIcon size={13} />}
         {loading === 'docx' ? ' Generando Word...' : loading === 'pdf' ? ' Generando PDF...' : ' Generar plantilla'}
         {!loading && <span className="tpl-chevron">{open ? '▲' : '▼'}</span>}
       </button>
@@ -106,14 +107,14 @@ export default function TemplateDropdown({ reqId, companyName, onToast }: Templa
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
         >
           <button className="tpl-menu-item" onClick={handleDocx}>
-            <span className="tpl-menu-icon">📝</span>
+            <span className="tpl-menu-icon"><FileDownIcon size={15} /></span>
             <div>
               <div className="tpl-menu-label">Descargar como Word</div>
               <div className="tpl-menu-sub">Editable en Word / LibreOffice (.docx)</div>
             </div>
           </button>
           <button className="tpl-menu-item" onClick={handlePdf}>
-            <span className="tpl-menu-icon">📄</span>
+            <span className="tpl-menu-icon"><FileDownIcon size={15} /></span>
             <div>
               <div className="tpl-menu-label">Descargar como PDF</div>
               <div className="tpl-menu-sub">Formato final para presentar (.pdf)</div>
