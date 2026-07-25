@@ -7,6 +7,7 @@ import LegalDetail from './LegalDetail';
 import SectorComparisonCard from './SectorComparisonCard';
 import ActionPlan from './ActionPlan';
 import { calcPct } from '@/lib/metrics';
+import { CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { LockIcon } from './Icons';
 
 interface DiagnosticoViewProps {
@@ -191,6 +192,13 @@ export default function DiagnosticoView({
             <div className="doc-chip" style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)' }}>
               {REQUISITOS.length} requisitos legales
             </div>
+            <div
+              className="doc-chip"
+              style={{ background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.6)' }}
+              title="Versión del set de criterios legales usado para este análisis"
+            >
+              📋 {CHECKLIST_VERSION_LABEL}
+            </div>
           </div>
         </div>
 
@@ -322,7 +330,12 @@ export default function DiagnosticoView({
                         </p>
                       )}
                       <div className="criterios-list">
-                        {criterios.map((c, i) => (
+                        {criterios.map((c, i) => {
+                          // Resultado ambiguo: hay evidencia (ok/warn) pero la confianza no es
+                          // alta → se marca visiblemente para derivar a revisión humana.
+                          const necesitaRevisionHumana = c.status !== 'fail' && c.confianza !== 'alta';
+                          const mostrarFragmento = (c.status === 'ok' || c.status === 'warn') && c.fragmentoDocumento;
+                          return (
                           <div key={i} className="criterio-item">
                             <div className="criterio-main-row">
                               <div className={`criterio-badge ${c.status}`}>
@@ -354,20 +367,31 @@ export default function DiagnosticoView({
                                 aria-label={`Confianza ${c.confianza}`}
                               />
                             </div>
-                            {(c.frasesLegalesEncontradas?.length > 0 || c.requiereRevisionManual) && (
+
+                            {/* Fragmento EXACTO del documento que respalda la detección */}
+                            {mostrarFragmento && (
+                              <div className="criterio-fragmento">
+                                <span className="criterio-fragmento-label">El documento dice:</span>
+                                <blockquote>“{c.fragmentoDocumento}”</blockquote>
+                              </div>
+                            )}
+
+                            {(c.frasesLegalesEncontradas?.length > 0 || necesitaRevisionHumana) && (
                               <div className="criterio-indicators">
                                 {c.frasesLegalesEncontradas?.map((f, fi) => (
                                   <span key={fi} className="criterio-frase-tag">⚖ {f}</span>
                                 ))}
-                                {c.requiereRevisionManual && (
+                                {necesitaRevisionHumana && (
                                   <span className="criterio-revision-tag">
-                                    ⚠ Revisión manual — término en contexto negativo
+                                    ⚠ Revisión humana requerida — confianza {c.confianza}
+                                    {c.requiereRevisionManual ? ' (término en contexto negativo)' : ''}
                                   </span>
                                 )}
                               </div>
                             )}
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                       <div className={`gap-box ${gapColor}`} style={{ marginTop: 10 }}>
                         <strong>

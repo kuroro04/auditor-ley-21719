@@ -2,6 +2,15 @@
 import { SINONIMOS } from './sinonimos';
 import { FRASES_LEGALES } from './frasesLegales';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// VERSIÓN DEL CHECKLIST — debe actualizarse cada vez que se agreguen, quiten
+// o modifiquen requisitos/criterios en este archivo, para que el historial
+// de análisis quede trazado a la versión exacta del checklist que se usó.
+// ═══════════════════════════════════════════════════════════════════════════
+export const CHECKLIST_VERSION = 'Checklist Ley 21.719 v1.0';
+export const CHECKLIST_VERSION_DATE = '2026-07-24';
+export const CHECKLIST_VERSION_LABEL = `${CHECKLIST_VERSION} — ${CHECKLIST_VERSION_DATE}`;
+
 // Obtiene los sinónimos de un criterio desde el diccionario centralizado
 const s = (reqId: string, criterioName: string): string[] =>
   SINONIMOS[reqId]?.[criterioName] ?? [];

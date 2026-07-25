@@ -4,8 +4,8 @@ import { ScaleIcon, FileTextIcon, SearchCheckIcon, AlertCircleIcon, BarChart2Ico
 import type { UserRole, Sector } from '@/lib/types';
 
 interface LandingProps {
-  onLogin: (rut: string, role: UserRole, sector: Sector) => void;
-  onDemo: () => void;
+  onLogin: (rut: string, email: string, sector: Sector) => void;
+  onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
 

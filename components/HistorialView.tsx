@@ -189,6 +189,7 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
               <th>Al día</th>
               <th>Incompleto</th>
               <th>Faltante</th>
+              <th>Checklist usado</th>
             </tr>
           </thead>
           <tbody>
@@ -200,6 +201,7 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
                 <td style={{ color: 'var(--green)' }}>{s.green}</td>
                 <td style={{ color: 'var(--yellow)' }}>{s.yellow}</td>
                 <td style={{ color: 'var(--red)' }}>{s.red}</td>
+                <td style={{ color: 'var(--text3)', fontSize: 10.5 }}>{s.checklistVersion}</td>
               </tr>
             ))}
           </tbody>

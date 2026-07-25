@@ -66,6 +66,10 @@ export interface CriterioResult {
   frasesLegalesEncontradas: string[];
   requiereRevisionManual: boolean;
   densidad: number;
+  // Fragmento textual EXACTO del documento (recorte con contexto alrededor
+  // del término/frase que respalda la detección). Vacío cuando no hay
+  // evidencia (status 'fail').
+  fragmentoDocumento: string;
 }
 
 export interface RequisitoResult {
@@ -82,6 +86,7 @@ export interface HistorialSnapshot {
   green: number;    // cantidad de requisitos en estado verde
   yellow: number;   // cantidad de requisitos en estado amarillo
   red: number;      // cantidad de requisitos en estado rojo
+  checklistVersion: string; // versión del checklist de requisitos usada en este análisis
 }
 
 export type Screen = 'landing' | 'app' | 'analyzing';

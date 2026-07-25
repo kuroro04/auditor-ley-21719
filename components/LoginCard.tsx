@@ -4,15 +4,21 @@ import { SECTORES_OPCIONES } from '@/lib/sectorData';
 import type { UserRole } from '@/lib/types';
 import type { Sector } from '@/lib/types';
 
-const ROLES: { value: UserRole; label: string; desc: string }[] = [
+// Botones de "modo demostración": cada uno simula haber iniciado sesión ya
+// autenticado con ese rol predefinido. Nunca es el usuario quien "elige"
+// su rol de acceso real; esto es solo un atajo de prueba, separado del
+// formulario de login real.
+const DEMO_ROLES: { value: UserRole; label: string; desc: string }[] = [
   { value: 'administrador', label: 'Administrador', desc: 'Acceso total' },
   { value: 'auditor',       label: 'Auditor',       desc: 'Ve registro de auditoría' },
   { value: 'visualizador',  label: 'Visualizador',  desc: 'Solo lectura' },
 ];
 
 interface LoginCardProps {
-  onLogin: (rut: string, role: UserRole, sector: Sector) => void;
-  onDemo: () => void;
+  // El rol NUNCA viaja desde este formulario: se resuelve después de
+  // autenticar, a partir del correo (ver lib/userRoles.ts).
+  onLogin: (rut: string, email: string, sector: Sector) => void;
+  onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
 
@@ -55,11 +61,10 @@ const getPassReqs = (pass: string) => ({
   special: /[!@#$%&*]/.test(pass),
 });
 
-export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) {
+export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
   const [rut,    setRut]    = useState('');
   const [email,  setEmail]  = useState('');
   const [pass,   setPass]   = useState('');
-  const [role,   setRole]   = useState<UserRole>('administrador');
   const [sector, setSector] = useState<Sector>('otro');
 
   // Flags para mostrar errores solo después de que el usuario toca cada campo
@@ -78,7 +83,9 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
     setEmailTouched(true);
     setPassTouched(true);
     if (!isFormValid) return;
-    onLogin(rut.trim(), role, sector);
+    // No se envía ningún rol: se resuelve después de autenticar (ver onLogin
+    // en useAppState.login → lib/userRoles.ts).
+    onLogin(rut.trim(), email.trim(), sector);
   };
 
   return (
@@ -170,17 +177,6 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
         )}
       </div>
 
-      {/* Rol */}
-      <div className="form-group">
-        <label className="form-label">Rol de acceso</label>
-        <select className="form-input form-select" value={role}
-          onChange={e => setRole(e.target.value as UserRole)}>
-          {ROLES.map(r => (
-            <option key={r.value} value={r.value}>{r.label} — {r.desc}</option>
-          ))}
-        </select>
-      </div>
-
       {/* Sector */}
       <div className="form-group">
         <label className="form-label">Sector de su empresa</label>
@@ -203,10 +199,33 @@ export default function LoginCard({ onLogin, onDemo, onToast }: LoginCardProps) 
 
       <div className="login-divider">o continúe sin registrarse</div>
 
-      {/* El botón demo omite todas las validaciones */}
-      <button className="btn-demo" onClick={onDemo}>
-        Ver demostración con datos de ejemplo
-      </button>
+      {/*
+        Modo demostración: claramente separado del login real. Cada botón
+        simula una sesión YA autenticada con un rol predefinido y datos de
+        ejemplo — el usuario nunca elige su rol aquí tampoco, solo elige
+        cuál demo quiere ver.
+      */}
+      <div className="demo-mode-box">
+        <div className="demo-mode-label">
+          <span aria-hidden="true">🧪</span> Modo demostración (no es un ingreso real)
+        </div>
+        <p className="demo-mode-desc">
+          Pruebe la plataforma con datos de ejemplo ya cargados, viendo cómo cambia la
+          experiencia según el rol del usuario.
+        </p>
+        <div className="demo-mode-buttons">
+          {DEMO_ROLES.map(r => (
+            <button
+              key={r.value}
+              className="btn-demo"
+              title={r.desc}
+              onClick={() => onDemo(r.value)}
+            >
+              Entrar como {r.label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="login-security">
         <div className="login-security-item">

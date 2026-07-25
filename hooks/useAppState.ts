@@ -1,13 +1,25 @@
 ﻿'use client';
 import { useState, useCallback } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
-import { REQUISITOS } from '@/lib/requisitos';
+import { REQUISITOS, CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
 import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
 import { calcPct } from '@/lib/metrics';
 import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
 import { saveDocument, listDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
+import { getRoleForUser } from '@/lib/userRoles';
+
+// Calcula los resultados del análisis para un conjunto de documentos.
+// Única fuente de esta lógica: la usan tanto el flujo real (finishAnalysis)
+// como el modo demostración (demo), para que ambos calculen igual.
+function computeResults(docs: Record<string, UploadedDoc>): Record<string, RequisitoResult> {
+  const results: Record<string, RequisitoResult> = {};
+  REQUISITOS.forEach(r => {
+    results[r.id] = analyzeDocument(r.id, docs);
+  });
+  return results;
+}
 
 // RUT sintético y estable usado solo para el modo demo: permite que los
 // documentos de ejemplo también queden aislados bajo un companyId propio.
@@ -69,10 +81,15 @@ export function useAppState() {
     }, ...prev]);
   }, []);
 
-  const login = useCallback((rut: string, selectedRole: UserRole, selectedSector: Sector = 'otro') => {
+  const login = useCallback((rut: string, email: string, selectedSector: Sector = 'otro') => {
+    // El rol NUNCA lo elige el usuario en la interfaz: se resuelve aquí,
+    // después de "autenticar", a partir de su correo. En producción esta
+    // línea sería reemplazada por una llamada al backend (p.ej. GET /me)
+    // que devuelve el rol guardado en la base de datos para ese usuario.
+    const resolvedRole = getRoleForUser(email);
     setCompanyName(rut);
     setCompanyId(buildCompanyId(rut));
-    setRole(selectedRole);
+    setRole(resolvedRole);
     setSector(selectedSector);
     setTourActive(true);
     setTourStep(0);
@@ -80,10 +97,10 @@ export function useAppState() {
     setActiveTab('subir');
   }, []);
 
-  const demo = useCallback(() => {
+  const demo = useCallback((demoRole: UserRole) => {
     setCompanyName('Empresa Demo S.A.');
     setCompanyId(buildCompanyId(DEMO_RUT));
-    setRole('administrador');
+    setRole(demoRole);
     setSector('tecnologia');
     // Los documentos de ejemplo también deben quedar en el almacén aislado por
     // empresa (no solo en el estado de React), para que finishAnalysis --que
@@ -91,11 +108,28 @@ export function useAppState() {
     const demoCtx: TenantContext = {
       companyId: buildCompanyId(DEMO_RUT),
       companyName: 'Empresa Demo S.A.',
-      role: 'administrador',
+      role: demoRole,
       usuario: 'Empresa Demo S.A.',
     };
     Object.entries(DEMO_DOCS).forEach(([reqId, doc]) => saveDocument(demoCtx, reqId, doc));
     setUploadedDocs(DEMO_DOCS);
+
+    // El demo ya viene "analizado" sin importar el rol elegido, para que
+    // auditor/visualizador también puedan ver un diagnóstico completo aunque
+    // no tengan permiso para ejecutar el análisis ellos mismos.
+    const demoResults = computeResults(DEMO_DOCS);
+    const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(demoResults);
+    setResults(demoResults);
+    setAnalyzed(true);
+    setSnapshots([{
+      fecha: new Date().toISOString(),
+      pct,
+      green: greenCount,
+      yellow: yellowCount,
+      red: redCount,
+      checklistVersion: CHECKLIST_VERSION_LABEL,
+    }]);
+
     setTourActive(true);
     setTourStep(0);
     setScreen('app');
@@ -153,10 +187,7 @@ export function useAppState() {
     // siempre se re-obtienen desde el almacén aislado por empresa, así ningún
     // componente puede saltarse el filtro por companyId ni analizar datos ajenos.
     const docsAislados = listDocuments(ctx);
-    const newResults: Record<string, RequisitoResult> = {};
-    REQUISITOS.forEach(r => {
-      newResults[r.id] = analyzeDocument(r.id, docsAislados);
-    });
+    const newResults = computeResults(docsAislados);
     setSecurityEvents(getSecurityAuditLog().filter(
       e => e.companyIdSolicitante === ctx.companyId || e.companyIdRecurso === ctx.companyId,
     ));
@@ -170,6 +201,7 @@ export function useAppState() {
       green: greenCount,
       yellow: yellowCount,
       red: redCount,
+      checklistVersion: CHECKLIST_VERSION_LABEL,
     }]);
 
     setResults(newResults);

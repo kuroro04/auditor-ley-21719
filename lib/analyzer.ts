@@ -17,6 +17,10 @@ const VENTANA_PROXIMIDAD = 10;
 // Umbral de densidad a partir del cual se considera que el concepto es recurrente
 const UMBRAL_DENSIDAD_ALTA = 3;
 
+// Radio en caracteres a cada lado del término encontrado para armar el
+// fragmento de contexto que se le muestra al usuario como evidencia.
+const RADIO_FRAGMENTO = 90;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // FUNCIONES AUXILIARES INTERNAS
 // ═══════════════════════════════════════════════════════════════════════════
@@ -82,6 +86,26 @@ function calcularDensidad(texto: string, terminos: string[]): number {
 }
 
 /**
+ * Extrae un fragmento EXACTO del documento (texto real, tal cual aparece)
+ * alrededor de la primera aparición de 'termino'. Este fragmento es lo que
+ * se le muestra al usuario como evidencia: "el documento dice: '...'".
+ * Se ajusta a límites de palabra para no cortar a mitad de una palabra.
+ */
+function extraerFragmento(texto: string, termino: string): string {
+  const idx = texto.indexOf(termino.toLowerCase());
+  if (idx === -1) return '';
+
+  let inicio = Math.max(0, idx - RADIO_FRAGMENTO);
+  let fin = Math.min(texto.length, idx + termino.length + RADIO_FRAGMENTO);
+  while (inicio > 0 && /\S/.test(texto[inicio - 1])) inicio--;
+  while (fin < texto.length && /\S/.test(texto[fin])) fin++;
+
+  const prefijo = inicio > 0 ? '… ' : '';
+  const sufijo = fin < texto.length ? ' …' : '';
+  return (prefijo + texto.slice(inicio, fin).trim() + sufijo).replace(/\s+/g, ' ');
+}
+
+/**
  * Verifica si al menos dos términos de la lista aparecen a menos de
  * VENTANA_PROXIMIDAD palabras entre sí, indicando una idea coherente.
  */
@@ -113,6 +137,7 @@ interface EvaluacionCriterio {
   requiereRevisionManual: boolean;
   status: 'ok' | 'warn' | 'fail';
   confianza: 'alta' | 'media' | 'baja';
+  fragmento: string;
 }
 
 /**
@@ -220,6 +245,12 @@ function evaluarCriterio(
   // Si hay revisión manual, la confianza baja al menos un nivel
   if (requiereRevisionManual && confianza === 'alta') confianza = 'media';
 
+  // ── 9. Fragmento exacto del documento que respalda la detección ────────
+  // Prioridad: frase legal exacta > keyword válida > sinónimo. Sin evidencia
+  // (fail) no hay nada que citar.
+  const terminoClave = frasesEncontradas[0] ?? kwsValidas[0] ?? sinonimosValidos[0] ?? null;
+  const fragmento = terminoClave ? extraerFragmento(texto, terminoClave) : '';
+
   return {
     frasesEncontradas,
     kwsValidas,
@@ -230,6 +261,7 @@ function evaluarCriterio(
     requiereRevisionManual,
     status,
     confianza,
+    fragmento,
   };
 }
 
@@ -261,6 +293,7 @@ export function analyzeDocument(
         frasesLegalesEncontradas: [],
         requiereRevisionManual: false,
         densidad: 0,
+        fragmentoDocumento: '',
       })),
       gap: `Documento obligatorio según ${req.art}. Sin este documento su empresa queda expuesta a multas de ${req.multa}.`,
     };
@@ -283,6 +316,7 @@ export function analyzeDocument(
         frasesLegalesEncontradas: [],
         requiereRevisionManual: false,
         densidad: 0,
+        fragmentoDocumento: '',
       })),
       gap: `El archivo "${doc.name}" parece ser un PDF escaneado o una imagen. No es posible extraer su texto para verificar el cumplimiento. Súbalo como PDF con texto seleccionable, Word o TXT.`,
     };
@@ -329,6 +363,7 @@ export function analyzeDocument(
       frasesLegalesEncontradas: ev.frasesEncontradas,
       requiereRevisionManual: ev.requiereRevisionManual,
       densidad: ev.densidad,
+      fragmentoDocumento: ev.fragmento,
     };
   });
 

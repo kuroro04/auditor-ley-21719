@@ -21,13 +21,13 @@ export default function Home() {
     <>
       {state.screen === 'landing' && (
         <Landing
-          onLogin={(rut, role, sector) => {
-            state.login(rut, role, sector);
+          onLogin={(rut, email, sector) => {
+            state.login(rut, email, sector);
             toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
           }}
-          onDemo={() => {
-            state.demo();
-            toast('✓ Modo demo activado con 3 documentos de ejemplo.', 'blue');
+          onDemo={role => {
+            state.demo(role);
+            toast('✓ Modo demostración activado con 3 documentos de ejemplo.', 'blue');
           }}
           onToast={toast}
         />
