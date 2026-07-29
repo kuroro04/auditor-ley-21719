@@ -366,6 +366,14 @@ export default function DiagnosticoView({
                                 }`}
                                 aria-label={`Confianza ${c.confianza}`}
                               />
+                              {c.origenDeteccion === 'semantico' && (
+                                <span
+                                  className="criterio-origen-tag semantico"
+                                  title="Detectado por la capa de análisis semántico (NLP), no por coincidencia exacta de palabras clave — requiere validación legal"
+                                >
+                                  🧠 Semántico
+                                </span>
+                              )}
                             </div>
 
                             {/* Fragmento EXACTO del documento que respalda la detección */}
@@ -373,6 +381,17 @@ export default function DiagnosticoView({
                               <div className="criterio-fragmento">
                                 <span className="criterio-fragmento-label">El documento dice:</span>
                                 <blockquote>“{c.fragmentoDocumento}”</blockquote>
+                              </div>
+                            )}
+
+                            {c.coincidenciaSemantica && (
+                              <div className="criterio-semantico">
+                                <span className="criterio-semantico-label">
+                                  🧠 Posible coincidencia semántica (similitud {c.coincidenciaSemantica.nivel}) — requiere validación legal
+                                </span>
+                                <blockquote className="criterio-semantico-parrafo">
+                                  "{c.coincidenciaSemantica.parrafo}"
+                                </blockquote>
                               </div>
                             )}
 
