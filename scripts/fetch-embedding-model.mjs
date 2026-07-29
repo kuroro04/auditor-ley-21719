@@ -6,7 +6,7 @@
 // como "npm run fetch-model". Si falla (ej. sin conexión), NO rompe la
 // instalación: la app sigue funcionando solo con el motor de reglas hasta
 // que este script se ejecute con éxito.
-import { existsSync, mkdirSync, createWriteStream } from 'fs';
+import { existsSync, mkdirSync, createWriteStream, unlinkSync, renameSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { pipeline as streamPipeline } from 'stream/promises';
@@ -34,12 +34,26 @@ async function descargarArchivo(nombreRelativo) {
   }
   mkdirSync(dirname(destino), { recursive: true });
   const url = `${BASE_URL}/${nombreRelativo}`;
+  const destinoTemporal = destino + '.part';
   console.log(`[fetch-embedding-model] descargando ${nombreRelativo}...`);
   const res = await fetch(url);
   if (!res.ok || !res.body) {
     throw new Error(`No se pudo descargar ${url} (HTTP ${res.status})`);
   }
-  await streamPipeline(Readable.fromWeb(res.body), createWriteStream(destino));
+  try {
+    await streamPipeline(Readable.fromWeb(res.body), createWriteStream(destinoTemporal));
+    renameSync(destinoTemporal, destino);
+  } catch (err) {
+    // Limpiar el archivo parcial si falla la descarga
+    if (existsSync(destinoTemporal)) {
+      try {
+        unlinkSync(destinoTemporal);
+      } catch (unlinkErr) {
+        // Ignorar errores al limpiar, el error principal es lo importante
+      }
+    }
+    throw err;
+  }
 }
 
 async function main() {
