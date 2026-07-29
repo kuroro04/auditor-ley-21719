@@ -50,6 +50,10 @@ const nextConfig = {
 
   webpack: (config) => {
     config.resolve.alias.canvas = false;
+    // @xenova/transformers: evitar que webpack intente resolver dependencias
+    // opcionales de Node (sharp, backends nativos) que no existen en el navegador.
+    config.resolve.alias.sharp$ = false;
+    config.resolve.fallback = { ...config.resolve.fallback, fs: false, path: false, crypto: false };
     return config;
   },
 };
