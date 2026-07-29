@@ -1,7 +1,9 @@
 'use client';
+import { useEffect } from 'react';
 import { useAppState } from '@/hooks/useAppState';
 import { useToast } from '@/hooks/useToast';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { preloadEmbeddingModel } from '@/lib/semantic/embeddingModel';
 import Landing from '@/components/Landing';
 import AppShell from '@/components/AppShell';
 import AnalyzingScreen from '@/components/AnalyzingScreen';
@@ -10,6 +12,15 @@ import Toast from '@/components/Toast';
 export default function Home() {
   const state = useAppState();
   const { toasts, toast } = useToast();
+
+  // Precarga en segundo plano del modelo de análisis semántico: arranca
+  // apenas se monta la app (sin importar la pantalla activa), para que ya
+  // esté listo cuando el usuario ejecute su primer análisis. No bloquea
+  // nada — si el modelo aún no está listo cuando el usuario analiza, el
+  // motor de reglas responde igual de inmediato.
+  useEffect(() => {
+    preloadEmbeddingModel();
+  }, []);
 
   useSessionTimeout(
     () => toast('Su sesión expirará en 1 minuto por inactividad', 'yellow'),

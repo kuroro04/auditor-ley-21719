@@ -1,5 +1,6 @@
 ﻿'use client';
 import { useState, useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
 import { REQUISITOS, CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
@@ -9,6 +10,7 @@ import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
 import { saveDocument, listDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
 import { getRoleForUser } from '@/lib/userRoles';
+import { enriquecerConSemantica } from '@/lib/semantic/semanticMatcher';
 
 // Calcula los resultados del análisis para un conjunto de documentos.
 // Única fuente de esta lógica: la usan tanto el flujo real (finishAnalysis)
@@ -19,6 +21,29 @@ function computeResults(docs: Record<string, UploadedDoc>): Record<string, Requi
     results[r.id] = analyzeDocument(r.id, docs);
   });
   return results;
+}
+
+// Enriquece los resultados con la capa semántica en segundo plano, requisito
+// por requisito, sin bloquear la interfaz. Si el modelo de embeddings no
+// está disponible (aún cargando cuando se llama, o falló al cargar), cada
+// requisito simplemente se queda con el resultado del motor de reglas.
+async function enhanceResultsInBackground(
+  docs: Record<string, UploadedDoc>,
+  baseResults: Record<string, RequisitoResult>,
+  setResults: Dispatch<SetStateAction<Record<string, RequisitoResult>>>,
+) {
+  for (const req of REQUISITOS) {
+    const doc = docs[req.id];
+    const base = baseResults[req.id];
+    if (!doc || !base || doc.scanned || !doc.text) continue;
+    try {
+      const enriquecido = await enriquecerConSemantica(req, base, doc);
+      setResults(prev => ({ ...prev, [req.id]: enriquecido }));
+    } catch {
+      // Modelo de análisis semántico no disponible: este requisito se queda
+      // con el resultado del motor de reglas, sin bloquear los demás.
+    }
+  }
 }
 
 // RUT sintético y estable usado solo para el modo demo: permite que los
@@ -121,6 +146,7 @@ export function useAppState() {
     const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(demoResults);
     setResults(demoResults);
     setAnalyzed(true);
+    void enhanceResultsInBackground(DEMO_DOCS, demoResults, setResults);
     setSnapshots([{
       fecha: new Date().toISOString(),
       pct,
@@ -210,6 +236,9 @@ export function useAppState() {
     setScreen('app');
     setActiveTab('diagnostico');
     addAuditEvent('ejecutó análisis', currentRole, currentUser);
+    // Capa semántica: se aplica en segundo plano, sin bloquear la pantalla
+    // de diagnóstico que el usuario ya está viendo con los resultados de reglas.
+    void enhanceResultsInBackground(docsAislados, newResults, setResults);
     // companyId debe estar en las dependencias: de lo contrario este callback queda
     // memorizado con el companyId inicial ('') y listDocuments() nunca encontraría
     // los documentos guardados bajo el companyId real de la sesión.
