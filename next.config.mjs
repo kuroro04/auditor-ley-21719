@@ -53,6 +53,10 @@ const nextConfig = {
     // @xenova/transformers: evitar que webpack intente resolver dependencias
     // opcionales de Node (sharp, backends nativos) que no existen en el navegador.
     config.resolve.alias.sharp$ = false;
+    // El backend nativo de Node de onnxruntime nunca se usa en el navegador
+    // (ahí corre el backend wasm de onnxruntime-web); sin este alias, webpack
+    // intenta bundlear sus binarios .node de todas las plataformas y falla el build.
+    config.resolve.alias['onnxruntime-node$'] = false;
     config.resolve.fallback = { ...config.resolve.fallback, fs: false, path: false, crypto: false };
     return config;
   },
