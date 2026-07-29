@@ -89,11 +89,9 @@ describe('splitParagraphs', () => {
 });
 
 describe('construirTextoConceptoCriterio', () => {
-  it('combina nombre, keywords y sinónimos en un solo texto', () => {
+  it('usa el nombre del criterio como texto del concepto', () => {
     const texto = construirTextoConceptoCriterio(reqFixture().criterios[0]);
-    expect(texto).toContain('Plazo de conservación de los datos');
-    expect(texto).toContain('conservación');
-    expect(texto).toContain('período de guarda');
+    expect(texto).toBe('Plazo de conservación de los datos');
   });
 });
 

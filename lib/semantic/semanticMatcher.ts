@@ -50,7 +50,14 @@ export function construirTextoConceptoCriterio(criterio: {
   keywords: string[];
   synonyms: string[];
 }): string {
-  return [criterio.name, ...criterio.keywords, ...criterio.synonyms].join(' ');
+  // El nombre del criterio ya es una frase en lenguaje natural (ej. "Plazo de
+  // conservación de los datos"). Concatenar keywords y sinónimos sueltos aquí
+  // degrada la calidad del embedding con all-MiniLM-L6-v2 (modelo de sentence
+  // embeddings, no bag-of-words): medido contra el modelo real, la version
+  // "sopa de palabras" da menor similitud con párrafos relevantes que con
+  // párrafos irrelevantes. Se mantiene la firma con keywords/synonyms por si
+  // una futura mejora de calibración los necesita, pero hoy no se usan.
+  return criterio.name;
 }
 
 type ExtractorTextos = (textos: string[]) => Promise<number[][]>;
