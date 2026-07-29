@@ -8,6 +8,10 @@ out/
 # generated assets — copied from node_modules at build time
 public/pdf.worker.min.js
 
+# modelo de embeddings del analisis semantico — se descarga via postinstall
+# (ver scripts/fetch-embedding-model.mjs), no se versiona
+public/models/
+
 # env files
 .env
 .env.local
