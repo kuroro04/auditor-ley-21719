@@ -1,5 +1,5 @@
 import { REQUISITOS } from './requisitos';
-import type { UploadedDoc, RequisitoResult, CriterioResult } from './types';
+import type { UploadedDoc, RequisitoResult, CriterioResult, Requisito } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTES DE CONFIGURACIÓN
@@ -367,6 +367,26 @@ export function analyzeDocument(
     };
   });
 
+  return buildRequisitoResult(req, criterios, doc);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGREGACIÓN: cobertura, estado y mensaje de brecha a partir de los criterios
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calcula cobertura, estado (green/yellow/red) y mensaje de brecha a partir
+ * de una lista de criterios ya evaluados. Se usa tanto desde el motor de
+ * reglas (analyzeDocument) como desde la capa semántica, que recalcula el
+ * resultado después de enriquecer algunos criterios con coincidencias
+ * semánticas — así ambos caminos comparten exactamente la misma lógica de
+ * agregación.
+ */
+export function buildRequisitoResult(
+  req: Requisito,
+  criterios: CriterioResult[],
+  doc: UploadedDoc,
+): RequisitoResult {
   // ── Calcular cobertura ─────────────────────────────────────────────────
   // ok=1.0, warn=0.5, fail=0.0
   const score = criterios.reduce((acc, c) => {
