@@ -70,6 +70,19 @@ export interface CriterioResult {
   // del término/frase que respalda la detección). Vacío cuando no hay
   // evidencia (status 'fail').
   fragmentoDocumento: string;
+  // ── Capa semántica (NLP local, complementaria al motor de reglas) ──────
+  // Ausente = detectado por el motor de reglas (comportamiento de siempre).
+  // 'semantico' = un criterio que las reglas marcaron 'fail' fue promovido
+  // a 'warn' por una coincidencia semántica; NUNCA se usa para llegar a 'ok'.
+  origenDeteccion?: 'reglas' | 'semantico';
+  // Evidencia de la coincidencia semántica (presente tanto si origenDeteccion
+  // es 'semantico' como si un criterio 'warn' de reglas además tuvo
+  // corroboración semántica adicional).
+  coincidenciaSemantica?: {
+    parrafo: string;
+    similitud: number;
+    nivel: 'alto' | 'medio';
+  };
 }
 
 export interface RequisitoResult {
