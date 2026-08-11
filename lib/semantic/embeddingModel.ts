@@ -47,6 +47,19 @@ async function cargarExtractor(): Promise<ExtractorEmbeddings> {
   env.allowRemoteModels = false;
   env.localModelPath = '/models/';
 
+  // El runtime de ONNX (onnxruntime-web) intenta por defecto descargar su
+  // motor WASM desde cdn.jsdelivr.net cuando corre en el navegador — esto
+  // viola el principio de "cero llamadas de red externas" y además el CSP
+  // de la app lo bloquea (connect-src no incluye jsdelivr), por lo que el
+  // modelo nunca cargaría en un navegador real sin este override. Se sirve
+  // desde public/ort/ (copiado por next.config.mjs) en su lugar.
+  env.backends.onnx.wasm.wasmPaths = '/ort/';
+  // Forzar single-thread: sin esto, onnxruntime-web intenta la variante
+  // threaded, que requiere SharedArrayBuffer (headers COOP/COEP que esta
+  // app no configura). El single-thread es suficientemente rápido para el
+  // tamaño de documento típico de este producto.
+  env.backends.onnx.wasm.numThreads = 1;
+
   const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
     quantized: true,
   });
