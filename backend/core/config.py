@@ -17,5 +17,7 @@ DATABASE_URL = os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'backend.db'}")
 FRONTEND_ORIGIN = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
 # En producción (HTTPS) debe ser 'true' para que la cookie solo viaje por TLS.
 COOKIE_SECURE = os.getenv('COOKIE_SECURE', 'false').lower() == 'true'
+COOKIE_NAME = 'access_token'
+COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 horas, igual que ACCESS_TOKEN_EXPIRE_MINUTES
 
 STORAGE_DIR = BASE_DIR / 'storage'

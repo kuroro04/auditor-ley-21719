@@ -3,17 +3,15 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from core.config import COOKIE_SECURE
-from core.security import create_access_token, hash_password
+from core.config import COOKIE_SECURE, COOKIE_NAME, COOKIE_MAX_AGE_SECONDS
+from core.deps import CurrentUser, get_current_user
+from core.security import create_access_token, hash_password, verify_password
 from db.database import get_db
 from db.models import Company, User
-from models.schemas import RegisterRequest, SessionResponse
+from models.schemas import LoginRequest, RegisterRequest, SessionResponse
 from services.rut_service import is_valid_rut, normalize_rut
 
 router = APIRouter(prefix='/auth', tags=['auth'])
-
-COOKIE_NAME = 'access_token'
-COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 horas, igual que ACCESS_TOKEN_EXPIRE_MINUTES
 
 
 def _set_session_cookie(response: Response, token: str) -> None:
@@ -72,3 +70,38 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
         email=user.email, role=user.role, company_id=company.id,
         company_nombre=company.nombre, company_sector=company.sector,
     )
+
+
+@router.post('/login', response_model=SessionResponse)
+def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
+    email_normalizado = payload.email.lower()
+    user = db.query(User).filter(User.email == email_normalizado).first()
+    # Mensaje genérico a propósito: no revela si falló el correo o la
+    # contraseña, para no ayudar a un atacante a enumerar correos válidos.
+    if not user or not verify_password(payload.password, user.password_hash):
+        raise HTTPException(status_code=401, detail='Correo o contraseña incorrectos')
+
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    token = create_access_token(user.id, user.company_id, user.role)
+    _set_session_cookie(response, token)
+    return SessionResponse(
+        email=user.email, role=user.role, company_id=company.id,
+        company_nombre=company.nombre, company_sector=company.sector,
+    )
+
+
+@router.get('/me', response_model=SessionResponse)
+def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == current.user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail='Sesión inválida')
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    return SessionResponse(
+        email=user.email, role=user.role, company_id=company.id,
+        company_nombre=company.nombre, company_sector=company.sector,
+    )
+
+
+@router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
+def logout(response: Response):
+    response.delete_cookie(COOKIE_NAME, path='/')
