@@ -1,0 +1,74 @@
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.orm import Session
+
+from core.config import COOKIE_SECURE
+from core.security import create_access_token, hash_password
+from db.database import get_db
+from db.models import Company, User
+from models.schemas import RegisterRequest, SessionResponse
+from services.rut_service import is_valid_rut, normalize_rut
+
+router = APIRouter(prefix='/auth', tags=['auth'])
+
+COOKIE_NAME = 'access_token'
+COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 horas, igual que ACCESS_TOKEN_EXPIRE_MINUTES
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    # httpOnly: el JavaScript del navegador nunca puede leer ni robar este
+    # valor (a diferencia de localStorage/sessionStorage, que cualquier script
+    # que corra en la página -incluido uno inyectado por XSS- sí puede leer).
+    # El navegador la reenvía solo en cada request al backend gracias a
+    # credentials:'include' en el fetch del frontend.
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        httponly=True,
+        samesite='lax',
+        secure=COOKIE_SECURE,
+        max_age=COOKIE_MAX_AGE_SECONDS,
+        path='/',
+    )
+
+
+@router.post('/register', response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+    if not is_valid_rut(payload.rut):
+        raise HTTPException(status_code=400, detail='RUT inválido')
+
+    rut_normalizado = normalize_rut(payload.rut)
+    email_normalizado = payload.email.lower()
+
+    if db.query(Company).filter(Company.rut == rut_normalizado).first():
+        # No se une automáticamente al usuario a la empresa existente: el RUT
+        # es información pública en Chile, así que auto-unirse solo con el
+        # RUT sería un hueco de seguridad. Incorporar usuarios a una empresa
+        # ya registrada es responsabilidad de su administrador (flujo de
+        # "invitar usuarios" queda para una fase futura).
+        raise HTTPException(
+            status_code=409,
+            detail='Esta empresa ya está registrada. Si perteneces a ella, solicita a tu administrador que te dé acceso.',
+        )
+    if db.query(User).filter(User.email == email_normalizado).first():
+        raise HTTPException(status_code=409, detail='Ese correo ya está registrado')
+
+    company = Company(
+        id=str(uuid.uuid4()), rut=rut_normalizado, nombre=payload.nombre_empresa, sector=payload.sector,
+    )
+    db.add(company)
+
+    user = User(
+        id=str(uuid.uuid4()), company_id=company.id, email=email_normalizado,
+        password_hash=hash_password(payload.password), role='administrador',
+    )
+    db.add(user)
+    db.commit()
+
+    token = create_access_token(user.id, company.id, user.role)
+    _set_session_cookie(response, token)
+    return SessionResponse(
+        email=user.email, role=user.role, company_id=company.id,
+        company_nombre=company.nombre, company_sector=company.sector,
+    )
