@@ -6,9 +6,11 @@ import { analyzeDocument } from '@/lib/analyzer';
 import { TOUR_STEP_COUNT } from '@/lib/tourConfig';
 import { calcPct } from '@/lib/metrics';
 import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
-import { saveDocument, listDocuments } from '@/lib/tenant/repository';
+import { saveDocument, listDocuments as listTenantDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
-import { getRoleForUser } from '@/lib/userRoles';
+import { loginUser, registerCompany as registerCompanyApi, type RegisterPayload } from '@/lib/api/auth';
+
+export type AuthSource = 'backend' | 'demo' | null;
 
 // Calcula los resultados del análisis para un conjunto de documentos.
 // Única fuente de esta lógica: la usan tanto el flujo real (finishAnalysis)
@@ -49,6 +51,10 @@ export function useAppState() {
   const [companyName, setCompanyName] = useState('');
   const [companyId, setCompanyId] = useState('');
   const [role, setRole] = useState<UserRole>('administrador');
+  // Distingue una sesión real (backend FastAPI) de una sesión de demostración
+  // (100% local, sin backend) — usado por UploadView para decidir si además
+  // de guardar localmente debe subir el archivo original al servidor.
+  const [authSource, setAuthSource] = useState<AuthSource>(null);
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDoc>>({});
   const [results, setResults] = useState<Record<string, RequisitoResult>>({});
   const [analyzed, setAnalyzed] = useState(false);
@@ -81,16 +87,29 @@ export function useAppState() {
     }, ...prev]);
   }, []);
 
-  const login = useCallback((rut: string, email: string, selectedSector: Sector = 'otro') => {
-    // El rol NUNCA lo elige el usuario en la interfaz: se resuelve aquí,
-    // después de "autenticar", a partir de su correo. En producción esta
-    // línea sería reemplazada por una llamada al backend (p.ej. GET /me)
-    // que devuelve el rol guardado en la base de datos para ese usuario.
-    const resolvedRole = getRoleForUser(email);
-    setCompanyName(rut);
-    setCompanyId(buildCompanyId(rut));
-    setRole(resolvedRole);
-    setSector(selectedSector);
+  // El rol y el nombre de la empresa NUNCA se eligen en el cliente: vienen
+  // siempre de la respuesta del backend, que a su vez los toma del JWT de
+  // sesión (nunca de un parámetro que el frontend pudiera manipular).
+  const login = useCallback(async (email: string, password: string) => {
+    const session = await loginUser(email, password);
+    setCompanyName(session.companyNombre);
+    setCompanyId(session.companyId);
+    setRole(session.role);
+    setSector(session.companySector ?? 'otro');
+    setAuthSource('backend');
+    setTourActive(true);
+    setTourStep(0);
+    setScreen('app');
+    setActiveTab('subir');
+  }, []);
+
+  const registerCompany = useCallback(async (payload: RegisterPayload) => {
+    const session = await registerCompanyApi(payload);
+    setCompanyName(session.companyNombre);
+    setCompanyId(session.companyId);
+    setRole(session.role);
+    setSector(session.companySector ?? payload.sector);
+    setAuthSource('backend');
     setTourActive(true);
     setTourStep(0);
     setScreen('app');
@@ -102,6 +121,7 @@ export function useAppState() {
     setCompanyId(buildCompanyId(DEMO_RUT));
     setRole(demoRole);
     setSector('tecnologia');
+    setAuthSource('demo');
     // Los documentos de ejemplo también deben quedar en el almacén aislado por
     // empresa (no solo en el estado de React), para que finishAnalysis --que
     // ahora siempre lee desde listDocuments()-- pueda encontrarlos.
@@ -142,6 +162,7 @@ export function useAppState() {
     setSecurityEvents([]);
     setRole('administrador');
     setSector('otro');
+    setAuthSource(null);
     setUploadedDocs({});
     setResults({});
     setPreviousResults({});
@@ -186,7 +207,7 @@ export function useAppState() {
     // El motor de análisis nunca recibe documentos "tal cual" desde el llamador:
     // siempre se re-obtienen desde el almacén aislado por empresa, así ningún
     // componente puede saltarse el filtro por companyId ni analizar datos ajenos.
-    const docsAislados = listDocuments(ctx);
+    const docsAislados = listTenantDocuments(ctx);
     const newResults = computeResults(docsAislados);
     setSecurityEvents(getSecurityAuditLog().filter(
       e => e.companyIdSolicitante === ctx.companyId || e.companyIdRecurso === ctx.companyId,
@@ -252,9 +273,9 @@ export function useAppState() {
   }, []);
 
   return {
-    screen, activeTab, companyName, companyId, role, sector, uploadedDocs, results,
+    screen, activeTab, companyName, companyId, role, sector, authSource, uploadedDocs, results,
     previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
-    login, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
+    login, registerCompany, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
     switchTab, logDownload, logUploadRejected, advanceTour, skipTour,
   };
 }
