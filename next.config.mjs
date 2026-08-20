@@ -3,6 +3,7 @@ import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 // Self-host the PDF.js worker — removes the unpkg.com CDN dependency
 try {
@@ -36,7 +37,7 @@ const nextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com",
+              `connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com ${API_URL}`,
               "img-src 'self' data: blob:",
               "worker-src 'self' blob:",
               "object-src 'none'",
