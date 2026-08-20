@@ -1,13 +1,13 @@
 'use client';
 import { useState } from 'react';
 import { SECTORES_OPCIONES } from '@/lib/sectorData';
-import type { UserRole } from '@/lib/types';
-import type { Sector } from '@/lib/types';
+import type { UserRole, Sector } from '@/lib/types';
+import type { RegisterPayload } from '@/lib/api/auth';
 
 // Botones de "modo demostración": cada uno simula haber iniciado sesión ya
 // autenticado con ese rol predefinido. Nunca es el usuario quien "elige"
 // su rol de acceso real; esto es solo un atajo de prueba, separado del
-// formulario de login real.
+// formulario de login/registro real (que sí habla con el backend).
 const DEMO_ROLES: { value: UserRole; label: string; desc: string }[] = [
   { value: 'administrador', label: 'Administrador', desc: 'Acceso total' },
   { value: 'auditor',       label: 'Auditor',       desc: 'Ve registro de auditoría' },
@@ -15,9 +15,10 @@ const DEMO_ROLES: { value: UserRole; label: string; desc: string }[] = [
 ];
 
 interface LoginCardProps {
-  // El rol NUNCA viaja desde este formulario: se resuelve después de
-  // autenticar, a partir del correo (ver lib/userRoles.ts).
-  onLogin: (rut: string, email: string, sector: Sector) => void;
+  // El rol y el nombre de la empresa NUNCA viajan desde este formulario:
+  // los resuelve el backend (ver lib/api/auth.ts) a partir del RUT/correo.
+  onLogin: (email: string, password: string) => Promise<void>;
+  onRegister: (payload: RegisterPayload) => Promise<void>;
   onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
@@ -61,31 +62,56 @@ const getPassReqs = (pass: string) => ({
   special: /[!@#$%&*]/.test(pass),
 });
 
-export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
-  const [rut,    setRut]    = useState('');
+type LoginMode = 'login' | 'register';
+
+export default function LoginCard({ onLogin, onRegister, onDemo }: LoginCardProps) {
+  const [mode, setMode] = useState<LoginMode>('login');
+  const [submitting, setSubmitting] = useState(false);
+
+  const [rut,           setRut]           = useState('');
+  const [nombreEmpresa, setNombreEmpresa] = useState('');
   const [email,  setEmail]  = useState('');
   const [pass,   setPass]   = useState('');
   const [sector, setSector] = useState<Sector>('otro');
 
   // Flags para mostrar errores solo después de que el usuario toca cada campo
-  const [rutTouched,   setRutTouched]   = useState(false);
-  const [emailTouched, setEmailTouched] = useState(false);
-  const [passTouched,  setPassTouched]  = useState(false);
-  const [showPass,     setShowPass]     = useState(false);
+  const [rutTouched,     setRutTouched]     = useState(false);
+  const [nombreTouched,  setNombreTouched]  = useState(false);
+  const [emailTouched,   setEmailTouched]   = useState(false);
+  const [passTouched,    setPassTouched]    = useState(false);
+  const [showPass,       setShowPass]       = useState(false);
 
-  const passReqs   = getPassReqs(pass);
-  const passOk     = Object.values(passReqs).every(Boolean);
-  const isFormValid = isValidRut(rut) && isValidEmail(email) && passOk;
+  const passReqs = getPassReqs(pass);
+  const passOk   = Object.values(passReqs).every(Boolean);
 
-  const handleLogin = () => {
-    // Marcar todos los campos como tocados para mostrar errores al intentar enviar
+  const isFormValid = mode === 'login'
+    ? isValidEmail(email) && pass.length > 0
+    : isValidRut(rut) && nombreEmpresa.trim().length > 0 && isValidEmail(email) && passOk;
+
+  const switchMode = (next: LoginMode) => {
+    setMode(next);
+    setRutTouched(false);
+    setNombreTouched(false);
+    setEmailTouched(false);
+    setPassTouched(false);
+  };
+
+  const handleSubmit = async () => {
     setRutTouched(true);
+    setNombreTouched(true);
     setEmailTouched(true);
     setPassTouched(true);
-    if (!isFormValid) return;
-    // No se envía ningún rol: se resuelve después de autenticar (ver onLogin
-    // en useAppState.login → lib/userRoles.ts).
-    onLogin(rut.trim(), email.trim(), sector);
+    if (!isFormValid || submitting) return;
+
+    setSubmitting(true);
+    if (mode === 'login') {
+      await onLogin(email.trim(), pass);
+    } else {
+      await onRegister({
+        rut: rut.trim(), nombreEmpresa: nombreEmpresa.trim(), email: email.trim(), password: pass, sector,
+      });
+    }
+    setSubmitting(false);
   };
 
   return (
@@ -93,20 +119,56 @@ export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
       <h2>Acceder a la plataforma</h2>
       <p className="login-sub">Ingrese o cree su cuenta de empresa</p>
 
-      {/* RUT */}
-      <div className="form-group">
-        <label className="form-label">RUT de la empresa</label>
-        <input
-          className={`form-input${rutTouched && !isValidRut(rut) ? ' form-input--error' : ''}`}
-          type="text" placeholder="76.123.456-7"
-          value={rut} maxLength={12}
-          onChange={e => setRut(formatRut(e.target.value))}
-          onBlur={() => setRutTouched(true)}
-        />
-        {rutTouched && !isValidRut(rut) && (
-          <p className="form-error-msg">Ingrese un RUT válido (ejemplo: 76.123.456-7)</p>
-        )}
+      <div className="login-mode-toggle" role="tablist" aria-label="Modo de acceso">
+        <button
+          type="button" role="tab" aria-selected={mode === 'login'}
+          className={`login-mode-btn${mode === 'login' ? ' login-mode-btn--active' : ''}`}
+          onClick={() => switchMode('login')}
+        >
+          Iniciar sesión
+        </button>
+        <button
+          type="button" role="tab" aria-selected={mode === 'register'}
+          className={`login-mode-btn${mode === 'register' ? ' login-mode-btn--active' : ''}`}
+          onClick={() => switchMode('register')}
+        >
+          Crear empresa
+        </button>
       </div>
+
+      {mode === 'register' && (
+        <>
+          {/* RUT */}
+          <div className="form-group">
+            <label className="form-label">RUT de la empresa</label>
+            <input
+              className={`form-input${rutTouched && !isValidRut(rut) ? ' form-input--error' : ''}`}
+              type="text" placeholder="76.123.456-7"
+              value={rut} maxLength={12}
+              onChange={e => setRut(formatRut(e.target.value))}
+              onBlur={() => setRutTouched(true)}
+            />
+            {rutTouched && !isValidRut(rut) && (
+              <p className="form-error-msg">Ingrese un RUT válido (ejemplo: 76.123.456-7)</p>
+            )}
+          </div>
+
+          {/* Nombre de la empresa */}
+          <div className="form-group">
+            <label className="form-label">Nombre de la empresa</label>
+            <input
+              className={`form-input${nombreTouched && nombreEmpresa.trim().length === 0 ? ' form-input--error' : ''}`}
+              type="text" placeholder="Mi Empresa S.A."
+              value={nombreEmpresa}
+              onChange={e => setNombreEmpresa(e.target.value)}
+              onBlur={() => setNombreTouched(true)}
+            />
+            {nombreTouched && nombreEmpresa.trim().length === 0 && (
+              <p className="form-error-msg">Ingrese el nombre de la empresa</p>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Correo */}
       <div className="form-group">
@@ -128,12 +190,12 @@ export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
         <label className="form-label">Contraseña</label>
         <div className="pass-input-wrap">
           <input
-            className={`form-input${passTouched && !passOk ? ' form-input--error' : ''}`}
+            className={`form-input${passTouched && mode === 'register' && !passOk ? ' form-input--error' : ''}`}
             type={showPass ? 'text' : 'password'} placeholder="••••••••"
             value={pass}
             onChange={e => setPass(e.target.value)}
             onBlur={() => setPassTouched(true)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            onKeyDown={e => e.key === 'Enter' && handleSubmit()}
           />
           <button
             type="button"
@@ -142,14 +204,12 @@ export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
             aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
           >
             {showPass ? (
-              // Ojo tachado — ocultar
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
                 <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
                 <line x1="1" y1="1" x2="23" y2="23"/>
               </svg>
             ) : (
-              // Ojo abierto — mostrar
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                 <circle cx="12" cy="12" r="3"/>
@@ -157,53 +217,56 @@ export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
             )}
           </button>
         </div>
-        {/* Lista de requisitos en tiempo real */}
-        <ul className="pass-req-list">
-          {([
-            [passReqs.length,  'Mínimo 8 caracteres'],
-            [passReqs.upper,   'Al menos una letra mayúscula'],
-            [passReqs.lower,   'Al menos una letra minúscula'],
-            [passReqs.number,  'Al menos un número'],
-            [passReqs.special, 'Al menos un carácter especial (!@#$%&*)'],
-          ] as [boolean, string][]).map(([ok, label]) => (
-            <li key={label} className={`req-item${ok ? ' req-item--ok' : ' req-item--fail'}`}>
-              <span className="req-icon">{ok ? '✓' : '·'}</span>
-              {label}
-            </li>
-          ))}
-        </ul>
-        {passTouched && !passOk && (
+        {mode === 'register' && (
+          <ul className="pass-req-list">
+            {([
+              [passReqs.length,  'Mínimo 8 caracteres'],
+              [passReqs.upper,   'Al menos una letra mayúscula'],
+              [passReqs.lower,   'Al menos una letra minúscula'],
+              [passReqs.number,  'Al menos un número'],
+              [passReqs.special, 'Al menos un carácter especial (!@#$%&*)'],
+            ] as [boolean, string][]).map(([ok, label]) => (
+              <li key={label} className={`req-item${ok ? ' req-item--ok' : ' req-item--fail'}`}>
+                <span className="req-icon">{ok ? '✓' : '·'}</span>
+                {label}
+              </li>
+            ))}
+          </ul>
+        )}
+        {passTouched && mode === 'register' && !passOk && (
           <p className="form-error-msg">La contraseña no cumple los requisitos mínimos de seguridad</p>
         )}
       </div>
 
-      {/* Sector */}
-      <div className="form-group">
-        <label className="form-label">Sector de su empresa</label>
-        <select className="form-input form-select" value={sector}
-          onChange={e => setSector(e.target.value as Sector)}>
-          {SECTORES_OPCIONES.map(s => (
-            <option key={s.value} value={s.value}>{s.label} — {s.desc}</option>
-          ))}
-        </select>
-      </div>
+      {/* Sector — solo al crear empresa */}
+      {mode === 'register' && (
+        <div className="form-group">
+          <label className="form-label">Sector de su empresa</label>
+          <select className="form-input form-select" value={sector}
+            onChange={e => setSector(e.target.value as Sector)}>
+            {SECTORES_OPCIONES.map(s => (
+              <option key={s.value} value={s.value}>{s.label} — {s.desc}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <button
         className="btn-login"
-        onClick={handleLogin}
-        disabled={!isFormValid}
-        aria-disabled={!isFormValid}
+        onClick={handleSubmit}
+        disabled={!isFormValid || submitting}
+        aria-disabled={!isFormValid || submitting}
       >
-        Ingresar →
+        {submitting ? 'Un momento…' : mode === 'login' ? 'Ingresar →' : 'Crear empresa →'}
       </button>
 
       <div className="login-divider">o continúe sin registrarse</div>
 
       {/*
-        Modo demostración: claramente separado del login real. Cada botón
-        simula una sesión YA autenticada con un rol predefinido y datos de
-        ejemplo — el usuario nunca elige su rol aquí tampoco, solo elige
-        cuál demo quiere ver.
+        Modo demostración: claramente separado del login/registro real (no
+        habla con el backend). Cada botón simula una sesión YA autenticada
+        con un rol predefinido y datos de ejemplo — el usuario nunca elige
+        su rol aquí tampoco, solo elige cuál demo quiere ver.
       */}
       <div className="demo-mode-box">
         <div className="demo-mode-label">
@@ -230,11 +293,11 @@ export default function LoginCard({ onLogin, onDemo }: LoginCardProps) {
       <div className="login-security">
         <div className="login-security-item">
           <span>🔒</span>
-          <span>Procesamiento local</span>
+          <span>Sesión cifrada (cookie httpOnly)</span>
         </div>
         <div className="login-security-item">
           <span>🛡</span>
-          <span>Sin servidores externos</span>
+          <span>Aislamiento por empresa</span>
         </div>
         <div className="login-security-item">
           <span>🔑</span>
