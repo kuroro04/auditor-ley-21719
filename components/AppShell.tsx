@@ -5,6 +5,7 @@ import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
 import RiesgosView from './RiesgosView';
 import type { ActiveTab, AuditEvent, UploadedDoc, RequisitoResult, UserRole, Sector, HistorialSnapshot } from '@/lib/types';
+import type { AuthSource } from '@/hooks/useAppState';
 import type { SecurityEvent } from '@/lib/tenant/guard';
 import OnboardingTour from './OnboardingTour';
 import HistorialView from './HistorialView';
@@ -16,6 +17,7 @@ interface AppShellProps {
   securityEvents: SecurityEvent[];
   role: UserRole;
   sector: Sector;
+  authSource: AuthSource;
   auditLog: AuditEvent[];
   activeTab: ActiveTab;
   uploadedDocs: Record<string, UploadedDoc>;
@@ -43,7 +45,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export default function AppShell({
-  companyName, companyId, securityEvents, role, sector, auditLog, activeTab, uploadedDocs, results,
+  companyName, companyId, securityEvents, role, sector, authSource, auditLog, activeTab, uploadedDocs, results,
   previousResults, snapshots, analyzed, tourActive, tourStep,
   onSwitchTab, onUpload, onUploadRejected, onStartAnalysis, onLogout, onDownload,
   onAdvanceTour, onSkipTour, onToast,
@@ -133,6 +135,7 @@ export default function AppShell({
           <UploadView
             uploadedDocs={uploadedDocs}
             role={role}
+            authSource={authSource}
             onUpload={onUpload}
             onUploadRejected={onUploadRejected}
             onStartAnalysis={onStartAnalysis}

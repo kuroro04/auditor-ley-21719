@@ -2,18 +2,21 @@
 import { useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
 import { extractDocumentText } from '@/lib/extractText';
+import { uploadDocument } from '@/lib/api/documents';
+import type { AuthSource } from '@/hooks/useAppState';
 import type { UploadedDoc, UserRole } from '@/lib/types';
 
 interface UploadViewProps {
   uploadedDocs: Record<string, UploadedDoc>;
   role: UserRole;
+  authSource: AuthSource;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onStartAnalysis: () => void;
   onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
-export default function UploadView({ uploadedDocs, role, onUpload, onUploadRejected, onStartAnalysis, onToast }: UploadViewProps) {
+export default function UploadView({ uploadedDocs, role, authSource, onUpload, onUploadRejected, onStartAnalysis, onToast }: UploadViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingReqId = useRef<string | null>(null);
   const [uploading, setUploading] = useState<{ reqId: string; phase: 'security' | 'extracting' } | null>(null);
@@ -61,6 +64,17 @@ export default function UploadView({ uploadedDocs, role, onUpload, onUploadRejec
       onToast(`✓ "${file.name}" cargado · ${info}`, 'green');
     }
     pendingReqId.current = null;
+
+    // Además de guardarse localmente (arriba), el archivo original se sube
+    // al backend en segundo plano — solo si hay una sesión real (no en modo
+    // demostración). El análisis del motor sigue siendo 100% local y no
+    // depende de que esta llamada tenga éxito: si el backend no responde,
+    // no interrumpe ni revierte nada de lo que ya pasó en el cliente.
+    if (authSource === 'backend') {
+      uploadDocument(file, reqId).catch(() => {
+        onToast('El documento se analizó localmente, pero no se pudo respaldar en el servidor', 'yellow');
+      });
+    }
   };
 
   return (
