@@ -1,15 +1,17 @@
 'use client';
 import LoginCard from './LoginCard';
 import { ScaleIcon, FileTextIcon, SearchCheckIcon, AlertCircleIcon, BarChart2Icon } from './Icons';
-import type { UserRole, Sector } from '@/lib/types';
+import type { UserRole } from '@/lib/types';
+import type { RegisterPayload } from '@/lib/api/auth';
 
 interface LandingProps {
-  onLogin: (rut: string, email: string, sector: Sector) => void;
+  onLogin: (email: string, password: string) => Promise<void>;
+  onRegister: (payload: RegisterPayload) => Promise<void>;
   onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
 
-export default function Landing({ onLogin, onDemo, onToast }: LandingProps) {
+export default function Landing({ onLogin, onRegister, onDemo, onToast }: LandingProps) {
   return (
     <div className="landing-page">
       {/* Nav */}
@@ -79,7 +81,7 @@ export default function Landing({ onLogin, onDemo, onToast }: LandingProps) {
           </div>
         </div>
 
-        <LoginCard onLogin={onLogin} onDemo={onDemo} onToast={onToast} />
+        <LoginCard onLogin={onLogin} onRegister={onRegister} onDemo={onDemo} onToast={onToast} />
       </div>
     </div>
   );

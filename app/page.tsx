@@ -2,6 +2,7 @@
 import { useAppState } from '@/hooks/useAppState';
 import { useToast } from '@/hooks/useToast';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { ApiError } from '@/lib/api/client';
 import Landing from '@/components/Landing';
 import AppShell from '@/components/AppShell';
 import AnalyzingScreen from '@/components/AnalyzingScreen';
@@ -21,9 +22,21 @@ export default function Home() {
     <>
       {state.screen === 'landing' && (
         <Landing
-          onLogin={(rut, email, sector) => {
-            state.login(rut, email, sector);
-            toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+          onLogin={async (email, password) => {
+            try {
+              await state.login(email, password);
+              toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+            } catch (err) {
+              toast(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión', 'yellow');
+            }
+          }}
+          onRegister={async payload => {
+            try {
+              await state.registerCompany(payload);
+              toast('✓ Empresa registrada. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+            } catch (err) {
+              toast(err instanceof ApiError ? err.message : 'No se pudo registrar la empresa', 'yellow');
+            }
           }}
           onDemo={role => {
             state.demo(role);
@@ -50,6 +63,7 @@ export default function Home() {
           securityEvents={state.securityEvents}
           role={state.role}
           sector={state.sector}
+          authSource={state.authSource}
           auditLog={state.auditLog}
           activeTab={state.activeTab}
           uploadedDocs={state.uploadedDocs}
