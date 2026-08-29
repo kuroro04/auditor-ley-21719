@@ -482,6 +482,15 @@ html, body {
 .btn-logout:hover { border-color: var(--red-border); color: var(--red); background: var(--red-bg); }
 .btn-logout:active { transform: scale(0.97); }
 
+.btn-tutorial {
+  padding: 6px 13px; background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 12px;
+  font-family: var(--font-sora),'Sora',sans-serif; color: var(--text2); cursor: pointer;
+  transition: border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out), background var(--dur) var(--ease-out);
+}
+.btn-tutorial:hover { border-color: rgba(37,99,235,0.35); color: var(--blue); background: var(--blue-dim); }
+.btn-tutorial:active { transform: scale(0.97); }
+
 .app-nav {
   background: var(--white); border-bottom: 1px solid var(--border);
   padding: 0 32px; display: flex; gap: 0;

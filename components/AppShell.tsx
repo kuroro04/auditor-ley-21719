@@ -35,6 +35,7 @@ interface AppShellProps {
   onDownload: () => void;
   onAdvanceTour: () => void;
   onSkipTour: () => void;
+  onOpenTour: () => void;
   onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
@@ -48,7 +49,7 @@ export default function AppShell({
   companyName, companyId, securityEvents, role, sector, authSource, auditLog, activeTab, uploadedDocs, results,
   previousResults, snapshots, analyzed, tourActive, tourStep,
   onSwitchTab, onUpload, onUploadRejected, onStartAnalysis, onLogout, onDownload,
-  onAdvanceTour, onSkipTour, onToast,
+  onAdvanceTour, onSkipTour, onOpenTour, onToast,
 }: AppShellProps) {
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
   const canSeeRegistro = role === 'administrador' || role === 'auditor';
@@ -84,6 +85,14 @@ export default function AppShell({
             <span>{companyName}</span>
             <span className="header-company-id">ID: {companyId}</span>
           </div>
+          <button
+            className="btn-tutorial"
+            onClick={onOpenTour}
+            title="Volver a mostrar el tutorial de bienvenida"
+            aria-label="Abrir tutorial de bienvenida"
+          >
+            ¿Cómo usar?
+          </button>
           <button className="btn-logout" onClick={onLogout}>Salir</button>
         </div>
       </header>

@@ -22,6 +22,7 @@ class SessionResponse(BaseModel):
     company_id: str
     company_nombre: str
     company_sector: Optional[str] = None
+    onboarding_completed: bool = False
 
 
 class DocumentOut(BaseModel):

@@ -92,6 +92,7 @@ export default function Home() {
           onDownload={() => state.logDownload(state.role, state.companyName)}
           onAdvanceTour={state.advanceTour}
           onSkipTour={state.skipTour}
+          onOpenTour={state.openTour}
           onToast={toast}
         />
       )}
