@@ -1,3 +1,10 @@
+import os
+
+# Modo de excepción explícito para tests: debe fijarse antes de importar
+# `main` (y por lo tanto `core.config`), así los tests no dependen de tener
+# un backend/.env real ni se rompen por el fail-closed de SECRET_KEY/COOKIE_SECURE.
+os.environ.setdefault('TESTING', '1')
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
