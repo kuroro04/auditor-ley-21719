@@ -8,7 +8,7 @@ import { calcPct } from '@/lib/metrics';
 import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
 import { saveDocument, listDocuments as listTenantDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
-import { loginUser, registerCompany as registerCompanyApi, type RegisterPayload } from '@/lib/api/auth';
+import { completeOnboarding, loginUser, registerCompany as registerCompanyApi, type RegisterPayload } from '@/lib/api/auth';
 
 export type AuthSource = 'backend' | 'demo' | null;
 
@@ -97,7 +97,9 @@ export function useAppState() {
     setRole(session.role);
     setSector(session.companySector ?? 'otro');
     setAuthSource('backend');
-    setTourActive(true);
+    // El tour solo se abre automáticamente la primera vez: si el backend ya
+    // registra que este usuario lo vio (o lo cerró) antes, no se repite.
+    setTourActive(!session.onboardingCompleted);
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
@@ -110,7 +112,7 @@ export function useAppState() {
     setRole(session.role);
     setSector(session.companySector ?? payload.sector);
     setAuthSource('backend');
-    setTourActive(true);
+    setTourActive(!session.onboardingCompleted);
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
@@ -176,6 +178,17 @@ export function useAppState() {
     auditCounter = 0;
   }, []);
 
+  // Avisa al backend que el usuario ya vio (o cerró) el tour, para que no
+  // vuelva a mostrarse automáticamente en su próximo inicio de sesión. Solo
+  // aplica a sesiones reales: el modo demostración no tiene una cuenta
+  // persistente contra la cual guardar la preferencia. Falla en silencio: en
+  // el peor caso el tour reaparece una vez más, sin afectar el resto de la app.
+  const marcarTourVistoSiCorresponde = useCallback((tourEstabaActivo: boolean, source: AuthSource) => {
+    if (tourEstabaActivo && source === 'backend') {
+      completeOnboarding().catch(() => {});
+    }
+  }, []);
+
   const uploadDoc = useCallback((reqId: string, doc: UploadedDoc, currentRole: UserRole, currentUser: string) => {
     // Todo documento se persiste en el almacén aislado por empresa (lib/tenant/repository),
     // etiquetado con el companyId de la sesión activa, nunca con uno provisto por el llamador.
@@ -195,9 +208,10 @@ export function useAppState() {
     if (analyzed) {
       setPreviousResults(results);
     }
+    marcarTourVistoSiCorresponde(tourActive, authSource);
     setTourActive(false);
     setScreen('analyzing');
-  }, [analyzed, results]);
+  }, [analyzed, results, tourActive, authSource, marcarTourVistoSiCorresponde]);
 
   const finishAnalysis = useCallback((
     currentRole: UserRole,
@@ -227,6 +241,7 @@ export function useAppState() {
 
     setResults(newResults);
     setAnalyzed(true);
+    marcarTourVistoSiCorresponde(tourActive, authSource);
     setTourActive(false);
     setScreen('app');
     setActiveTab('diagnostico');
@@ -234,7 +249,7 @@ export function useAppState() {
     // companyId debe estar en las dependencias: de lo contrario este callback queda
     // memorizado con el companyId inicial ('') y listDocuments() nunca encontraría
     // los documentos guardados bajo el companyId real de la sesión.
-  }, [addAuditEvent, companyId]);
+  }, [addAuditEvent, companyId, tourActive, authSource, marcarTourVistoSiCorresponde]);
 
   const logDownload = useCallback((currentRole: UserRole, currentUser: string) => {
     addAuditEvent('descargó informe', currentRole, currentUser, 'informe_cumplimiento.pdf');
@@ -253,30 +268,42 @@ export function useAppState() {
     if (tab === 'diagnostico' && !isAnalyzed) return false;
     setActiveTab(tab);
     // Cerrar el tour al cambiar de pestaña: no debe seguir en Riesgos, Registro, etc.
+    marcarTourVistoSiCorresponde(tourActive, authSource);
     setTourActive(false);
     return true;
-  }, []);
+  }, [tourActive, authSource, marcarTourVistoSiCorresponde]);
 
   const advanceTour = useCallback(() => {
     setTourStep(prev => {
       if (prev >= TOUR_STEP_COUNT - 1) {
+        marcarTourVistoSiCorresponde(true, authSource);
         setTourActive(false);
         return 0;
       }
       return prev + 1;
     });
-  }, []);
+  }, [authSource, marcarTourVistoSiCorresponde]);
 
   const skipTour = useCallback(() => {
+    marcarTourVistoSiCorresponde(true, authSource);
     setTourActive(false);
     setTourStep(0);
+  }, [authSource, marcarTourVistoSiCorresponde]);
+
+  // Reabre el tour a pedido (botón "¿Cómo usar?" del header): útil si otra
+  // persona nueva usa la cuenta, o si alguien quiere repasarlo. Siempre
+  // vuelve a la pestaña "Subir documentos", que es donde vive el tour.
+  const openTour = useCallback(() => {
+    setActiveTab('subir');
+    setTourStep(0);
+    setTourActive(true);
   }, []);
 
   return {
     screen, activeTab, companyName, companyId, role, sector, authSource, uploadedDocs, results,
     previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
     login, registerCompany, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
-    switchTab, logDownload, logUploadRejected, advanceTour, skipTour,
+    switchTab, logDownload, logUploadRejected, advanceTour, skipTour, openTour,
   };
 }
 

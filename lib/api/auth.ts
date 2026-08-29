@@ -15,6 +15,10 @@ export interface SessionInfo {
   companyId: string;
   companyNombre: string;
   companySector: Sector | null;
+  // Si ya vio (o cerró) el tour de bienvenida alguna vez. Vive en el backend
+  // (no en localStorage) para que la preferencia persista entre sesiones y
+  // dispositivos.
+  onboardingCompleted: boolean;
 }
 
 interface SessionResponseDto {
@@ -23,6 +27,7 @@ interface SessionResponseDto {
   company_id: string;
   company_nombre: string;
   company_sector: string | null;
+  onboarding_completed: boolean;
 }
 
 function fromDto(dto: SessionResponseDto): SessionInfo {
@@ -32,6 +37,7 @@ function fromDto(dto: SessionResponseDto): SessionInfo {
     companyId: dto.company_id,
     companyNombre: dto.company_nombre,
     companySector: (dto.company_sector as Sector | null) ?? null,
+    onboardingCompleted: dto.onboarding_completed,
   };
 }
 
@@ -64,4 +70,10 @@ export async function fetchMe(): Promise<SessionInfo> {
 
 export async function logoutUser(): Promise<void> {
   await apiRequest<void>('/auth/logout', { method: 'POST' });
+}
+
+// Avisa al backend que el usuario ya vio (o cerró) el tour de bienvenida,
+// para que no vuelva a mostrarse automáticamente en futuros inicios de sesión.
+export async function completeOnboarding(): Promise<void> {
+  await apiRequest<void>('/auth/complete-onboarding', { method: 'POST' });
 }

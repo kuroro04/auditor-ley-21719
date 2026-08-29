@@ -12,6 +12,9 @@ def test_registro_exitoso_crea_admin_y_setea_cookie(client):
     assert body['company_nombre'] == 'Empresa Test'
     assert body['company_sector'] == 'tecnologia'
     assert body['email'] == 'admin@empresatest.cl'
+    # Un usuario recién registrado nunca vio el tour: debe mostrarse la
+    # primera vez que entre a la app.
+    assert body['onboarding_completed'] is False
     assert 'access_token' in res.cookies
 
 

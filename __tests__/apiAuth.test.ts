@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { loginUser, registerCompany } from '../lib/api/auth';
+import { completeOnboarding, loginUser, registerCompany } from '../lib/api/auth';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -11,6 +11,7 @@ const DTO = {
   company_id: 'c1',
   company_nombre: 'Empresa Test',
   company_sector: 'tecnologia',
+  onboarding_completed: false,
 };
 
 describe('lib/api/auth', () => {
@@ -23,7 +24,17 @@ describe('lib/api/auth', () => {
       companyId: 'c1',
       companyNombre: 'Empresa Test',
       companySector: 'tecnologia',
+      onboardingCompleted: false,
     });
+  });
+
+  it('completeOnboarding llama al endpoint correcto por POST', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => undefined });
+    vi.stubGlobal('fetch', fetchMock);
+    await completeOnboarding();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/auth/complete-onboarding');
+    expect(init.method).toBe('POST');
   });
 
   it('registerCompany envía nombre_empresa en snake_case al backend', async () => {

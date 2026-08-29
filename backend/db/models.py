@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from db.database import Base
@@ -36,6 +36,11 @@ class User(Base):
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(String, nullable=False)
+    # Marca si el usuario ya vio (o cerró) el tour de bienvenida al menos una
+    # vez, para que no se le muestre automáticamente en próximos inicios de
+    # sesión. Vive en el backend (no en localStorage) para que persista entre
+    # sesiones y dispositivos.
+    onboarding_completed = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, default=_utcnow)
 
     company = relationship('Company', back_populates='users')

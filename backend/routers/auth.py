@@ -69,6 +69,7 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
     return SessionResponse(
         email=user.email, role=user.role, company_id=company.id,
         company_nombre=company.nombre, company_sector=company.sector,
+        onboarding_completed=user.onboarding_completed,
     )
 
 
@@ -87,6 +88,7 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
     return SessionResponse(
         email=user.email, role=user.role, company_id=company.id,
         company_nombre=company.nombre, company_sector=company.sector,
+        onboarding_completed=user.onboarding_completed,
     )
 
 
@@ -99,7 +101,19 @@ def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(g
     return SessionResponse(
         email=user.email, role=user.role, company_id=company.id,
         company_nombre=company.nombre, company_sector=company.sector,
+        onboarding_completed=user.onboarding_completed,
     )
+
+
+@router.post('/complete-onboarding', status_code=status.HTTP_204_NO_CONTENT)
+def complete_onboarding(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+    # current.user_id viene del JWT verificado por el servidor, nunca de un
+    # parámetro del cliente: un usuario solo puede marcar su propio onboarding.
+    user = db.query(User).filter(User.id == current.user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail='Sesión inválida')
+    user.onboarding_completed = True
+    db.commit()
 
 
 @router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
