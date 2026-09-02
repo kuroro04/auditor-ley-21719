@@ -8,6 +8,7 @@ from core.deps import CurrentUser, get_current_user, get_tenant_db
 from core.security import create_access_token, hash_password, verify_password
 from db.database import get_db
 from db.models import Company, User
+from db.tenant import find_user_by_email, set_tenant_context
 from models.schemas import LoginRequest, RegisterRequest, SessionResponse
 from services.rut_service import is_valid_rut, normalize_rut
 
@@ -52,22 +53,28 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
     if db.query(User).filter(User.email == email_normalizado).first():
         raise HTTPException(status_code=409, detail='Ese correo ya está registrado')
 
+    company_id = str(uuid.uuid4())
     company = Company(
-        id=str(uuid.uuid4()), rut=rut_normalizado, nombre=payload.nombre_empresa, sector=payload.sector,
+        id=company_id, rut=rut_normalizado, nombre=payload.nombre_empresa, sector=payload.sector,
     )
     db.add(company)
 
+    # Fija el contexto de tenant ANTES de insertar el primer usuario: la
+    # política RLS de `users` exige que company_id coincida con el
+    # contexto de la transacción, incluso para el INSERT.
+    set_tenant_context(db, company_id)
+
     user = User(
-        id=str(uuid.uuid4()), company_id=company.id, email=email_normalizado,
+        id=str(uuid.uuid4()), company_id=company_id, email=email_normalizado,
         password_hash=hash_password(payload.password), role='administrador',
     )
     db.add(user)
     db.commit()
 
-    token = create_access_token(user.id, company.id, user.role)
+    token = create_access_token(user.id, company_id, user.role)
     _set_session_cookie(response, token)
     return SessionResponse(
-        email=user.email, role=user.role, company_id=company.id,
+        email=user.email, role=user.role, company_id=company_id,
         company_nombre=company.nombre, company_sector=company.sector,
         onboarding_completed=user.onboarding_completed,
     )
