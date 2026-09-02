@@ -8,7 +8,14 @@ from core.config import DATABASE_URL
 # distinto, así que hace falta relajar esa restricción aquí.
 connect_args = {'check_same_thread': False} if DATABASE_URL.startswith('sqlite') else {}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# expire_on_commit=False: por defecto, SQLAlchemy expira los objetos tras
+# cada commit() y dispara un SELECT de refresco en la próxima lectura de
+# atributo. Ese SELECT corre en una transacción nueva, sin el contexto de
+# tenant que fija RLS (SET LOCAL solo dura la transacción del commit), así
+# que quedaría bloqueado por las políticas. Con expire_on_commit=False los
+# objetos conservan sus valores en memoria después del commit, sin I/O
+# adicional — evita el problema y de paso ahorra una consulta por request.
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
 
 Base = declarative_base()
 

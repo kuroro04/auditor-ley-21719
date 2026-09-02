@@ -50,7 +50,11 @@ async def upload_document(
     )
     db.add(doc)
     db.commit()
-    db.refresh(doc)
+    # No hace falta db.refresh(doc): id y uploaded_at ya se generan en
+    # Python (uuid.uuid4() / _utcnow()) antes del INSERT, así que el
+    # objeto ya tiene todos sus valores sin necesidad de releerlos de la
+    # base — un refresh explícito además correría en una transacción sin
+    # contexto de tenant y RLS lo bloquearía.
     return _to_document_out(doc)
 
 
