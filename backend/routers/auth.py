@@ -83,12 +83,13 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
 @router.post('/login', response_model=SessionResponse)
 def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     email_normalizado = payload.email.lower()
-    user = db.query(User).filter(User.email == email_normalizado).first()
+    user = find_user_by_email(db, email_normalizado)
     # Mensaje genérico a propósito: no revela si falló el correo o la
     # contraseña, para no ayudar a un atacante a enumerar correos válidos.
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail='Correo o contraseña incorrectos')
 
+    set_tenant_context(db, user.company_id)
     company = db.query(Company).filter(Company.id == user.company_id).first()
     token = create_access_token(user.id, user.company_id, user.role)
     _set_session_cookie(response, token)
