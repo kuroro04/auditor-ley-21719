@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
 from core.config import COOKIE_SECURE, COOKIE_NAME, COOKIE_MAX_AGE_SECONDS
-from core.deps import CurrentUser, get_current_user
+from core.deps import CurrentUser, get_current_user, get_tenant_db
 from core.security import create_access_token, hash_password, verify_password
 from db.database import get_db
 from db.models import Company, User
@@ -93,7 +93,7 @@ def login(payload: LoginRequest, response: Response, db: Session = Depends(get_d
 
 
 @router.get('/me', response_model=SessionResponse)
-def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
     user = db.query(User).filter(User.id == current.user_id).first()
     if not user:
         raise HTTPException(status_code=401, detail='Sesión inválida')
@@ -106,7 +106,7 @@ def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(g
 
 
 @router.post('/complete-onboarding', status_code=status.HTTP_204_NO_CONTENT)
-def complete_onboarding(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+def complete_onboarding(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
     # current.user_id viene del JWT verificado por el servidor, nunca de un
     # parámetro del cliente: un usuario solo puede marcar su propio onboarding.
     user = db.query(User).filter(User.id == current.user_id).first()

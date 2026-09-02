@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from core.config import STORAGE_DIR
-from core.deps import CurrentUser, get_current_user
-from db.database import get_db
+from core.deps import CurrentUser, get_current_user, get_tenant_db
 from db.models import Document
 from models.schemas import DocumentOut
 from services.file_security_service import check_file_security, sanitize_filename
@@ -26,7 +25,7 @@ async def upload_document(
     req_id: str = Form(...),
     file: UploadFile = File(...),
     current: CurrentUser = Depends(get_current_user),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_tenant_db),
 ):
     content = await file.read()
     result = check_file_security(file.filename or '', len(content), content[:8])
@@ -56,7 +55,7 @@ async def upload_document(
 
 
 @router.get('', response_model=list[DocumentOut])
-def list_documents(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_documents(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
     # Filtra SIEMPRE por el company_id del token — nunca acepta un
     # company_id como parámetro de query o de ruta.
     docs = db.query(Document).filter(Document.company_id == current.company_id).all()
