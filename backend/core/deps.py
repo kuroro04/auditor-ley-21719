@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 
+import clamd
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from core.config import COOKIE_NAME
+from core.config import CLAMAV_HOST, CLAMAV_PORT, CLAMAV_TIMEOUT_SECONDS, COOKIE_NAME
 from core.security import decode_access_token
 from db.database import get_db
 from db.tenant import set_tenant_context
@@ -40,3 +41,12 @@ def get_tenant_db(
     """
     set_tenant_context(db, current.company_id)
     return db
+
+
+def get_clamav_client() -> clamd.ClamdNetworkSocket:
+    """Cliente real de ClamAV (clamd), construido desde CLAMAV_HOST/PORT.
+
+    En los tests se sobreescribe (app.dependency_overrides) con un cliente
+    falso, para no depender de un contenedor de ClamAV corriendo.
+    """
+    return clamd.ClamdNetworkSocket(host=CLAMAV_HOST, port=CLAMAV_PORT, timeout=CLAMAV_TIMEOUT_SECONDS)

@@ -1,0 +1,30 @@
+# Fase 4 — ClamAV real para el escaneo antivirus de la carga segura.
+#
+# Levantar:      docker compose up -d clamav
+# Ver progreso:  docker compose logs -f clamav   (la primera vez demora unos
+#                minutos: freshclam descarga las firmas de virus)
+# Estado:        docker compose ps               (debe decir "healthy")
+#
+# El backend se conecta a clamd por TCP (ver CLAMAV_HOST/CLAMAV_PORT en
+# backend/.env). No se comparte ningún volumen con el backend: los archivos
+# se envían a clamd por el socket (INSTREAM), no por ruta de archivo.
+services:
+  clamav:
+    image: clamav/clamav:stable
+    container_name: datashield-clamav
+    ports:
+      - '3310:3310'
+    volumes:
+      # Persiste las firmas de virus entre reinicios del contenedor para
+      # no volver a descargarlas cada vez.
+      - clamav-db:/var/lib/clamav
+    healthcheck:
+      test: ['CMD', 'clamdcheck.sh']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 180s
+    restart: unless-stopped
+
+volumes:
+  clamav-db:

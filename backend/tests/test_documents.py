@@ -1,5 +1,11 @@
 import io
 
+import clamd as clamd_lib
+
+import main as main_module
+from core.deps import get_clamav_client
+from tests.fakes import FakeClamdCaido
+
 
 def _registrar_y_login(client, rut, email):
     client.post('/auth/register', json={
@@ -41,6 +47,30 @@ def test_subir_archivo_rechazado_por_magic_bytes_devuelve_400(client):
         data={'req_id': 'politica_privacidad'},
         files={'file': ('falso.pdf', io.BytesIO(b'esto no es un pdf real'), 'application/pdf')},
     )
+    assert res.status_code == 400
+
+
+def test_subir_archivo_eicar_es_detectado_y_rechazado(client):
+    _registrar_y_login(client, '11.111.111-1', 'admin@a.cl')
+    res = client.post(
+        '/documents/upload',
+        data={'req_id': 'politica_privacidad'},
+        files={'file': ('eicar.txt', io.BytesIO(clamd_lib.EICAR), 'text/plain')},
+    )
+    assert res.status_code == 400
+    assert 'amenaza' in res.json()['detail'].lower() or 'detectada' in res.json()['detail'].lower()
+
+
+def test_subir_documento_con_clamav_no_disponible_no_se_acepta(client):
+    _registrar_y_login(client, '11.111.111-1', 'admin@a.cl')
+    main_module.app.dependency_overrides[get_clamav_client] = lambda: FakeClamdCaido()
+
+    res = client.post(
+        '/documents/upload',
+        data={'req_id': 'politica_privacidad'},
+        files={'file': ('politica.pdf', io.BytesIO(PDF_BYTES), 'application/pdf')},
+    )
+
     assert res.status_code == 400
 
 

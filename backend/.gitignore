@@ -3,5 +3,7 @@ __pycache__/
 *.pyc
 *.db
 storage/
+quarantine/
+logs/
 .env
 .pytest_cache/

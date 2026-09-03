@@ -3,11 +3,10 @@ import uuid
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from core.config import STORAGE_DIR
-from core.deps import CurrentUser, get_current_user, get_tenant_db
+from core.deps import CurrentUser, get_clamav_client, get_current_user, get_tenant_db
 from db.models import Document
 from models.schemas import DocumentOut
-from services.file_security_service import check_file_security, sanitize_filename
+from services.secure_upload_service import process_secure_upload
 
 router = APIRouter(prefix='/documents', tags=['documents'])
 
@@ -26,24 +25,23 @@ async def upload_document(
     file: UploadFile = File(...),
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
+    clamav_client=Depends(get_clamav_client),
 ):
     content = await file.read()
-    result = check_file_security(file.filename or '', len(content), content[:8])
-    if not result.accepted:
-        raise HTTPException(status_code=400, detail=result.reason)
-
-    safe_name = sanitize_filename(file.filename or 'archivo')
-    company_dir = STORAGE_DIR / current.company_id
-    company_dir.mkdir(parents=True, exist_ok=True)
-    stored_path = company_dir / f'{uuid.uuid4()}_{safe_name}'
-    stored_path.write_bytes(content)
+    # Carga segura (Fase 4): cuarentena -> validación MIME/magic bytes ->
+    # escaneo ClamAV -> almacenamiento definitivo. Fail-closed: si ClamAV
+    # no responde, outcome.accepted queda en False igual que si estuviera
+    # infectado.
+    outcome = process_secure_upload(current.company_id, file.filename or 'archivo', content, clamav_client)
+    if not outcome.accepted:
+        raise HTTPException(status_code=400, detail=outcome.reason)
 
     doc = Document(
         id=str(uuid.uuid4()),
         company_id=current.company_id,
         req_id=req_id,
-        filename=safe_name,
-        stored_path=str(stored_path),
+        filename=outcome.filename,
+        stored_path=str(outcome.stored_path),
         content_type=file.content_type or 'application/octet-stream',
         size_bytes=len(content),
         uploaded_by=current.user_id,

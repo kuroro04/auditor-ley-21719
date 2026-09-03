@@ -12,7 +12,18 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import main as main_module
+import services.scan_audit_log as scan_audit_log
+from core.deps import get_clamav_client
 from db.database import Base, get_db
+from tests.fakes import FakeClamdLimpio
+
+
+@pytest.fixture(autouse=True)
+def _bitacora_de_escaneo_aislada(tmp_path, monkeypatch):
+    # Ningún test debe escribir en el log de auditoría real
+    # (backend/logs/document_scans.log): cada test escribe en su propio
+    # archivo temporal, para no mezclar datos de prueba con la bitácora real.
+    monkeypatch.setattr(scan_audit_log, 'SCAN_LOG_PATH', tmp_path / 'document_scans.log')
 
 
 @pytest.fixture()
@@ -35,6 +46,9 @@ def client():
             db.close()
 
     main_module.app.dependency_overrides[get_db] = override_get_db
+    # ClamAV falso por defecto: los tests no dependen de un contenedor
+    # real corriendo. Detecta EICAR igual que clamd de verdad.
+    main_module.app.dependency_overrides[get_clamav_client] = lambda: FakeClamdLimpio()
     with TestClient(main_module.app) as test_client:
         yield test_client
     main_module.app.dependency_overrides.clear()

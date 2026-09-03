@@ -37,3 +37,13 @@ COOKIE_NAME = 'access_token'
 COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 horas, igual que ACCESS_TOKEN_EXPIRE_MINUTES
 
 STORAGE_DIR = BASE_DIR / 'storage'
+
+# Fase 4 — carga segura con cuarentena + ClamAV.
+# La cuarentena vive separada de STORAGE_DIR: un archivo solo llega a
+# STORAGE_DIR si ClamAV lo declaró limpio.
+QUARANTINE_DIR = BASE_DIR / 'quarantine'
+SCAN_LOG_PATH = BASE_DIR / 'logs' / 'document_scans.log'
+
+CLAMAV_HOST = os.getenv('CLAMAV_HOST', 'localhost')
+CLAMAV_PORT = int(os.getenv('CLAMAV_PORT', '3310'))
+CLAMAV_TIMEOUT_SECONDS = float(os.getenv('CLAMAV_TIMEOUT_SECONDS', '15'))

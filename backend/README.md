@@ -25,12 +25,72 @@ uvicorn main:app --reload --port 8000
 La API queda disponible en `http://localhost:8000` (docs interactivas en
 `http://localhost:8000/docs`).
 
+## Carga segura de documentos (Fase 4): ClamAV + cuarentena
+
+Antes de aceptar cualquier archivo, `POST /documents/upload` lo pasa por
+un pipeline de cuarentena:
+
+```
+archivo subido
+      │
+      ▼
+1. se guarda en quarantine/<empresa>/   (zona temporal, separada de storage/)
+      │
+      ▼
+2. validación MIME + magic bytes        (services/file_security_service.py)
+      │  falla → se borra de forma segura, 400
+      ▼
+3. escaneo con ClamAV real (clamd)      (INSTREAM: se envían los bytes por
+      │                                  socket, sin compartir filesystem)
+      │  ClamAV no responde → se trata como infectado (fail-closed)
+      │  infectado → se borra de forma segura, 400
+      ▼
+4. limpio → se mueve a storage/<empresa>/   (almacenamiento definitivo)
+```
+
+Cada intento de escaneo (limpio / infectado / error) queda registrado en
+`backend/logs/document_scans.log` (una línea JSON por intento).
+
+### Levantar ClamAV con Docker
+
+```bash
+docker compose up -d clamav      # desde la raíz del repo
+docker compose logs -f clamav    # la primera vez demora unos minutos
+                                  # (freshclam descarga las firmas de virus)
+docker compose ps                # debe decir "healthy" antes de subir archivos
+```
+
+El backend se conecta a `clamd` por `CLAMAV_HOST`/`CLAMAV_PORT` (en
+`backend/.env`, por defecto `localhost:3310`). **Fail-closed:** si ClamAV
+no está corriendo o no responde, ningún archivo se acepta — nunca se
+guarda un archivo sin haber sido escaneado.
+
+Para detener ClamAV: `docker compose down` (los datos de firmas quedan en
+un volumen Docker, así que no hay que re-descargarlas la próxima vez).
+
+### Probar con el archivo de prueba EICAR
+
+EICAR es el string estándar de la industria para probar antivirus — no es
+un virus real, pero todo antivirus lo detecta como si lo fuera. Con
+ClamAV corriendo:
+
+```bash
+python -m pytest tests/test_clamav_integration.py -v   # habla con ClamAV real
+```
+
+Este test se salta solo (no falla) si ClamAV no está levantado.
+
 ## Correr los tests
 
 ```bash
 cd backend
 python -m pytest -v
 ```
+
+El resto de la suite (incluido `POST /documents/upload`) usa un cliente
+ClamAV *falso* inyectado por dependencia — no depende de Docker corriendo,
+pero simula clamd de verdad: detecta el string EICAR y declara limpio
+cualquier otro contenido.
 
 ## Endpoints
 
@@ -52,3 +112,6 @@ python -m pytest -v
   una fase posterior; `SameSite=Lax` ya mitiga el caso más común).
 - Los archivos subidos se validan por extensión Y por firma binaria (magic
   bytes) antes de guardarse — ver `services/file_security_service.py`.
+- Fase 4: además se escanean con ClamAV real antes de llegar al
+  almacenamiento definitivo (fail-closed) — ver "Carga segura de
+  documentos" más arriba.
