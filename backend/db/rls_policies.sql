@@ -9,6 +9,14 @@ GRANT CONNECT ON DATABASE postgres TO app_user;
 GRANT USAGE ON SCHEMA public TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON companies, users, documents TO app_user;
 
+-- 1b. Fase 5 — columnas del segundo factor TOTP. Idempotente (IF NOT EXISTS):
+--     create_all() de setup_rls.py crea tablas nuevas pero no agrega columnas
+--     a `users` si ya existía. Deben crearse ANTES de get_user_by_email, que
+--     las selecciona.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled boolean NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret_enc text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_backup_codes text;
+
 -- 2. Activar RLS en las tablas con datos por tenant.
 --    `companies` queda fuera a propósito: es el registro de tenants, no
 --    datos de un tenant, y cada usuario ya solo consulta su propia empresa
@@ -39,16 +47,24 @@ CREATE POLICY tenant_isolation_documents ON documents
 --    tenant — pero SOLO a través de esta función, con exactamente estas
 --    columnas. app_user no tiene permiso para hacer SELECT en `users` sin
 --    contexto de ninguna otra forma.
+--
+-- DROP previo: CREATE OR REPLACE no puede cambiar el tipo de retorno de una
+-- función existente (p. ej. al agregar las columnas MFA de la Fase 5), así
+-- que primero se elimina. IF EXISTS mantiene la idempotencia.
+DROP FUNCTION IF EXISTS get_user_by_email(text);
 CREATE OR REPLACE FUNCTION get_user_by_email(p_email text)
 RETURNS TABLE (
     id text, company_id text, email text, password_hash text,
-    role text, onboarding_completed boolean, created_at timestamptz
+    role text, onboarding_completed boolean,
+    mfa_enabled boolean, mfa_secret_enc text, mfa_backup_codes text,
+    created_at timestamptz
 )
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-    SELECT id, company_id, email, password_hash, role, onboarding_completed, created_at
+    SELECT id, company_id, email, password_hash, role, onboarding_completed,
+           mfa_enabled, mfa_secret_enc, mfa_backup_codes, created_at
     FROM users
     WHERE email = p_email;
 $$;
