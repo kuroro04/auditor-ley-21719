@@ -1,6 +1,7 @@
 'use client';
-import type { KeyboardEvent } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import UploadView from './UploadView';
+import MfaSettings from './MfaSettings';
 import DiagnosticoView from './DiagnosticoView';
 import RegistroView from './RegistroView';
 import RiesgosView from './RiesgosView';
@@ -27,6 +28,9 @@ interface AppShellProps {
   analyzed: boolean;
   tourActive: boolean;
   tourStep: number;
+  // Fase 5 — estado del segundo factor y callback para reflejar sus cambios.
+  mfaEnabled: boolean;
+  onMfaChanged: (enabled: boolean) => void;
   onSwitchTab: (tab: ActiveTab) => void;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
@@ -47,12 +51,17 @@ const ROLE_LABELS: Record<UserRole, string> = {
 
 export default function AppShell({
   companyName, companyId, securityEvents, role, sector, authSource, auditLog, activeTab, uploadedDocs, results,
-  previousResults, snapshots, analyzed, tourActive, tourStep,
+  previousResults, snapshots, analyzed, tourActive, tourStep, mfaEnabled, onMfaChanged,
   onSwitchTab, onUpload, onUploadRejected, onStartAnalysis, onLogout, onDownload,
   onAdvanceTour, onSkipTour, onOpenTour, onToast,
 }: AppShellProps) {
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
   const canSeeRegistro = role === 'administrador' || role === 'auditor';
+
+  // Fase 5 — panel de seguridad (verificación en dos pasos). Solo tiene
+  // sentido en una sesión real: el modo demostración no tiene cuenta.
+  const [mfaOpen, setMfaOpen] = useState(false);
+  const puedeGestionarMfa = authSource === 'backend';
 
   // Props comunes para que cada tab de navegación sea accesible por teclado
   // (los divs clicables no reciben foco ni Enter/Espacio por defecto).
@@ -93,6 +102,15 @@ export default function AppShell({
           >
             ¿Cómo usar?
           </button>
+          {puedeGestionarMfa && (
+            <button
+              className="btn-tutorial"
+              onClick={() => setMfaOpen(true)}
+              title="Configurar la verificación en dos pasos"
+            >
+              {mfaEnabled ? '🔒 Seguridad' : 'Seguridad'}
+            </button>
+          )}
           <button className="btn-logout" onClick={onLogout}>Salir</button>
         </div>
       </header>
@@ -183,6 +201,16 @@ export default function AppShell({
           tourStep={tourStep}
           onNext={onAdvanceTour}
           onSkip={onSkipTour}
+        />
+      )}
+
+      {/* Fase 5 — panel de verificación en dos pasos */}
+      {mfaOpen && (
+        <MfaSettings
+          mfaEnabled={mfaEnabled}
+          onChanged={onMfaChanged}
+          onClose={() => setMfaOpen(false)}
+          onToast={onToast}
         />
       )}
     </div>

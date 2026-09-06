@@ -8,7 +8,14 @@ import { calcPct } from '@/lib/metrics';
 import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
 import { saveDocument, listDocuments as listTenantDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
-import { completeOnboarding, loginUser, registerCompany as registerCompanyApi, type RegisterPayload } from '@/lib/api/auth';
+import {
+  completeOnboarding,
+  loginUser,
+  loginWithMfa,
+  registerCompany as registerCompanyApi,
+  type RegisterPayload,
+  type SessionInfo,
+} from '@/lib/api/auth';
 
 export type AuthSource = 'backend' | 'demo' | null;
 
@@ -67,6 +74,11 @@ export function useAppState() {
   const [tourActive, setTourActive]           = useState(false);
   const [tourStep, setTourStep]               = useState(0);
   const [snapshots, setSnapshots] = useState<HistorialSnapshot[]>([]);
+  // Fase 5 — estado del segundo factor del usuario con sesión activa, y el
+  // token corto que habilita el segundo paso del login (entre la validación
+  // de la contraseña y la del código TOTP).
+  const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [pendingMfaToken, setPendingMfaToken] = useState<string | null>(null);
 
   // Registra un evento en el audit log (más reciente primero)
   const addAuditEvent = useCallback((
@@ -87,22 +99,52 @@ export function useAppState() {
     }, ...prev]);
   }, []);
 
-  // El rol y el nombre de la empresa NUNCA se eligen en el cliente: vienen
-  // siempre de la respuesta del backend, que a su vez los toma del JWT de
-  // sesión (nunca de un parámetro que el frontend pudiera manipular).
-  const login = useCallback(async (email: string, password: string) => {
-    const session = await loginUser(email, password);
+  // Aplica una sesión ya obtenida del backend al estado de la app. Único
+  // lugar donde se "entra": lo usan el login normal y el segundo paso del MFA.
+  const applySession = useCallback((session: SessionInfo) => {
     setCompanyName(session.companyNombre);
     setCompanyId(session.companyId);
     setRole(session.role);
     setSector(session.companySector ?? 'otro');
     setAuthSource('backend');
+    setMfaEnabled(session.mfaEnabled);
+    setPendingMfaToken(null);
     // El tour solo se abre automáticamente la primera vez: si el backend ya
     // registra que este usuario lo vio (o lo cerró) antes, no se repite.
     setTourActive(!session.onboardingCompleted);
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
+  }, []);
+
+  // El rol y el nombre de la empresa NUNCA se eligen en el cliente: vienen
+  // siempre de la respuesta del backend, que a su vez los toma del JWT de
+  // sesión (nunca de un parámetro que el frontend pudiera manipular).
+  //
+  // Fase 5 — si el usuario tiene segundo factor, la contraseña sola no entra:
+  // devuelve { mfaRequired: true } y guarda el token corto; el segundo paso
+  // se completa con completeMfaLogin().
+  const login = useCallback(async (email: string, password: string): Promise<{ mfaRequired: boolean }> => {
+    const result = await loginUser(email, password);
+    if (result.mfaRequired) {
+      setPendingMfaToken(result.mfaToken);
+      return { mfaRequired: true };
+    }
+    applySession(result.session);
+    return { mfaRequired: false };
+  }, [applySession]);
+
+  // Segundo paso del login con MFA: canjea el token corto + el código de la
+  // app de autenticación (o un código de respaldo) por la sesión real.
+  const completeMfaLogin = useCallback(async (code: string) => {
+    if (!pendingMfaToken) throw new Error('No hay un desafío MFA pendiente');
+    const session = await loginWithMfa(pendingMfaToken, code);
+    applySession(session);
+  }, [pendingMfaToken, applySession]);
+
+  // Refleja en el estado un cambio de MFA hecho desde el panel de seguridad.
+  const notifyMfaChanged = useCallback((enabled: boolean) => {
+    setMfaEnabled(enabled);
   }, []);
 
   const registerCompany = useCallback(async (payload: RegisterPayload) => {
@@ -165,6 +207,8 @@ export function useAppState() {
     setRole('administrador');
     setSector('otro');
     setAuthSource(null);
+    setMfaEnabled(false);
+    setPendingMfaToken(null);
     setUploadedDocs({});
     setResults({});
     setPreviousResults({});
@@ -302,7 +346,9 @@ export function useAppState() {
   return {
     screen, activeTab, companyName, companyId, role, sector, authSource, uploadedDocs, results,
     previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
-    login, registerCompany, demo, logout, uploadDoc, startAnalysis, finishAnalysis,
+    mfaEnabled,
+    login, completeMfaLogin, notifyMfaChanged, registerCompany, demo, logout, uploadDoc,
+    startAnalysis, finishAnalysis,
     switchTab, logDownload, logUploadRejected, advanceTour, skipTour, openTour,
   };
 }

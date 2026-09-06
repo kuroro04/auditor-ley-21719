@@ -5,13 +5,14 @@ import type { UserRole } from '@/lib/types';
 import type { RegisterPayload } from '@/lib/api/auth';
 
 interface LandingProps {
-  onLogin: (email: string, password: string) => Promise<void>;
+  onLogin: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
+  onLoginMfa: (code: string) => Promise<void>;
   onRegister: (payload: RegisterPayload) => Promise<void>;
   onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
 }
 
-export default function Landing({ onLogin, onRegister, onDemo, onToast }: LandingProps) {
+export default function Landing({ onLogin, onLoginMfa, onRegister, onDemo, onToast }: LandingProps) {
   return (
     <div className="landing-page">
       {/* Nav */}
@@ -81,7 +82,7 @@ export default function Landing({ onLogin, onRegister, onDemo, onToast }: Landin
           </div>
         </div>
 
-        <LoginCard onLogin={onLogin} onRegister={onRegister} onDemo={onDemo} onToast={onToast} />
+        <LoginCard onLogin={onLogin} onLoginMfa={onLoginMfa} onRegister={onRegister} onDemo={onDemo} onToast={onToast} />
       </div>
     </div>
   );

@@ -21,6 +21,27 @@ if not TESTING and (not _secret_key or _secret_key == _DEFAULT_SECRET_KEY):
 SECRET_KEY = _secret_key or _DEFAULT_SECRET_KEY
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
+# Fase 5 — vida del token intermedio del login con MFA: solo sirve para
+# canjear el código TOTP por la sesión real, así que dura poco.
+MFA_CHALLENGE_EXPIRE_MINUTES = 5
+
+# Fase 5 — MFA (segundo factor TOTP opcional).
+# Clave Fernet con la que se cifra en reposo el secreto TOTP de cada usuario
+# (nunca se guarda en texto plano). Fail-closed igual que SECRET_KEY: sin ella
+# el backend no arranca en producción. En los tests se genera una efímera:
+# los secretos MFA de prueba viven solo en la base en memoria de cada test.
+_mfa_enc_key = os.getenv('MFA_ENC_KEY')
+if not TESTING and not _mfa_enc_key:
+    raise RuntimeError(
+        "MFA_ENC_KEY no está definida. Genera una con:\n"
+        "  python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"\n"
+        "y ponla en backend/.env antes de arrancar el backend."
+    )
+if _mfa_enc_key:
+    MFA_ENC_KEY = _mfa_enc_key
+else:
+    from cryptography.fernet import Fernet
+    MFA_ENC_KEY = Fernet.generate_key().decode()
 
 DATABASE_URL = os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'backend.db'}")
 FRONTEND_ORIGIN = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')

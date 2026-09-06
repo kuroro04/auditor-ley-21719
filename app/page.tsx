@@ -24,10 +24,22 @@ export default function Home() {
         <Landing
           onLogin={async (email, password) => {
             try {
-              await state.login(email, password);
-              toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+              const { mfaRequired } = await state.login(email, password);
+              if (!mfaRequired) {
+                toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+              }
+              return { mfaRequired };
             } catch (err) {
               toast(err instanceof ApiError ? err.message : 'No se pudo iniciar sesión', 'yellow');
+              return { mfaRequired: false };
+            }
+          }}
+          onLoginMfa={async code => {
+            try {
+              await state.completeMfaLogin(code);
+              toast('✓ Bienvenido. Suba sus documentos para comenzar el diagnóstico.', 'blue');
+            } catch (err) {
+              toast(err instanceof ApiError ? err.message : 'Código de verificación inválido', 'yellow');
             }
           }}
           onRegister={async payload => {
@@ -73,6 +85,8 @@ export default function Home() {
           analyzed={state.analyzed}
           tourActive={state.tourActive}
           tourStep={state.tourStep}
+          mfaEnabled={state.mfaEnabled}
+          onMfaChanged={state.notifyMfaChanged}
           onSwitchTab={tab => {
             const ok = state.switchTab(tab, state.analyzed);
             if (!ok) toast('Primero suba documentos y ejecute el análisis', 'yellow');

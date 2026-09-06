@@ -17,7 +17,10 @@ const DEMO_ROLES: { value: UserRole; label: string; desc: string }[] = [
 interface LoginCardProps {
   // El rol y el nombre de la empresa NUNCA viajan desde este formulario:
   // los resuelve el backend (ver lib/api/auth.ts) a partir del RUT/correo.
-  onLogin: (email: string, password: string) => Promise<void>;
+  // Fase 5 — onLogin indica si el backend pide un segundo factor; en ese
+  // caso el formulario cambia al paso del código en vez de entrar.
+  onLogin: (email: string, password: string) => Promise<{ mfaRequired: boolean }>;
+  onLoginMfa: (code: string) => Promise<void>;
   onRegister: (payload: RegisterPayload) => Promise<void>;
   onDemo: (role: UserRole) => void;
   onToast: (msg: string, type: 'yellow' | 'blue') => void;
@@ -64,9 +67,14 @@ const getPassReqs = (pass: string) => ({
 
 type LoginMode = 'login' | 'register';
 
-export default function LoginCard({ onLogin, onRegister, onDemo }: LoginCardProps) {
+export default function LoginCard({ onLogin, onLoginMfa, onRegister, onDemo }: LoginCardProps) {
   const [mode, setMode] = useState<LoginMode>('login');
   const [submitting, setSubmitting] = useState(false);
+
+  // Fase 5 — cuando el backend pide segundo factor, el formulario muestra
+  // el paso del código en lugar de correo/contraseña.
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
 
   const [rut,           setRut]           = useState('');
   const [nombreEmpresa, setNombreEmpresa] = useState('');
@@ -105,7 +113,8 @@ export default function LoginCard({ onLogin, onRegister, onDemo }: LoginCardProp
 
     setSubmitting(true);
     if (mode === 'login') {
-      await onLogin(email.trim(), pass);
+      const { mfaRequired } = await onLogin(email.trim(), pass);
+      if (mfaRequired) setMfaStep(true);
     } else {
       await onRegister({
         rut: rut.trim(), nombreEmpresa: nombreEmpresa.trim(), email: email.trim(), password: pass, sector,
@@ -113,6 +122,62 @@ export default function LoginCard({ onLogin, onRegister, onDemo }: LoginCardProp
     }
     setSubmitting(false);
   };
+
+  const handleMfaSubmit = async () => {
+    if (mfaCode.length !== 6 || submitting) return;
+    setSubmitting(true);
+    try {
+      await onLoginMfa(mfaCode.trim());
+      // Si el código es válido, la app cambia de pantalla y este componente
+      // se desmonta; si falla, el toast lo informa y se puede reintentar.
+    } finally {
+      setMfaCode('');
+      setSubmitting(false);
+    }
+  };
+
+  const cancelarMfa = () => {
+    setMfaStep(false);
+    setMfaCode('');
+    setPass('');
+  };
+
+  // Fase 5 — paso del segundo factor: reemplaza el formulario de acceso.
+  if (mfaStep) {
+    return (
+      <div className="login-card">
+        <h2>Verificación en dos pasos</h2>
+        <p className="login-sub">
+          Ingrese el código de 6 dígitos de su app de autenticación (o un código de respaldo).
+        </p>
+        <div className="form-group">
+          <label className="form-label">Código de verificación</label>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="numeric"
+            autoFocus
+            maxLength={6}
+            placeholder="000000"
+            value={mfaCode}
+            onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            onKeyDown={e => e.key === 'Enter' && handleMfaSubmit()}
+          />
+        </div>
+        <button
+          className="btn-login"
+          onClick={handleMfaSubmit}
+          disabled={mfaCode.length !== 6 || submitting}
+          aria-disabled={mfaCode.length !== 6 || submitting}
+        >
+          {submitting ? 'Verificando…' : 'Verificar e ingresar →'}
+        </button>
+        <button type="button" className="login-mfa-cancel" onClick={cancelarMfa}>
+          ← Volver
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="login-card">

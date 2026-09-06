@@ -26,6 +26,10 @@ def get_current_user(request: Request) -> CurrentUser:
         payload = decode_access_token(token)
     except jwt.PyJWTError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Sesión inválida o expirada')
+    # Un token intermedio de MFA (mfa_pending) nunca es una sesión válida:
+    # solo /auth/login/mfa lo acepta, para canjearlo por la cookie real.
+    if payload.get('mfa_pending'):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Sesión inválida o expirada')
     return CurrentUser(user_id=payload['sub'], company_id=payload['company_id'], role=payload['role'])
 
 

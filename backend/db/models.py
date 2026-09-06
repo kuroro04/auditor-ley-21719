@@ -41,6 +41,18 @@ class User(Base):
     # sesión. Vive en el backend (no en localStorage) para que persista entre
     # sesiones y dispositivos.
     onboarding_completed = Column(Boolean, nullable=False, default=False)
+
+    # Fase 5 — segundo factor TOTP opcional.
+    # mfa_enabled: el usuario confirmó y activó su segundo factor.
+    # mfa_secret_enc: secreto TOTP cifrado con Fernet (nunca en texto plano).
+    #   Puede existir con mfa_enabled=False: es el estado "enrolado pero sin
+    #   confirmar todavía" entre /auth/mfa/setup y /auth/mfa/activate.
+    # mfa_backup_codes: JSON con los hashes bcrypt de los códigos de respaldo
+    #   de un solo uso (se muestran una vez, al activar).
+    mfa_enabled = Column(Boolean, nullable=False, default=False)
+    mfa_secret_enc = Column(String, nullable=True)
+    mfa_backup_codes = Column(String, nullable=True)
+
     created_at = Column(DateTime, default=_utcnow)
 
     company = relationship('Company', back_populates='users')
