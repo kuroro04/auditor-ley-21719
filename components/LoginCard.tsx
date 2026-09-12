@@ -124,7 +124,7 @@ export default function LoginCard({ onLogin, onLoginMfa, onRegister, onDemo }: L
   };
 
   const handleMfaSubmit = async () => {
-    if (mfaCode.length !== 6 || submitting) return;
+    if (mfaCode.trim().length < 6 || submitting) return;
     setSubmitting(true);
     try {
       await onLoginMfa(mfaCode.trim());
@@ -155,20 +155,20 @@ export default function LoginCard({ onLogin, onLoginMfa, onRegister, onDemo }: L
           <input
             className="form-input"
             type="text"
-            inputMode="numeric"
+            autoComplete="one-time-code"
             autoFocus
-            maxLength={6}
-            placeholder="000000"
+            maxLength={10}
+            placeholder="000000 o código de respaldo"
             value={mfaCode}
-            onChange={e => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            onChange={e => setMfaCode(e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, 10))}
             onKeyDown={e => e.key === 'Enter' && handleMfaSubmit()}
           />
         </div>
         <button
           className="btn-login"
           onClick={handleMfaSubmit}
-          disabled={mfaCode.length !== 6 || submitting}
-          aria-disabled={mfaCode.length !== 6 || submitting}
+          disabled={mfaCode.trim().length < 6 || submitting}
+          aria-disabled={mfaCode.trim().length < 6 || submitting}
         >
           {submitting ? 'Verificando…' : 'Verificar e ingresar →'}
         </button>
