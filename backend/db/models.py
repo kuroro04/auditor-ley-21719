@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import BigInteger, Boolean, Column, DateTime, ForeignKey, Integer, JSON, String
 from sqlalchemy.orm import relationship
 
 from db.database import Base
@@ -72,3 +72,30 @@ class Document(Base):
     uploaded_at = Column(DateTime, default=_utcnow)
 
     company = relationship('Company', back_populates='documents')
+
+
+class AuditLog(Base):
+    """Bitácora de auditoría append-only con encadenamiento de hashes (Fase 6).
+
+    Ninguna fila se modifica ni se borra tras insertarse: cada evento enlaza
+    su hash con el del evento anterior (ver services/audit.py). La tabla ya
+    existe en Postgres/Supabase con tipos nativos (bigserial, timestamptz,
+    uuid, inet, jsonb, char(64)); este modelo la mapea con tipos genéricos
+    de SQLAlchemy para poder crearla también en SQLite (tests), igual que
+    el resto de los modelos de este archivo.
+    """
+    __tablename__ = 'audit_log'
+
+    # BigInteger en Postgres (bigserial ya existe); en SQLite el alias de
+    # rowid autoincremental solo funciona con tipo INTEGER exacto, no BIGINT
+    # — with_variant conserva ambos comportamientos según el motor.
+    id = Column(BigInteger().with_variant(Integer, 'sqlite'), primary_key=True, autoincrement=True)
+    ocurrido_en = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+    evento = Column(String, nullable=False)
+    resultado = Column(String, nullable=False)
+    user_id = Column(String, nullable=True)
+    company_id = Column(String, nullable=True)
+    ip_origen = Column(String, nullable=True)
+    detalle = Column(JSON, nullable=True)
+    hash_previo = Column(String(64), nullable=False)
+    hash_evento = Column(String(64), nullable=False, unique=True)
