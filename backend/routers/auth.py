@@ -187,9 +187,16 @@ def mfa_setup(current: CurrentUser = Depends(get_current_user), db: Session = De
     if user.mfa_enabled:
         raise HTTPException(status_code=409, detail='El segundo factor ya está activo. Desactívalo primero para reconfigurarlo.')
 
-    secreto = mfa.generate_totp_secret()
-    user.mfa_secret_enc = mfa.encrypt_secret(secreto)
-    db.commit()
+    # Reutiliza el secreto pendiente si ya existe: si el usuario vuelve a esta
+    # pantalla, el QR que ya escaneó debe seguir siendo válido.
+    if user.mfa_secret_enc:
+        secreto = mfa.decrypt_secret(user.mfa_secret_enc)
+    else:
+        secreto = mfa.generate_totp_secret()
+        user.mfa_secret_enc = mfa.encrypt_secret(secreto)
+        db.commit()
+    
+    
 
     uri = mfa.provisioning_uri(secreto, user.email)
     return MfaSetupResponse(otpauth_uri=uri, secret_base32=secreto, qr_svg=mfa.qr_svg_data_uri(uri))
