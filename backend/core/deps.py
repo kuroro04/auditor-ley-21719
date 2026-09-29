@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import clamd
 import jwt
@@ -45,6 +46,30 @@ def get_tenant_db(
     """
     set_tenant_context(db, current.company_id)
     return db
+
+
+def client_ip(request: Request) -> Optional[str]:
+    """IP de origen del cliente, para la bitácora de auditoría (Fase 6).
+
+    Si hay un proxy inverso delante (Nginx, balanceador del proveedor, etc.),
+    la IP real del cliente viaja en X-Forwarded-For y request.client.host es
+    la del proxy, no la del usuario. Se usa la primera IP de la lista (el
+    cliente original; las siguientes, si hay más de un proxy encadenado, son
+    saltos intermedios).
+    Confiar en este header SOLO es seguro si hay un proxy de confianza que lo
+    sobrescribe antes de reenviar la request: cualquier cliente puede mandar
+    su propio X-Forwarded-For, así que si la app llegara a quedar expuesta
+    directamente a internet sin ese proxy delante, el header sería
+    falsificable y habría que usar solo request.client.host.
+    Si el header no viene (no hay proxy delante, o es una conexión directa
+    como en los tests), se cae a request.client.host; si tampoco hay
+    conexión TCP asociada (posible en algunos entornos de test), devuelve
+    None — nunca lanza una excepción por esto.
+    """
+    forwarded = request.headers.get('x-forwarded-for')
+    if forwarded:
+        return forwarded.split(',')[0].strip()
+    return request.client.host if request.client else None
 
 
 def get_clamav_client() -> clamd.ClamdNetworkSocket:

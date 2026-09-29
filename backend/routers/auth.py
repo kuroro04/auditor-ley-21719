@@ -1,11 +1,11 @@
 import uuid
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from core.config import COOKIE_SECURE, COOKIE_NAME, COOKIE_MAX_AGE_SECONDS
-from core.deps import CurrentUser, get_current_user, get_tenant_db
+from core.deps import CurrentUser, client_ip, get_current_user, get_tenant_db
 from core.security import (
     create_access_token,
     create_mfa_challenge_token,
@@ -28,6 +28,7 @@ from models.schemas import (
     RegisterRequest,
     SessionResponse,
 )
+from services import audit
 from services.rut_service import is_valid_rut, normalize_rut
 
 router = APIRouter(prefix='/auth', tags=['auth'])
@@ -70,7 +71,7 @@ def _issue_session(response: Response, user: User, company: Company) -> SessionR
 
 
 @router.post('/register', response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     if not is_valid_rut(payload.rut):
         raise HTTPException(status_code=400, detail='RUT inválido')
 
@@ -106,47 +107,98 @@ def register(payload: RegisterRequest, response: Response, db: Session = Depends
         password_hash=hash_password(payload.password), role='administrador',
     )
     db.add(user)
+
+    audit.registrar_evento(
+        db, audit.EVENTO_EMPRESA_REGISTRADA, 'exito',
+        user_id=user.id, company_id=company_id, ip_origen=client_ip(request),
+    )
     db.commit()
 
     return _issue_session(response, user, company)
 
 
 @router.post('/login')
-def login(payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
+def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     email_normalizado = payload.email.lower()
     user = find_user_by_email(db, email_normalizado)
+    ip = client_ip(request)
+
     # Mensaje genérico a propósito: no revela si falló el correo o la
     # contraseña, para no ayudar a un atacante a enumerar correos válidos.
     if not user or not verify_password(payload.password, user.password_hash):
+        # Sin usuario válido no hay company_id que resolver todavía, así que
+        # el contexto de tenant no se fija (y no hace falta: la política de
+        # INSERT de audit_log acepta company_id NULL a propósito para estos
+        # eventos "de sistema", ver db/rls_policies.sql #5). Se registra el
+        # correo intentado —nunca la contraseña— para poder detectar fuerza
+        # bruta contra una cuenta puntual.
+        audit.registrar_evento(
+            db, audit.EVENTO_LOGIN_FALLIDO, 'fallo',
+            ip_origen=ip, detalle={'email_intentado': email_normalizado},
+        )
+        db.commit()
         raise HTTPException(status_code=401, detail='Correo o contraseña incorrectos')
 
     # Fase 5 — si el usuario tiene segundo factor, la contraseña sola NO
     # entrega la sesión: se devuelve un token corto para canjear el código
     # TOTP en /auth/login/mfa. Sin MFA, el flujo es idéntico al de antes.
     if user.mfa_enabled:
+        # company_id ya se conoce (viene del usuario encontrado), así que
+        # hay que fijar el contexto de tenant antes del INSERT: la política
+        # RLS de audit_log exige que coincida con current_setting(...) para
+        # cualquier fila que no lleve company_id NULL.
+        set_tenant_context(db, user.company_id)
+        audit.registrar_evento(
+            db, audit.EVENTO_LOGIN_EXITOSO, 'exito',
+            user_id=user.id, company_id=user.company_id, ip_origen=ip,
+            detalle={'mfa_requerido': True},
+        )
+        db.commit()
         return MfaLoginChallenge(mfa_token=create_mfa_challenge_token(user.id, user.company_id))
 
     set_tenant_context(db, user.company_id)
     company = db.query(Company).filter(Company.id == user.company_id).first()
+    audit.registrar_evento(
+        db, audit.EVENTO_LOGIN_EXITOSO, 'exito',
+        user_id=user.id, company_id=user.company_id, ip_origen=ip,
+    )
+    db.commit()
     return _issue_session(response, user, company)
 
 
 @router.post('/login/mfa', response_model=SessionResponse)
-def login_mfa(payload: MfaLoginRequest, response: Response, db: Session = Depends(get_db)):
+def login_mfa(payload: MfaLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
     """Segundo paso del login con MFA: canjea el token corto + código por la sesión."""
+    ip = client_ip(request)
+
+    def _rechazar(user_id=None, company_id=None):
+        # Registra el rechazo y aborta el request: todas las salidas de
+        # fallo de este endpoint terminan acá, para no repetir el registro
+        # de auditoría en cada punto de salida.
+        audit.registrar_evento(
+            db, audit.EVENTO_MFA_RECHAZADO, 'fallo',
+            user_id=user_id, company_id=company_id, ip_origen=ip,
+        )
+        db.commit()
+        raise HTTPException(status_code=401, detail=_MFA_LOGIN_ERROR)
+
     try:
         claims = decode_access_token(payload.mfa_token)
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail=_MFA_LOGIN_ERROR)
-    if not claims.get('mfa_pending'):
-        raise HTTPException(status_code=401, detail=_MFA_LOGIN_ERROR)
+        _rechazar()
 
-    # Con company_id del token ya podemos fijar el contexto RLS y leer al
-    # usuario por id sin ninguna excepción a las políticas de la Fase 3.
+    # Con company_id del token ya podemos fijar el contexto RLS: tanto para
+    # leer al usuario por id (política de la Fase 3) como para que un
+    # eventual EVENTO_MFA_RECHAZADO de acá en adelante lleve un company_id
+    # no nulo y aun así pase la política de INSERT de audit_log.
     set_tenant_context(db, claims['company_id'])
+
+    if not claims.get('mfa_pending'):
+        _rechazar(user_id=claims.get('sub'), company_id=claims.get('company_id'))
+
     user = db.query(User).filter(User.id == claims['sub']).first()
     if not user or not user.mfa_enabled or not user.mfa_secret_enc:
-        raise HTTPException(status_code=401, detail=_MFA_LOGIN_ERROR)
+        _rechazar(user_id=claims.get('sub'), company_id=claims.get('company_id'))
 
     secreto = mfa.decrypt_secret(user.mfa_secret_enc)
     if mfa.verify_code(secreto, payload.code):
@@ -155,11 +207,15 @@ def login_mfa(payload: MfaLoginRequest, response: Response, db: Session = Depend
         # ¿Es un código de respaldo? Si coincide, se consume (un solo uso).
         nuevo_almacen = mfa.consume_backup_code(user.mfa_backup_codes, payload.code)
         if nuevo_almacen is None:
-            raise HTTPException(status_code=401, detail=_MFA_LOGIN_ERROR)
+            _rechazar(user_id=user.id, company_id=user.company_id)
         user.mfa_backup_codes = nuevo_almacen
-        db.commit()
 
     company = db.query(Company).filter(Company.id == user.company_id).first()
+    audit.registrar_evento(
+        db, audit.EVENTO_MFA_SUPERADO, 'exito',
+        user_id=user.id, company_id=user.company_id, ip_origen=ip,
+    )
+    db.commit()
     return _issue_session(response, user, company)
 
 
@@ -205,6 +261,7 @@ def mfa_setup(current: CurrentUser = Depends(get_current_user), db: Session = De
 @router.post('/mfa/activate', response_model=MfaActivateResponse)
 def mfa_activate(
     payload: MfaCodeRequest,
+    request: Request,
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
 ):
@@ -224,6 +281,11 @@ def mfa_activate(
     codigos = mfa.generate_backup_codes(10)
     user.mfa_backup_codes = mfa.hash_backup_codes(codigos)
     user.mfa_enabled = True
+
+    audit.registrar_evento(
+        db, audit.EVENTO_MFA_ACTIVADO, 'exito',
+        user_id=user.id, company_id=user.company_id, ip_origen=client_ip(request),
+    )
     db.commit()
 
     return MfaActivateResponse(backup_codes=codigos)
@@ -232,6 +294,7 @@ def mfa_activate(
 @router.post('/mfa/disable', status_code=status.HTTP_204_NO_CONTENT)
 def mfa_disable(
     payload: MfaDisableRequest,
+    request: Request,
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
 ):
@@ -257,6 +320,11 @@ def mfa_disable(
     user.mfa_enabled = False
     user.mfa_secret_enc = None
     user.mfa_backup_codes = None
+
+    audit.registrar_evento(
+        db, audit.EVENTO_MFA_DESACTIVADO, 'exito',
+        user_id=user.id, company_id=user.company_id, ip_origen=client_ip(request),
+    )
     db.commit()
 
 
@@ -272,5 +340,30 @@ def complete_onboarding(current: CurrentUser = Depends(get_current_user), db: Se
 
 
 @router.post('/logout', status_code=status.HTTP_204_NO_CONTENT)
-def logout(response: Response):
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
+    # Sigue siendo idempotente a propósito (nunca 401): se puede llamar sin
+    # cookie o con una ya vencida y de todas formas borra lo que haya. Solo
+    # se registra el evento cuando hubo una sesión real que cerrar — sin
+    # cookie válida no hay nada que auditar.
+    token = request.cookies.get(COOKIE_NAME)
+    if token:
+        try:
+            claims = decode_access_token(token)
+        except jwt.PyJWTError:
+            claims = None
+        if claims and not claims.get('mfa_pending'):
+            company_id = claims.get('company_id')
+            if company_id:
+                # Igual que en login/mfa: un company_id no nulo necesita el
+                # contexto de tenant fijado para pasar la política de INSERT
+                # de audit_log. logout usa get_db (no get_tenant_db), así que
+                # nadie lo fijó todavía en esta request.
+                set_tenant_context(db, company_id)
+            audit.registrar_evento(
+                db, audit.EVENTO_CIERRE_SESION, 'exito',
+                user_id=claims.get('sub'), company_id=company_id,
+                ip_origen=client_ip(request),
+            )
+            db.commit()
+
     response.delete_cookie(COOKIE_NAME, path='/')

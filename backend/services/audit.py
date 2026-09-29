@@ -25,6 +25,14 @@ logger = logging.getLogger(__name__)
 # Hash "previo" del primer evento de la tabla: no hay ningún evento antes.
 HASH_GENESIS = '0' * 64
 
+# Clave del advisory lock transaccional que serializa la escritura de la
+# cadena (ver registrar_evento). Es un bigint arbitrario, sin significado:
+# solo debe ser estable en el tiempo. pg_advisory_xact_lock vive en un
+# espacio de nombres global de la base de datos, no por tabla, así que si
+# algún día se agrega otro uso de advisory locks en el proyecto, su clave
+# debe ser distinta a esta para no chocar.
+_ADVISORY_LOCK_KEY_CADENA = 7_281_994_001_782_365
+
 # --- Catálogo de eventos ---------------------------------------------------
 # Usar siempre estas constantes en vez de strings sueltos: evita typos que
 # creen un evento nuevo por accidente y rompan filtros/búsquedas.
@@ -139,7 +147,20 @@ def registrar_evento(
                 # Serializa la escritura de la cadena entre transacciones
                 # concurrentes: sin este lock, dos requests podrían leer el
                 # mismo "último hash_evento" y bifurcar la cadena.
-                db.execute(text('LOCK TABLE audit_log IN EXCLUSIVE MODE'))
+                #
+                # Advisory lock transaccional en vez de LOCK TABLE: se
+                # libera solo al terminar la transacción (o este SAVEPOINT,
+                # si se hace rollback), y no requiere privilegios UPDATE,
+                # DELETE ni TRUNCATE sobre audit_log —a diferencia de
+                # cualquier modo de LOCK TABLE más fuerte que ROW
+                # EXCLUSIVE—, que es justo lo que app_user no tiene a
+                # propósito para que la tabla sea append-only también a
+                # nivel de permisos (ver db/rls_policies.sql #5). ROW
+                # EXCLUSIVE sí lo tendría, pero no sirve: no es
+                # autoexcluyente (dos transacciones pueden tenerlo a la vez,
+                # que es exactamente lo que un INSERT normal ya toma), así
+                # que no evitaría la bifurcación.
+                db.execute(text('SELECT pg_advisory_xact_lock(:clave)'), {'clave': _ADVISORY_LOCK_KEY_CADENA})
 
             ultimo = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
             hash_previo = ultimo.hash_evento if ultimo is not None else HASH_GENESIS

@@ -50,5 +50,10 @@ def client():
     # real corriendo. Detecta EICAR igual que clamd de verdad.
     main_module.app.dependency_overrides[get_clamav_client] = lambda: FakeClamdLimpio()
     with TestClient(main_module.app) as test_client:
+        # Expuesto para tests que necesitan verificar el estado de la base
+        # directamente (p. ej. la bitácora de auditoría), sin pasar por un
+        # endpoint que la exponga. Mismo engine que create_all() de arriba
+        # (StaticPool: una sola conexión real detrás de todas las sesiones).
+        test_client.db_engine = engine
         yield test_client
     main_module.app.dependency_overrides.clear()
