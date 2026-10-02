@@ -119,6 +119,26 @@ def _calcular_hash(
     return hashlib.sha256(cadena.encode('utf-8')).hexdigest()
 
 
+def _es_postgres(db: Session) -> bool:
+    return db.get_bind().dialect.name == 'postgresql'
+
+
+def _ultimo_hash_global(db: Session) -> Optional[str]:
+    """hash_evento del último evento de TODA la bitácora, de cualquier tenant.
+
+    En Postgres no sirve un SELECT normal: la política RLS de SELECT de
+    audit_log filtra por el tenant activo, así que cada empresa vería solo
+    su propio último evento (y sin contexto de tenant, ninguno) y armaría
+    su propia cadena en paralelo. audit_log_ultimo_hash() es SECURITY
+    DEFINER y devuelve solo el hash, sin datos de ningún tenant (ver
+    db/rls_policies.sql #6). En SQLite (tests) no hay RLS: consulta ORM.
+    """
+    if _es_postgres(db):
+        return db.execute(text('SELECT audit_log_ultimo_hash()')).scalar()
+    ultimo = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
+    return ultimo.hash_evento if ultimo is not None else None
+
+
 def registrar_evento(
     db: Session,
     evento: str,
@@ -143,7 +163,8 @@ def registrar_evento(
     """
     try:
         with db.begin_nested():
-            if db.get_bind().dialect.name == 'postgresql':
+            es_postgres = _es_postgres(db)
+            if es_postgres:
                 # Serializa la escritura de la cadena entre transacciones
                 # concurrentes: sin este lock, dos requests podrían leer el
                 # mismo "último hash_evento" y bifurcar la cadena.
@@ -162,8 +183,7 @@ def registrar_evento(
                 # que no evitaría la bifurcación.
                 db.execute(text('SELECT pg_advisory_xact_lock(:clave)'), {'clave': _ADVISORY_LOCK_KEY_CADENA})
 
-            ultimo = db.query(AuditLog).order_by(AuditLog.id.desc()).first()
-            hash_previo = ultimo.hash_evento if ultimo is not None else HASH_GENESIS
+            hash_previo = _ultimo_hash_global(db) or HASH_GENESIS
 
             ocurrido_en = datetime.now(timezone.utc)
             hash_evento = _calcular_hash(
@@ -188,6 +208,17 @@ def registrar_evento(
                 hash_previo=hash_previo,
                 hash_evento=hash_evento,
             )
+            if es_postgres:
+                # id pedido a la secuencia ANTES del INSERT, para que el ORM
+                # no necesite INSERT ... RETURNING id. Con RETURNING, Postgres
+                # exige que la fila nueva cumpla también la política de
+                # SELECT (no solo el WITH CHECK de INSERT), y la de audit_log
+                # no deja ver filas con company_id NULL ni ajenas al tenant
+                # activo: el INSERT de un login fallido fallaría con "new row
+                # violates row-level security policy" aunque el WITH CHECK lo
+                # acepte. Se pide bajo el advisory lock, así que el orden de
+                # los id sigue siendo el orden de la cadena.
+                registro.id = db.execute(text("SELECT nextval('audit_log_id_seq')")).scalar()
             db.add(registro)
             db.flush()
         return registro
@@ -215,7 +246,24 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
     detecta eventos que nunca se escribieron: una ausencia no deja hueco en
     la cadena — por eso registrar_evento es fail-closed para los eventos
     críticos, en vez de depender solo de esta verificación posterior.
+
+    En Postgres, `db` debe ser una sesión del rol audit_verifier (ver
+    db/rls_policies.sql #7), que ve la bitácora completa. Con una sesión de
+    app_user, RLS esconde los eventos de otros tenants y los globales: la
+    cadena visible tendría huecos (falsa ruptura) o, peor, terminaría antes
+    del último evento real y se daría por íntegra sin haberlo revisado. Por
+    eso se exige de entrada que la sesión vea el último evento global.
     """
+    if _es_postgres(db):
+        hash_final = _ultimo_hash_global(db)
+        if hash_final is not None and not db.query(
+            db.query(AuditLog).filter(AuditLog.hash_evento == hash_final).exists()
+        ).scalar():
+            raise PermissionError(
+                'La sesión no ve la bitácora completa (RLS por tenant): '
+                'verificar_cadena debe correr con el rol audit_verifier.'
+            )
+
     query = db.query(AuditLog).order_by(AuditLog.id.asc())
     if desde_id is not None:
         query = query.filter(AuditLog.id >= desde_id)

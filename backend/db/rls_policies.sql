@@ -127,3 +127,52 @@ CREATE POLICY audit_log_insert_tenant ON audit_log
 GRANT SELECT, INSERT ON audit_log TO app_user;
 REVOKE UPDATE, DELETE ON audit_log FROM app_user;
 GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO app_user;
+
+-- 6. Fase 6 — último hash de la cadena, saltándose RLS. La cadena de hashes
+--    es GLOBAL: el evento N se encadena al N-1 sea de la empresa que sea.
+--    Con la política de SELECT de #5, app_user solo ve los eventos de su
+--    tenant (y sin contexto, ninguno), así que no puede leer el eslabón
+--    anterior con un SELECT normal. Misma idea que get_user_by_email (#4):
+--    SECURITY DEFINER acotada, que devuelve SOLO el hash (64 hex) — ningún
+--    dato de ningún tenant. registrar_evento() la llama bajo el advisory
+--    lock de la cadena (services/audit.py).
+CREATE OR REPLACE FUNCTION audit_log_ultimo_hash()
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+    SELECT hash_evento::text FROM audit_log ORDER BY id DESC LIMIT 1;
+$$;
+
+REVOKE ALL ON FUNCTION audit_log_ultimo_hash() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION audit_log_ultimo_hash() TO app_user;
+
+-- 7. Fase 6 — rol de solo lectura para verificar la cadena completa
+--    (verificar_cadena). Recalcular cada hash_evento exige leer todos los
+--    campos de todas las filas, así que una función SECURITY DEFINER para
+--    esto le daría a app_user —el rol de runtime de TODOS los tenants— una
+--    puerta a la bitácora de todas las empresas. En vez de eso, un rol
+--    aparte que la app web no usa, con una política de SELECT propia
+--    (las políticas permisivas se combinan con OR, y esta aplica SOLO a
+--    audit_verifier). Sin INSERT/UPDATE/DELETE.
+--    Se crea NOLOGIN; setup_rls.py le da LOGIN y contraseña si se pasa
+--    AUDIT_VERIFIER_PASSWORD (igual que app_user con APP_USER_PASSWORD).
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'audit_verifier') THEN
+        CREATE ROLE audit_verifier NOLOGIN;
+    END IF;
+END
+$$;
+
+GRANT CONNECT ON DATABASE postgres TO audit_verifier;
+GRANT USAGE ON SCHEMA public TO audit_verifier;
+GRANT SELECT ON audit_log TO audit_verifier;
+GRANT EXECUTE ON FUNCTION audit_log_ultimo_hash() TO audit_verifier;
+
+DROP POLICY IF EXISTS audit_log_select_verifier ON audit_log;
+CREATE POLICY audit_log_select_verifier ON audit_log
+    FOR SELECT
+    TO audit_verifier
+    USING (true);

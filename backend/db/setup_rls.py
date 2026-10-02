@@ -9,6 +9,7 @@ proceso al momento de correr este script.
 Uso (PowerShell):
     $env:DATABASE_URL_ADMIN = "postgresql://postgres:...@host:5432/postgres"
     $env:APP_USER_PASSWORD = "<password-generada-para-app_user>"
+    $env:AUDIT_VERIFIER_PASSWORD = "<password-para-audit_verifier>"  # opcional
     backend/venv/Scripts/python.exe -m db.setup_rls
 
 Es idempotente: se puede correr de nuevo sin duplicar nada (crea el rol
@@ -53,6 +54,17 @@ def main() -> None:
 
             print('3/3 Aplicando permisos, RLS y políticas (rls_policies.sql)...')
             cur.execute(RLS_SQL_PATH.read_text(encoding='utf-8'))
+
+            # Opcional: el rol audit_verifier (rls_policies.sql #7) se crea
+            # NOLOGIN; solo se habilita si se entrega su contraseña.
+            verifier_password = os.environ.get('AUDIT_VERIFIER_PASSWORD')
+            if verifier_password:
+                print('   Habilitando LOGIN del rol audit_verifier...')
+                cur.execute(
+                    sql.SQL('ALTER ROLE audit_verifier WITH LOGIN PASSWORD {}').format(
+                        sql.Literal(verifier_password)
+                    )
+                )
 
         print('Listo.')
     finally:
