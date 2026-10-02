@@ -36,7 +36,7 @@ interface AppShellProps {
   onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onStartAnalysis: () => void;
   onLogout: () => void;
-  onDownload: () => void;
+  onDownload: () => Promise<void>;
   onAdvanceTour: () => void;
   onSkipTour: () => void;
   onOpenTour: () => void;

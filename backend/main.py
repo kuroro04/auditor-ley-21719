@@ -5,7 +5,7 @@ from sqlalchemy import inspect, text
 from core.config import FRONTEND_ORIGIN, STORAGE_DIR
 from db.database import Base, engine
 from db import models  # noqa: F401 — registra los modelos en Base antes de create_all
-from routers import auth, documents
+from routers import auth, client_events, documents
 
 app = FastAPI(title="DataShield API", version="0.1.0")
 
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(documents.router)
+app.include_router(client_events.router)
 
 
 def _migrar_columnas_nuevas() -> None:

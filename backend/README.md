@@ -101,7 +101,47 @@ cualquier otro contenido.
 | GET    | `/auth/me`         | Sí   | Datos del usuario autenticado.                     |
 | POST   | `/auth/logout`     | Sí   | Cierra sesión (borra la cookie).                   |
 | POST   | `/documents/upload`| Sí   | Sube un documento (`file` + `req_id`, multipart).  |
-| GET    | `/documents`       | Sí   | Lista los documentos de la empresa de la sesión.   |
+| GET    | `/documents`       | Sí   | Lista los documentos de la empresa de la sesión (no se audita: solo metadatos). |
+| GET    | `/documents/{id}/download` | Sí | Descarga un documento. Audita `documento_consultado` (fail-closed). |
+| DELETE | `/documents/{id}`  | Sí (admin) | Elimina un documento. Audita `documento_eliminado` (fail-closed). |
+| POST   | `/audit/client-events` | Sí | Aviso del frontend: `diagnostico_ejecutado` o `exportacion_resultados`. **No verificable**, ver abajo. |
+
+## Bitácora de auditoría (Fase 6)
+
+<!--
+LIMITACIÓN EXPLÍCITA — eventos reportados por el cliente.
+El diagnóstico y la exportación del PDF corren en el navegador, no en el
+servidor. Los eventos `diagnostico_ejecutado` y `exportacion_resultados` se
+registran solo si el frontend llama a POST /audit/client-events: un cliente
+modificado puede ejecutar ambas operaciones sin avisar, o avisar sin
+ejecutarlas. Esos registros NO constituyen trazabilidad verificable.
+Quedan marcados con detalle.origen = 'reportado_por_cliente' para no
+confundirlos con los eventos que el servidor sí observa. Cerrar esta brecha
+exige mover el diagnóstico y la exportación al backend.
+-->
+
+- **Observados por el servidor** (verificables): subida, rechazo por
+  antivirus, descarga y eliminación de documentos, más los de autenticación.
+- **Reportados por el cliente** (no verificables): diagnóstico ejecutado y
+  exportación de resultados. Ver la limitación en `routers/client_events.py`.
+
+### Limpieza de archivos huérfanos
+
+Borra archivos de `storage/` sin un `Document` que los referencie (subida
+interrumpida entre el traslado y el commit, o borrado de disco fallido tras
+eliminar un documento). Solo toca archivos con más de 15 minutos de
+antigüedad, para no pisar una subida en curso.
+
+```bash
+cd backend
+python -m services.storage_cleanup --dry-run   # solo lista
+python -m services.storage_cleanup             # borra
+```
+
+Debe correr en la misma máquina/volumen que `storage/` y con las mismas
+variables de entorno que el backend. En producción: una tarea programada
+(cron, timer de systemd o CronJob de Kubernetes), por ejemplo cada hora.
+Devuelve código de salida 1 si algún archivo no se pudo borrar.
 
 ## Notas de seguridad
 

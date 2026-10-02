@@ -20,7 +20,7 @@ interface DiagnosticoViewProps {
   role: UserRole;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
-  onDownload: () => void;
+  onDownload: () => Promise<void>;
   onToast: (msg: string, type: 'green' | 'blue' | 'yellow') => void;
 }
 
@@ -120,7 +120,14 @@ export default function DiagnosticoView({
       onToast('El rol visualizador no puede descargar informes', 'yellow');
       return;
     }
-    onDownload();
+    try {
+      // Fail-closed: sin registro de la exportación en la bitácora, no se
+      // genera el PDF.
+      await onDownload();
+    } catch {
+      onToast('No se pudo registrar la exportación en la bitácora; el informe no se generó', 'yellow');
+      return;
+    }
     onToast('Generando informe PDF...', 'blue');
     try {
       const { generarInformePDF } = await import('@/lib/pdfExport');

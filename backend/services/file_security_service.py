@@ -24,6 +24,20 @@ SIGNATURES = {
 }
 
 
+# Tipo MIME que corresponde a cada extensión permitida. Solo es "detectado"
+# (y no solo declarado por el cliente) después de que check_file_security
+# aceptó el archivo, porque ahí ya se comprobó que los magic bytes coinciden
+# con la extensión.
+MIME_POR_EXTENSION = {
+    'txt': 'text/plain',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+}
+
+
 @dataclass
 class FileSecurityResult:
     accepted: bool
@@ -44,6 +58,11 @@ def sanitize_filename(name: str) -> str:
 def _get_extension(name: str) -> str:
     parts = name.rsplit('.', 1)
     return parts[-1].lower() if len(parts) > 1 else ''
+
+
+def detected_mime(filename: str) -> str:
+    """MIME de un archivo YA aceptado por check_file_security."""
+    return MIME_POR_EXTENSION.get(_get_extension(filename), 'application/octet-stream')
 
 
 def _has_dangerous_double_extension(name: str) -> bool:

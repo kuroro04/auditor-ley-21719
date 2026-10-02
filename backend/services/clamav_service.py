@@ -11,6 +11,7 @@ infectado: rechazarlo.
 """
 import io
 from dataclasses import dataclass
+from typing import Optional
 
 ESTADO_LIMPIO = 'limpio'
 ESTADO_INFECTADO = 'infectado'
@@ -21,6 +22,7 @@ ESTADO_ERROR = 'error'
 class ScanResult:
     status: str  # ESTADO_LIMPIO | ESTADO_INFECTADO | ESTADO_ERROR
     detail: str
+    signature: Optional[str] = None  # nombre de la firma, solo si ESTADO_INFECTADO
 
 
 def scan_with_client(client, content: bytes) -> ScanResult:
@@ -33,5 +35,5 @@ def scan_with_client(client, content: bytes) -> ScanResult:
     if status == 'OK':
         return ScanResult(ESTADO_LIMPIO, 'Sin amenazas detectadas')
     if status == 'FOUND':
-        return ScanResult(ESTADO_INFECTADO, f'Amenaza detectada: {virus_name}')
+        return ScanResult(ESTADO_INFECTADO, f'Amenaza detectada: {virus_name}', virus_name)
     return ScanResult(ESTADO_ERROR, f'Respuesta inesperada de ClamAV: {response}')

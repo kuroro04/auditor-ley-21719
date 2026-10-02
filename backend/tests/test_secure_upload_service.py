@@ -29,15 +29,19 @@ def _preparar_carpetas(tmp_path, monkeypatch):
     monkeypatch.setattr(qs, 'STORAGE_DIR', tmp_path / 'storage')
 
 
-def test_archivo_limpio_termina_en_storage_y_no_en_cuarentena(tmp_path, monkeypatch):
+def test_archivo_limpio_queda_en_cuarentena_hasta_que_el_router_lo_promueva(tmp_path, monkeypatch):
+    # Desde la Fase 6 el traslado a storage lo hace el router, después de
+    # escribir el evento de auditoría (ver routers/documents.py).
     _preparar_carpetas(tmp_path, monkeypatch)
 
     outcome = process_secure_upload('empresa-1', 'politica.pdf', PDF_BYTES, _ClienteFalsoLimpio())
 
     assert outcome.accepted
-    assert outcome.stored_path.exists()
-    assert outcome.stored_path.read_bytes() == PDF_BYTES
-    assert not (tmp_path / 'quarantine' / 'empresa-1').exists() or list((tmp_path / 'quarantine' / 'empresa-1').iterdir()) == []
+    assert outcome.quarantine_path.exists()
+    assert outcome.quarantine_path.read_bytes() == PDF_BYTES
+    assert outcome.mime_detectado == 'application/pdf'
+    assert outcome.scan_status == 'limpio'
+    assert not (tmp_path / 'storage' / 'empresa-1').exists()
 
 
 def test_archivo_eicar_es_rechazado_y_no_queda_en_disco(tmp_path, monkeypatch):

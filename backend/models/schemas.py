@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -59,6 +59,13 @@ class MfaLoginChallenge(BaseModel):
 class MfaLoginRequest(BaseModel):
     mfa_token: str
     code: str
+
+
+class ClientEventRequest(BaseModel):
+    # Solo el nombre del evento: el cliente no puede mandar `detalle` libre,
+    # para que nunca termine contenido de documentos o datos de terceros en
+    # la bitácora por esta vía.
+    evento: Literal['diagnostico_ejecutado', 'exportacion_resultados']
 
 
 class DocumentOut(BaseModel):

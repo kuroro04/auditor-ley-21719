@@ -12,6 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import main as main_module
+import services.quarantine_service as quarantine_service
 import services.scan_audit_log as scan_audit_log
 from core.deps import get_clamav_client
 from db.database import Base, get_db
@@ -24,6 +25,16 @@ def _bitacora_de_escaneo_aislada(tmp_path, monkeypatch):
     # (backend/logs/document_scans.log): cada test escribe en su propio
     # archivo temporal, para no mezclar datos de prueba con la bitácora real.
     monkeypatch.setattr(scan_audit_log, 'SCAN_LOG_PATH', tmp_path / 'document_scans.log')
+
+
+@pytest.fixture(autouse=True)
+def _carpetas_de_almacenamiento_aisladas(tmp_path, monkeypatch):
+    # Igual que la bitácora de escaneo: ningún test debe escribir en
+    # backend/quarantine ni backend/storage reales. Sin esto, cada subida
+    # de prueba dejaba ahí un archivo de una empresa que solo existía en la
+    # base en memoria del test (un huérfano permanente).
+    monkeypatch.setattr(quarantine_service, 'QUARANTINE_DIR', tmp_path / 'quarantine')
+    monkeypatch.setattr(quarantine_service, 'STORAGE_DIR', tmp_path / 'storage')
 
 
 @pytest.fixture()

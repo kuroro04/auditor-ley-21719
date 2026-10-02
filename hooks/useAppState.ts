@@ -8,6 +8,7 @@ import { calcPct } from '@/lib/metrics';
 import { buildCompanyId, type TenantContext } from '@/lib/tenant/context';
 import { saveDocument, listDocuments as listTenantDocuments } from '@/lib/tenant/repository';
 import { getSecurityAuditLog, type SecurityEvent } from '@/lib/tenant/guard';
+import { reportClientEvent } from '@/lib/api/audit';
 import {
   completeOnboarding,
   loginUser,
@@ -290,14 +291,24 @@ export function useAppState() {
     setScreen('app');
     setActiveTab('diagnostico');
     addAuditEvent('ejecutó análisis', currentRole, currentUser);
+    // diagnostico_ejecutado es fail-open en el backend: si el aviso falla,
+    // el análisis (que ya corrió en el navegador) se muestra igual.
+    if (authSource === 'backend') {
+      reportClientEvent('diagnostico_ejecutado').catch(() => {});
+    }
     // companyId debe estar en las dependencias: de lo contrario este callback queda
     // memorizado con el companyId inicial ('') y listDocuments() nunca encontraría
     // los documentos guardados bajo el companyId real de la sesión.
   }, [addAuditEvent, companyId, tourActive, authSource, marcarTourVistoSiCorresponde]);
 
-  const logDownload = useCallback((currentRole: UserRole, currentUser: string) => {
+  // Lanza si el backend no pudo registrar la exportación (evento crítico,
+  // fail-closed): quien llama no debe generar el PDF en ese caso.
+  const logDownload = useCallback(async (currentRole: UserRole, currentUser: string) => {
+    if (authSource === 'backend') {
+      await reportClientEvent('exportacion_resultados');
+    }
     addAuditEvent('descargó informe', currentRole, currentUser, 'informe_cumplimiento.pdf');
-  }, [addAuditEvent]);
+  }, [addAuditEvent, authSource]);
 
   const logUploadRejected = useCallback((
     currentRole: UserRole,

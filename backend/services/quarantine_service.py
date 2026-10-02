@@ -25,9 +25,17 @@ def write_to_quarantine(company_id: str, filename: str, content: bytes) -> Path:
     return ruta
 
 
+def clean_destination(quarantine_path: Path, company_id: str) -> Path:
+    """Ruta definitiva que tendrá el archivo, sin moverlo todavía.
+
+    Permite registrar el Document (y su evento de auditoría) con su
+    stored_path antes de sacar el archivo de la cuarentena.
+    """
+    return _carpeta_de_empresa(STORAGE_DIR, company_id) / quarantine_path.name
+
+
 def move_to_clean(quarantine_path: Path, company_id: str) -> Path:
-    carpeta = _carpeta_de_empresa(STORAGE_DIR, company_id)
-    destino = carpeta / quarantine_path.name
+    destino = clean_destination(quarantine_path, company_id)
     quarantine_path.replace(destino)
     return destino
 
