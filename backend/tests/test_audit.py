@@ -75,6 +75,29 @@ def test_verificar_cadena_intacta(db):
     assert resultado.id_primera_inconsistencia is None
 
 
+def test_verificar_cadena_informa_rango_de_ids(db):
+    uno = audit.registrar_evento(db, audit.EVENTO_LOGIN_EXITOSO, 'ok', user_id='u1')
+    dos = audit.registrar_evento(db, audit.EVENTO_LOGIN_FALLIDO, 'fallo', user_id='u1')
+    tres = audit.registrar_evento(db, audit.EVENTO_CIERRE_SESION, 'ok', user_id='u1')
+    db.commit()
+
+    completo = audit.verificar_cadena(db)
+    assert (completo.id_primero, completo.id_ultimo) == (uno.id, tres.id)
+
+    dos.hash_evento = 'f' * 64
+    db.commit()
+    roto = audit.verificar_cadena(db)
+    assert (roto.id_primero, roto.id_ultimo) == (uno.id, dos.id)
+
+
+def test_verificar_cadena_sin_eventos_no_tiene_rango(db):
+    resultado = audit.verificar_cadena(db)
+
+    assert resultado.intacta is True
+    assert resultado.id_primero is None
+    assert resultado.id_ultimo is None
+
+
 def test_verificar_cadena_detecta_hash_evento_alterado(db):
     audit.registrar_evento(db, audit.EVENTO_LOGIN_EXITOSO, 'ok', user_id='u1')
     segundo = audit.registrar_evento(db, audit.EVENTO_LOGIN_FALLIDO, 'fallo', user_id='u1')

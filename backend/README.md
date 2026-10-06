@@ -125,6 +125,56 @@ exige mover el diagnóstico y la exportación al backend.
 - **Reportados por el cliente** (no verificables): diagnóstico ejecutado y
   exportación de resultados. Ver la limitación en `routers/client_events.py`.
 
+### Verificar la integridad de la cadena de hashes
+
+Cada evento de `audit_log` guarda el hash del anterior, así que alterar o
+reordenar una fila antigua rompe la cadena desde ese punto.
+`verificar_auditoria.py` recorre la bitácora, recalcula los hashes e informa
+el primer evento inconsistente.
+
+```powershell
+# PowerShell, desde backend/
+$env:AUDIT_VERIFIER_DATABASE_URL = "postgresql://audit_verifier:<password>@<host>:5432/postgres"
+python verificar_auditoria.py                  # informe legible
+python verificar_auditoria.py --desde-id 5000  # desde un punto (se enlaza con el evento anterior)
+python verificar_auditoria.py --json           # salida JSON, para guardar o procesar
+```
+
+| Código de salida | Significado |
+|------------------|-------------|
+| 0 | Cadena íntegra |
+| 1 | Cadena rota: el informe da el id del primer evento inconsistente y el motivo |
+| 2 | No se pudo verificar (falta la variable, conexión fallida, rol incorrecto) |
+
+En una tarea programada, cualquier código distinto de 0 debe generar una
+alerta. La verificación se detiene en la primera inconsistencia: los eventos
+posteriores a ella no se revisan.
+
+**Por qué usa el rol `audit_verifier` y no `app_user`.** La cadena es
+global: el evento N se encadena al N-1, sea de la empresa que sea. Para
+verificarla hay que leer todas las filas de todos los tenants, y `app_user`
+no puede hacerlo porque su política RLS solo le muestra los eventos del
+tenant activo. Con ese rol la cadena vista tendría huecos (falsas rupturas)
+o terminaría antes del último evento real, y se daría por íntegra sin
+haberlo revisado. Darle a `app_user` una vía para ver todo (una función
+`SECURITY DEFINER`, por ejemplo) abriría la bitácora de todas las empresas
+al proceso que atiende a cada una de ellas. Por eso existe un rol aparte
+(`db/rls_policies.sql` #7) que tiene `SELECT` sobre `audit_log`, una
+política RLS propia que ve todos los tenants y nada más: no puede insertar,
+modificar ni borrar. El script exige que la sesión sea efectivamente
+`audit_verifier` (con otro rol, aunque sea `postgres`, no corre) y abre una
+transacción de solo lectura `REPEATABLE READ`, así que verifica una foto
+consistente aunque la aplicación siga escribiendo.
+
+**Por qué la URL no va en `backend/.env`.** Ese archivo lo carga el backend
+web. Si la credencial del verificador estuviera ahí, quedaría al alcance del
+mismo proceso del que se quiere aislar, y la separación de roles no serviría
+de nada. Se pasa solo como variable de entorno del proceso que corre la
+verificación, guardada en el gestor de secretos del programador de tareas.
+Si el script la encuentra en `backend/.env`, se niega a correr. La
+contraseña del rol se fija con `AUDIT_VERIFIER_PASSWORD` al ejecutar
+`db/setup_rls.py`.
+
 ### Limpieza de archivos huérfanos
 
 Borra archivos de `storage/` sin un `Document` que los referencie (subida

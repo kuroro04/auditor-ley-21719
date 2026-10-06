@@ -235,6 +235,11 @@ class ResultadoVerificacionCadena:
     eventos_revisados: int
     id_primera_inconsistencia: Optional[int] = None
     motivo: Optional[str] = None
+    # Rango de ids efectivamente revisados (None si no se revisó ninguno).
+    # Si la cadena está rota, id_ultimo es el de la primera inconsistencia:
+    # la verificación se detiene ahí.
+    id_primero: Optional[int] = None
+    id_ultimo: Optional[int] = None
 
 
 def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVerificacionCadena:
@@ -280,8 +285,13 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
             hash_previo_esperado = anterior.hash_evento
 
     revisados = 0
+    id_primero = None
+    id_ultimo = None
     for fila in query:
         revisados += 1
+        if id_primero is None:
+            id_primero = fila.id
+        id_ultimo = fila.id
 
         if fila.hash_previo != hash_previo_esperado:
             return ResultadoVerificacionCadena(
@@ -289,6 +299,8 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
                 eventos_revisados=revisados,
                 id_primera_inconsistencia=fila.id,
                 motivo='hash_previo no coincide con el hash_evento del registro anterior',
+                id_primero=id_primero,
+                id_ultimo=id_ultimo,
             )
 
         recalculado = _calcular_hash(
@@ -307,8 +319,12 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
                 eventos_revisados=revisados,
                 id_primera_inconsistencia=fila.id,
                 motivo='hash_evento almacenado no coincide con el recalculado',
+                id_primero=id_primero,
+                id_ultimo=id_ultimo,
             )
 
         hash_previo_esperado = fila.hash_evento
 
-    return ResultadoVerificacionCadena(intacta=True, eventos_revisados=revisados)
+    return ResultadoVerificacionCadena(
+        intacta=True, eventos_revisados=revisados, id_primero=id_primero, id_ultimo=id_ultimo,
+    )
