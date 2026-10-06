@@ -175,6 +175,39 @@ Si el script la encuentra en `backend/.env`, se niega a correr. La
 contraseña del rol se fija con `AUDIT_VERIFIER_PASSWORD` al ejecutar
 `db/setup_rls.py`.
 
+### Copia externa en Better Stack
+
+Cada evento que se confirma en `audit_log` también se envía a Better Stack
+(`services/audit_externo.py`), para tener una copia fuera del alcance de
+quien administre la base. Se activa con dos variables en `backend/.env`:
+
+```
+BETTERSTACK_SOURCE_TOKEN=<token de la source HTTP>
+BETTERSTACK_INGEST_HOST=<host de ingesta, p. ej. s1234.eu-nbg-2.betterstackdata.com>
+```
+
+Si falta alguna de las dos, el envío queda desactivado y la aplicación
+funciona igual. En los tests siempre está desactivado.
+
+Se envían exactamente las columnas de `audit_log` (más `dt`, una copia de
+`ocurrido_en`), incluidos `hash_previo` y `hash_evento`. Con ellos, la copia
+externa se puede contrastar con la local evento por evento. No sale nada
+que no esté ya en la bitácora local.
+
+**Cómo funciona.** Solo se envían eventos de transacciones que hicieron
+commit; lo que se deshace con un rollback no sale. El request del usuario
+solo deja el evento en una cola en memoria (hasta 10.000 eventos). Un hilo
+aparte la vacía en lotes por HTTP, con un timeout de 5 s y hasta 3 intentos.
+
+**Limitación: el envío es best-effort.** Un evento puede quedar en
+`audit_log` y no en Better Stack si el servicio externo falla más allá de
+los reintentos, si la cola se llena durante una caída prolongada o si el
+proceso termina con eventos en cola (al apagarse intenta vaciarla, con un
+tope de tiempo). Cada pérdida queda registrada en el log de la aplicación,
+con el `id` y el `hash_evento` de los eventos afectados. La base local
+sigue siendo la fuente de verdad, y `verificar_auditoria.py` la verifica
+de forma independiente.
+
 ### Limpieza de archivos huérfanos
 
 Borra archivos de `storage/` sin un `Document` que los referencie (subida

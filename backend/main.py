@@ -6,6 +6,7 @@ from core.config import FRONTEND_ORIGIN, STORAGE_DIR
 from db.database import Base, engine
 from db import models  # noqa: F401 — registra los modelos en Base antes de create_all
 from routers import auth, client_events, documents
+from services import audit_externo
 
 app = FastAPI(title="DataShield API", version="0.1.0")
 
@@ -56,6 +57,13 @@ def on_startup():
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
     _migrar_columnas_nuevas()
+
+
+@app.on_event('shutdown')
+def on_shutdown():
+    # Intenta vaciar la cola de copias a Better Stack antes de salir (con
+    # tope de tiempo: un Better Stack caído no debe colgar el apagado).
+    audit_externo.detener()
 
 
 @app.get('/health')

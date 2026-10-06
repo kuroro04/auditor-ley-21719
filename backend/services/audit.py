@@ -19,6 +19,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from db.models import AuditLog
+from services import audit_externo
 
 logger = logging.getLogger(__name__)
 
@@ -221,12 +222,26 @@ def registrar_evento(
                 registro.id = db.execute(text("SELECT nextval('audit_log_id_seq')")).scalar()
             db.add(registro)
             db.flush()
-        return registro
     except Exception:
         logger.exception('No se pudo registrar el evento de auditoría "%s"', evento)
         if evento in EVENTOS_CRITICOS:
             raise
         return None
+
+    _programar_envio_externo(db, registro)
+    return registro
+
+
+def _programar_envio_externo(db: Session, registro: AuditLog) -> None:
+    """Copia a Better Stack tras el commit (ver services/audit_externo.py).
+
+    Nunca lanza: el evento ya está en audit_log, la copia externa es
+    redundante y su fallo no debe afectar la operación, sea o no crítica.
+    """
+    try:
+        audit_externo.programar_envio(db, registro, audit_externo.payload_de_registro(registro, _iso_utc))
+    except Exception:
+        logger.exception('No se pudo programar la copia externa del evento de auditoría id=%s', registro.id)
 
 
 @dataclass

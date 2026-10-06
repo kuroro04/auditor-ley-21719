@@ -68,3 +68,11 @@ SCAN_LOG_PATH = BASE_DIR / 'logs' / 'document_scans.log'
 CLAMAV_HOST = os.getenv('CLAMAV_HOST', 'localhost')
 CLAMAV_PORT = int(os.getenv('CLAMAV_PORT', '3310'))
 CLAMAV_TIMEOUT_SECONDS = float(os.getenv('CLAMAV_TIMEOUT_SECONDS', '15'))
+
+# Fase 6 — copia externa de la bitácora de auditoría en Better Stack.
+# Opcional: sin token o sin host, el envío queda desactivado y la aplicación
+# funciona igual (la bitácora local en audit_log sigue siendo la fuente de
+# verdad). En tests siempre desactivado, aunque backend/.env lo tenga: los
+# tests que lo necesitan inyectan un enviador con transporte HTTP simulado.
+BETTERSTACK_SOURCE_TOKEN = None if TESTING else (os.getenv('BETTERSTACK_SOURCE_TOKEN') or None)
+BETTERSTACK_INGEST_HOST = None if TESTING else (os.getenv('BETTERSTACK_INGEST_HOST') or None)
