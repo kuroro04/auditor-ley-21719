@@ -11,6 +11,7 @@ import type { SecurityEvent } from '@/lib/tenant/guard';
 import OnboardingTour from './OnboardingTour';
 import HistorialView from './HistorialView';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
+import { useSemanticModel } from '@/hooks/useSemanticModel';
 
 interface AppShellProps {
   companyName: string;
@@ -57,6 +58,7 @@ export default function AppShell({
 }: AppShellProps) {
   const brechaCount = Object.values(results).filter(r => r.estado !== 'green').length;
   const canSeeRegistro = role === 'administrador' || role === 'auditor';
+  const semanticStatus = useSemanticModel();
 
   // Fase 5 — panel de seguridad (verificación en dos pasos). Solo tiene
   // sentido en una sesión real: el modo demostración no tiene cuenta.
@@ -88,6 +90,30 @@ export default function AppShell({
           <span style={{ fontSize: 11, color: 'var(--text3)', letterSpacing: '0.02em' }}>Ley 21.719</span>
         </div>
         <div className="header-right">
+          {semanticStatus === 'loading' && (
+            <div
+              className="semantic-status-badge loading"
+              title="El modelo de análisis semántico local se está preparando en segundo plano"
+            >
+              Preparando análisis semántico…
+            </div>
+          )}
+          {semanticStatus === 'ready' && (
+            <div
+              className="semantic-status-badge ready"
+              title="El análisis semántico local está activo y se aplica automáticamente junto al motor de reglas"
+            >
+              Análisis semántico activo
+            </div>
+          )}
+          {semanticStatus === 'error' && (
+            <div
+              className="semantic-status-badge error"
+              title="No se pudo cargar el modelo de análisis semántico; se muestran solo los resultados del motor de reglas"
+            >
+              Solo motor de reglas
+            </div>
+          )}
           <div className="header-role-badge">{ROLE_LABELS[role]}</div>
           <div className="header-company" title="Identificador de empresa (tenant) de la sesión actual">
             <div className="header-company-dot" />

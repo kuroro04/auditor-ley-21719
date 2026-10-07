@@ -1,5 +1,5 @@
 import { REQUISITOS } from './requisitos';
-import type { UploadedDoc, RequisitoResult, CriterioResult } from './types';
+import type { UploadedDoc, RequisitoResult, CriterioResult, Requisito } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTES DE CONFIGURACIÓN
@@ -367,6 +367,26 @@ export function analyzeDocument(
     };
   });
 
+  return buildRequisitoResult(req, criterios, doc);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AGREGACIÓN: cobertura, estado y mensaje de brecha a partir de los criterios
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calcula cobertura, estado (green/yellow/red) y mensaje de brecha a partir
+ * de una lista de criterios ya evaluados. Se usa tanto desde el motor de
+ * reglas (analyzeDocument) como desde la capa semántica, que recalcula el
+ * resultado después de enriquecer algunos criterios con coincidencias
+ * semánticas — así ambos caminos comparten exactamente la misma lógica de
+ * agregación.
+ */
+export function buildRequisitoResult(
+  req: Requisito,
+  criterios: CriterioResult[],
+  doc: UploadedDoc,
+): RequisitoResult {
   // ── Calcular cobertura ─────────────────────────────────────────────────
   // ok=1.0, warn=0.5, fail=0.0
   const score = criterios.reduce((acc, c) => {
@@ -377,10 +397,17 @@ export function analyzeDocument(
   const cobertura = Math.round((score / criterios.length) * 100);
 
   // ── Determinar estado y mensaje de brecha ──────────────────────────────
+  // La capa semántica nunca puede, por sí sola, llevar un requisito a "Cumple":
+  // sus coincidencias valen 0.5 en la cobertura (status 'warn'), así que sin
+  // este freno un requisito podría cruzar el 75% solo con similitudes coseno
+  // sin validar. Si hay cualquier criterio de origen semántico, el resultado se
+  // queda como máximo en 'yellow' (revisión pendiente), sin importar la cobertura.
+  const tieneEvidenciaSemantica = criterios.some(c => c.origenDeteccion === 'semantico');
+
   let estado: 'green' | 'yellow' | 'red';
   let gap: string;
 
-  if (cobertura >= 75) {
+  if (cobertura >= 75 && !tieneEvidenciaSemantica) {
     estado = 'green';
     const warnItems = criterios.filter(c => c.status === 'warn');
     gap = warnItems.length > 0
@@ -390,6 +417,12 @@ export function analyzeDocument(
     estado = 'yellow';
     const faltantes = criterios.filter(c => c.status !== 'ok').map(c => c.name).slice(0, 3);
     gap = `Cumplimiento parcial (${cobertura}%) del ${req.art}. Debe agregar o corregir: ${faltantes.join(', ')}.`;
+    if (tieneEvidenciaSemantica && cobertura >= 75) {
+      // Alcanzó el umbral de "verde" pero parte de la evidencia es una coincidencia
+      // semántica sin confirmar por reglas — nunca se sube a "Cumple" solo por eso.
+      const criteriosSemanticos = criterios.filter(c => c.origenDeteccion === 'semantico').map(c => c.name);
+      gap = `Cumplimiento aparente (${cobertura}%) del ${req.art}, pero se mantiene en revisión porque incluye coincidencias semánticas sin validar en: ${criteriosSemanticos.join(', ')}. Requiere validación legal antes de considerarse cumplido.`;
+    }
   } else {
     estado = 'red';
     const criticos = criterios.filter(c => c.status === 'fail').map(c => c.name).slice(0, 2);

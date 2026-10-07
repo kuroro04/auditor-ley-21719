@@ -1,5 +1,6 @@
 ﻿'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
 import { REQUISITOS, CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { analyzeDocument } from '@/lib/analyzer';
@@ -17,6 +18,7 @@ import {
   type RegisterPayload,
   type SessionInfo,
 } from '@/lib/api/auth';
+import { enriquecerConSemantica } from '@/lib/semantic/semanticMatcher';
 
 export type AuthSource = 'backend' | 'demo' | null;
 
@@ -29,6 +31,40 @@ function computeResults(docs: Record<string, UploadedDoc>): Record<string, Requi
     results[r.id] = analyzeDocument(r.id, docs);
   });
   return results;
+}
+
+// Enriquece los resultados con la capa semántica en segundo plano, requisito
+// por requisito, sin bloquear la interfaz. Si el modelo de embeddings no
+// está disponible (aún cargando cuando se llama, o falló al cargar), cada
+// requisito simplemente se queda con el resultado del motor de reglas.
+//
+// `esVigente` dice si el análisis que lanzó este enriquecimiento sigue siendo
+// el actual. Si cambió la sesión (logout, otro login) o se lanzó un análisis
+// nuevo mientras el modelo trabajaba, el resultado se descarta: escribirlo
+// mezclaría datos de otra empresa, o de un documento ya reemplazado, en el
+// diagnóstico vigente. Es el mismo aislamiento que el RLS garantiza en la base.
+async function enhanceResultsInBackground(
+  docs: Record<string, UploadedDoc>,
+  baseResults: Record<string, RequisitoResult>,
+  setResults: Dispatch<SetStateAction<Record<string, RequisitoResult>>>,
+  esVigente: () => boolean,
+) {
+  for (const req of REQUISITOS) {
+    if (!esVigente()) return;
+    const doc = docs[req.id];
+    const base = baseResults[req.id];
+    if (!doc || !base || doc.scanned || !doc.text) continue;
+    try {
+      const enriquecido = await enriquecerConSemantica(req, base, doc);
+      if (!esVigente()) return;
+      // Se vuelve a comprobar dentro del updater: React lo ejecuta más tarde,
+      // y entre medio pudo haber un logout.
+      setResults(prev => (esVigente() ? { ...prev, [req.id]: enriquecido } : prev));
+    } catch {
+      // Modelo de análisis semántico no disponible: este requisito se queda
+      // con el resultado del motor de reglas, sin bloquear los demás.
+    }
+  }
 }
 
 // RUT sintético y estable usado solo para el modo demo: permite que los
@@ -80,6 +116,17 @@ export function useAppState() {
   // de la contraseña y la del código TOTP).
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [pendingMfaToken, setPendingMfaToken] = useState<string | null>(null);
+  // Generación del análisis vigente. Se incrementa al lanzar un análisis y al
+  // cambiar de sesión; un enriquecimiento semántico en segundo plano solo
+  // escribe si su generación sigue siendo la actual.
+  const generacionAnalisis = useRef(0);
+
+  // Invalida cualquier enriquecimiento semántico en curso y devuelve el
+  // chequeo de vigencia para uno nuevo.
+  const nuevaGeneracionAnalisis = useCallback(() => {
+    const generacion = ++generacionAnalisis.current;
+    return () => generacionAnalisis.current === generacion;
+  }, []);
 
   // Registra un evento en el audit log (más reciente primero)
   const addAuditEvent = useCallback((
@@ -103,6 +150,9 @@ export function useAppState() {
   // Aplica una sesión ya obtenida del backend al estado de la app. Único
   // lugar donde se "entra": lo usan el login normal y el segundo paso del MFA.
   const applySession = useCallback((session: SessionInfo) => {
+    // Entrar a una sesión (aunque no haya pasado por logout) invalida
+    // cualquier enriquecimiento semántico de la sesión anterior.
+    nuevaGeneracionAnalisis();
     setCompanyName(session.companyNombre);
     setCompanyId(session.companyId);
     setRole(session.role);
@@ -116,7 +166,7 @@ export function useAppState() {
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
-  }, []);
+  }, [nuevaGeneracionAnalisis]);
 
   // El rol y el nombre de la empresa NUNCA se eligen en el cliente: vienen
   // siempre de la respuesta del backend, que a su vez los toma del JWT de
@@ -150,6 +200,7 @@ export function useAppState() {
 
   const registerCompany = useCallback(async (payload: RegisterPayload) => {
     const session = await registerCompanyApi(payload);
+    nuevaGeneracionAnalisis();
     setCompanyName(session.companyNombre);
     setCompanyId(session.companyId);
     setRole(session.role);
@@ -159,7 +210,7 @@ export function useAppState() {
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
-  }, []);
+  }, [nuevaGeneracionAnalisis]);
 
   const demo = useCallback((demoRole: UserRole) => {
     setCompanyName('Empresa Demo S.A.');
@@ -186,6 +237,7 @@ export function useAppState() {
     const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(demoResults);
     setResults(demoResults);
     setAnalyzed(true);
+    void enhanceResultsInBackground(DEMO_DOCS, demoResults, setResults, nuevaGeneracionAnalisis());
     setSnapshots([{
       fecha: new Date().toISOString(),
       pct,
@@ -199,9 +251,12 @@ export function useAppState() {
     setTourStep(0);
     setScreen('app');
     setActiveTab('subir');
-  }, []);
+  }, [nuevaGeneracionAnalisis]);
 
   const logout = useCallback(() => {
+    // Primero, antes de limpiar el estado: ningún resultado semántico de esta
+    // sesión puede escribirse después del logout.
+    nuevaGeneracionAnalisis();
     setCompanyName('');
     setCompanyId('');
     setSecurityEvents([]);
@@ -221,7 +276,7 @@ export function useAppState() {
     setTourActive(false);
     setTourStep(0);
     auditCounter = 0;
-  }, []);
+  }, [nuevaGeneracionAnalisis]);
 
   // Avisa al backend que el usuario ya vio (o cerró) el tour, para que no
   // vuelva a mostrarse automáticamente en su próximo inicio de sesión. Solo
@@ -296,10 +351,15 @@ export function useAppState() {
     if (authSource === 'backend') {
       reportClientEvent('diagnostico_ejecutado').catch(() => {});
     }
+    // Capa semántica: se aplica en segundo plano, sin bloquear la pantalla
+    // de diagnóstico que el usuario ya está viendo con los resultados de reglas.
+    // Un análisis nuevo invalida el enriquecimiento del anterior, que pudo
+    // haber corrido sobre documentos ya reemplazados.
+    void enhanceResultsInBackground(docsAislados, newResults, setResults, nuevaGeneracionAnalisis());
     // companyId debe estar en las dependencias: de lo contrario este callback queda
     // memorizado con el companyId inicial ('') y listDocuments() nunca encontraría
     // los documentos guardados bajo el companyId real de la sesión.
-  }, [addAuditEvent, companyId, tourActive, authSource, marcarTourVistoSiCorresponde]);
+  }, [addAuditEvent, companyId, tourActive, authSource, marcarTourVistoSiCorresponde, nuevaGeneracionAnalisis]);
 
   // Lanza si el backend no pudo registrar la exportación (evento crítico,
   // fail-closed): quien llama no debe generar el PDF en ese caso.

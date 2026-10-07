@@ -12,6 +12,13 @@ public/ort/
 # modelo de embeddings del analisis semantico — se descarga via postinstall
 public/models/
 
+# motor WASM de onnxruntime-web — se copia desde node_modules en next.config.mjs
+public/ort/
+
+# modelo de embeddings del analisis semantico — se descarga via postinstall
+# (ver scripts/fetch-embedding-model.mjs), no se versiona
+public/models/
+
 # env files
 .env
 .env.local
