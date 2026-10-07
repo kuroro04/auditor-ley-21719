@@ -1231,6 +1231,26 @@ html, body {
 }
 .riesgos-notice-icon { flex-shrink: 0; color: var(--blue); }
 
+/* ── Aviso de documento no aceptado por el servidor ── */
+/* Rojo: problema del archivo. Amarillo: problema transitorio del servicio o la red. */
+.upload-error-alert {
+  display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  background: var(--red-bg); border: 1px solid var(--red-border); color: var(--red);
+}
+.upload-error-alert.kind-escaner_no_disponible,
+.upload-error-alert.kind-conexion,
+.upload-error-alert.kind-otro { background: var(--yellow-bg); border-color: var(--yellow-border); color: #92400e; }
+.upload-error-icon { flex-shrink: 0; margin-top: 1px; }
+.upload-error-body { flex: 1; min-width: 0; }
+.upload-error-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.upload-error-msg, .upload-error-action { font-size: 12px; line-height: 1.6; margin: 0; color: var(--text); }
+.upload-error-action { margin-top: 4px; }
+.upload-error-close {
+  flex-shrink: 0; border: none; background: transparent; color: inherit;
+  font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+
 /* ── Toggle "Iniciar sesión / Crear empresa" (Fase 2: backend real) ── */
 .login-mode-toggle {
   display: flex; background: var(--surface2); border: 1px solid var(--border);

@@ -178,6 +178,7 @@ export default function AppShell({
             companyId={companyId}
             sector={sector}
             role={role}
+            authSource={authSource}
             onUpload={onUpload}
             onUploadRejected={onUploadRejected}
             onDownload={onDownload}

@@ -1,8 +1,10 @@
 ﻿'use client';
 import { useEffect, useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
-import { extractDocumentText } from '@/lib/extractText';
+import { processDocumentUpload, type UploadFailure } from '@/lib/documentUpload';
+import type { AuthSource } from '@/hooks/useAppState';
 import type { RequisitoResult, UploadedDoc, UserRole, Sector } from '@/lib/types';
+import UploadErrorAlert from './UploadErrorAlert';
 import LegalDetail from './LegalDetail';
 import SectorComparisonCard from './SectorComparisonCard';
 import ActionPlan from './ActionPlan';
@@ -18,6 +20,7 @@ interface DiagnosticoViewProps {
   companyId: string;
   sector: Sector;
   role: UserRole;
+  authSource: AuthSource;
   onUpload: (reqId: string, doc: UploadedDoc) => void;
   onUploadRejected: (reqId: string, fileName: string, reason: string) => void;
   onDownload: () => Promise<void>;
@@ -27,13 +30,14 @@ interface DiagnosticoViewProps {
 const CIRC = 2 * Math.PI * 44;
 
 export default function DiagnosticoView({
-  results, previousResults, uploadedDocs, companyName, companyId, sector, role,
+  results, previousResults, uploadedDocs, companyName, companyId, sector, role, authSource,
   onUpload, onUploadRejected, onDownload, onToast,
 }: DiagnosticoViewProps) {
   const circleRef = useRef<SVGCircleElement>(null);
   const [openCards, setOpenCards] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingReqId = useRef<string | null>(null);
+  const [uploadError, setUploadError] = useState<{ reqId: string; failure: UploadFailure } | null>(null);
 
   // Permisos por rol
   const canEdit     = role === 'administrador';                          // subir docs
@@ -90,9 +94,22 @@ export default function DiagnosticoView({
     const file = e.target.files?.[0];
     const reqId = pendingReqId.current;
     if (!file || !reqId) return;
+    setUploadError(null);
     onToast('Verificando seguridad del archivo...', 'blue');
-    const doc = await extractDocumentText(file);
-    if (doc.rejected) {
+    const attempt = await processDocumentUpload(file, reqId, authSource);
+
+    // Con sesión real, si el servidor no aceptó el archivo este no se lee ni
+    // se analiza (ver lib/documentUpload.ts).
+    if (attempt.status === 'fallo_servidor') {
+      setUploadError({ reqId, failure: attempt.failure });
+      onToast(`"${file.name}" no se subió — ${attempt.failure.titulo}`, 'yellow');
+      onUploadRejected(reqId, file.name, attempt.failure.titulo);
+      pendingReqId.current = null;
+      return;
+    }
+
+    const doc = attempt.doc;
+    if (attempt.status === 'rechazado_local') {
       onToast(`"${file.name}" rechazado — ${doc.extractMethod}`, 'yellow');
       onUploadRejected(reqId, file.name, doc.extractMethod ?? 'motivo desconocido');
       pendingReqId.current = null;
@@ -291,6 +308,10 @@ export default function DiagnosticoView({
 
               {isOpen && (
                 <div className="brecha-body">
+
+                  {uploadError?.reqId === r.id && (
+                    <UploadErrorAlert failure={uploadError.failure} onDismiss={() => setUploadError(null)} />
+                  )}
 
                   {prevRes && (
                     <div className="version-comparison-banner">

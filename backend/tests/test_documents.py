@@ -4,6 +4,7 @@ import clamd as clamd_lib
 
 import main as main_module
 from core.deps import get_clamav_client
+from services.clamav_service import DETALLE_ESCANER_NO_DISPONIBLE
 from tests.fakes import FakeClamdCaido
 
 
@@ -48,6 +49,8 @@ def test_subir_archivo_rechazado_por_magic_bytes_devuelve_400(client):
         files={'file': ('falso.pdf', io.BytesIO(b'esto no es un pdf real'), 'application/pdf')},
     )
     assert res.status_code == 400
+    # El frontend usa `codigo` para explicar al usuario qué pasó.
+    assert res.json()['codigo'] == 'validacion_tipo'
 
 
 def test_subir_archivo_eicar_es_detectado_y_rechazado(client):
@@ -59,6 +62,7 @@ def test_subir_archivo_eicar_es_detectado_y_rechazado(client):
     )
     assert res.status_code == 400
     assert 'amenaza' in res.json()['detail'].lower() or 'detectada' in res.json()['detail'].lower()
+    assert res.json()['codigo'] == 'firma_detectada'
 
 
 def test_subir_documento_con_clamav_no_disponible_no_se_acepta(client):
@@ -72,6 +76,12 @@ def test_subir_documento_con_clamav_no_disponible_no_se_acepta(client):
     )
 
     assert res.status_code == 400
+    assert res.json()['codigo'] == 'fallo_escaner'
+    # La respuesta HTTP no revela qué antivirus se usa ni el error interno.
+    assert res.json()['detail'] == DETALLE_ESCANER_NO_DISPONIBLE
+    assert 'clamav' not in res.text.lower()
+    assert 'no disponible (prueba)' not in res.text
+    assert 'ConnectionError' not in res.text
 
 
 def test_listar_documentos_de_la_propia_empresa(client):

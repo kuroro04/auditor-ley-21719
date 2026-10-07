@@ -6,10 +6,14 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 export class ApiError extends Error {
   status: number;
-  constructor(message: string, status: number) {
+  // Código de motivo legible por máquina, cuando el backend lo envía
+  // (ej. `codigo` en los rechazos de /documents/upload).
+  code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -29,13 +33,15 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
 
   if (!res.ok) {
     let detail = `Error ${res.status}`;
+    let code: string | undefined;
     try {
       const data = await res.json();
       if (typeof data?.detail === 'string') detail = data.detail;
+      if (typeof data?.codigo === 'string') code = data.codigo;
     } catch {
       // respuesta sin body JSON (ej. error de red o del propio servidor)
     }
-    throw new ApiError(detail, res.status);
+    throw new ApiError(detail, res.status, code);
   }
 
   if (res.status === 204) return undefined as T;

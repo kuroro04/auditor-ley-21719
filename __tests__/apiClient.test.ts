@@ -24,6 +24,14 @@ describe('apiRequest', () => {
       .rejects.toBeInstanceOf(ApiError);
   });
 
+  it('expone el "codigo" de rechazo del backend cuando viene en la respuesta', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 400, json: async () => ({ detail: 'Amenaza detectada', codigo: 'firma_detectada' }),
+    }));
+    await expect(apiRequest('/documents/upload', { method: 'POST', body: new FormData() }))
+      .rejects.toMatchObject({ status: 400, code: 'firma_detectada' });
+  });
+
   it('siempre incluye credentials:"include" para que viaje la cookie de sesión', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);

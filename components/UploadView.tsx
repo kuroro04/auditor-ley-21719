@@ -1,8 +1,8 @@
 'use client';
 import { useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
-import { extractDocumentText } from '@/lib/extractText';
-import { uploadDocument } from '@/lib/api/documents';
+import { processDocumentUpload, type UploadFailure } from '@/lib/documentUpload';
+import UploadErrorAlert from './UploadErrorAlert';
 import type { AuthSource } from '@/hooks/useAppState';
 import type { UploadedDoc, UserRole } from '@/lib/types';
 
@@ -20,6 +20,7 @@ export default function UploadView({ uploadedDocs, role, authSource, onUpload, o
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingReqId = useRef<string | null>(null);
   const [uploading, setUploading] = useState<{ reqId: string; phase: 'security' | 'extracting' } | null>(null);
+  const [uploadError, setUploadError] = useState<UploadFailure | null>(null);
 
   // Solo el administrador puede subir documentos y ejecutar el análisis
   const canEdit = role === 'administrador';
@@ -43,11 +44,25 @@ export default function UploadView({ uploadedDocs, role, authSource, onUpload, o
     const reqId = pendingReqId.current;
     if (!file || !reqId) return;
 
+    setUploadError(null);
     setUploading({ reqId, phase: 'security' });
-    const result = await extractDocumentText(file, phase => setUploading({ reqId, phase }));
+    const attempt = await processDocumentUpload(file, reqId, authSource, {
+      onPhase: phase => setUploading({ reqId, phase }),
+    });
     setUploading(null);
 
-    if (result.rejected) {
+    // Con sesión real, si el servidor no aceptó el archivo este no se lee ni
+    // se analiza (ver lib/documentUpload.ts).
+    if (attempt.status === 'fallo_servidor') {
+      setUploadError(attempt.failure);
+      onToast(`"${file.name}" no se subió — ${attempt.failure.titulo}`, 'yellow');
+      onUploadRejected(reqId, file.name, attempt.failure.titulo);
+      pendingReqId.current = null;
+      return;
+    }
+
+    const result = attempt.doc;
+    if (attempt.status === 'rechazado_local') {
       onToast(`"${file.name}" rechazado — ${result.extractMethod}`, 'yellow');
       onUploadRejected(reqId, file.name, result.extractMethod ?? 'motivo desconocido');
       pendingReqId.current = null;
@@ -64,17 +79,6 @@ export default function UploadView({ uploadedDocs, role, authSource, onUpload, o
       onToast(`✓ "${file.name}" cargado · ${info}`, 'green');
     }
     pendingReqId.current = null;
-
-    // Además de guardarse localmente (arriba), el archivo original se sube
-    // al backend en segundo plano — solo si hay una sesión real (no en modo
-    // demostración). El análisis del motor sigue siendo 100% local y no
-    // depende de que esta llamada tenga éxito: si el backend no responde,
-    // no interrumpe ni revierte nada de lo que ya pasó en el cliente.
-    if (authSource === 'backend') {
-      uploadDocument(file, reqId).catch(() => {
-        onToast('El documento se analizó localmente, pero no se pudo respaldar en el servidor', 'yellow');
-      });
-    }
   };
 
   return (
@@ -105,6 +109,8 @@ export default function UploadView({ uploadedDocs, role, authSource, onUpload, o
           El sistema lee el contenido real de PDF, Word y Excel para analizarlo contra los criterios legales.
         </p>
       </div>
+
+      {uploadError && <UploadErrorAlert failure={uploadError} onDismiss={() => setUploadError(null)} />}
 
       {/* Grid */}
       <div className="req-upload-grid" data-tour="upload-zone">

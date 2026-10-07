@@ -21,5 +21,8 @@ def log_scan_result(company_id: str, filename: str, result: ScanResult) -> None:
         'status': result.status,
         'detail': result.detail,
     }
+    # Bitácora del servidor: acá sí va el detalle técnico de un fallo.
+    if result.detalle_interno:
+        registro['detalle_interno'] = result.detalle_interno
     with open(SCAN_LOG_PATH, 'a', encoding='utf-8') as f:
         f.write(json.dumps(registro, ensure_ascii=False) + '\n')

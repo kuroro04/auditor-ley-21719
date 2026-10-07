@@ -3,7 +3,7 @@ import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 
 from core.deps import CurrentUser, client_ip, get_clamav_client, get_current_user, get_tenant_db
@@ -66,7 +66,10 @@ async def upload_document(
             },
         )
         db.commit()
-        raise HTTPException(status_code=400, detail=outcome.reason)
+        # `codigo` (validacion_tipo / firma_detectada / fallo_escaner) le
+        # permite al frontend explicar el rechazo sin depender del texto de
+        # `detail`, que sigue siendo un string por compatibilidad.
+        return JSONResponse(status_code=400, content={'detail': outcome.reason, 'codigo': outcome.motivo_rechazo})
 
     # Fase 6 — orden de la subida, para que la auditoría fail-closed y el
     # archivo en disco vivan o mueran juntos:
