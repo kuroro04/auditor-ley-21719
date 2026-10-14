@@ -422,6 +422,34 @@ export function analyzeDocument(
   const texto = doc.text.toLowerCase();
   const palabras = texto.split(/\s+/);
 
+  // ── Clasificación del tipo de documento ──────────────────────────────────
+  // Paso previo: verificar que el documento ES del tipo esperado (no habla SOBRE él).
+  const clasificacionDocumento = clasificarDocumento(req.clasificacion, texto);
+
+  if (clasificacionDocumento.tipo === 'incorrecto') {
+    return {
+      estado: 'wrong_type',
+      cobertura: 0,
+      criterios: req.criterios.map(c => ({
+        name: c.name,
+        status: 'fail',
+        found: 'Tipo de documento incorrecto — no se evaluó el contenido',
+        kwFound: 0,
+        kwTotal: c.keywords.length,
+        confianza: 'baja',
+        validado: c.validado,
+        negaciones: [],
+        frasesLegalesEncontradas: [],
+        requiereRevisionManual: false,
+        densidad: 0,
+        kwsEnContextoNormativo: [],
+        fragmentoDocumento: '',
+      })),
+      gap: `El documento "${doc.name}" no parece ser una política de privacidad. ${clasificacionDocumento.razon}`,
+      clasificacionDocumento,
+    };
+  }
+
   const criterios: CriterioResult[] = req.criterios.map(c => {
     const ev = evaluarCriterio(texto, palabras, c.keywords, c.synonyms, c.frasesLegales, doc.wordCount);
 
@@ -466,7 +494,14 @@ export function analyzeDocument(
     };
   });
 
-  return buildRequisitoResult(req, criterios, doc);
+  const resultado = buildRequisitoResult(req, criterios, doc);
+
+  // Dudoso → cap: si el motor dice 'green', lo baja a 'yellow' (revisión recomendada).
+  const estadoFinal = clasificacionDocumento.tipo === 'dudoso' && resultado.estado === 'green'
+    ? 'yellow'
+    : resultado.estado;
+
+  return { ...resultado, estado: estadoFinal, clasificacionDocumento };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
