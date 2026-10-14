@@ -80,6 +80,10 @@ export const REQUISITOS: Requisito[] = [
         'conservamos sus datos', 'le informamos que', 'datos del responsable',
         'el usuario podrá', 'el titular podrá', 'el usuario tendrá', 'el titular tendrá',
         'representante legal corresponde', 'conservará los datos', 'consiente expresamente',
+        // 3rd-person future declarations (Centro Médico style)
+        'tratará sus datos personales',
+        // 1st-person policy opening (Escuela de Seguros style)
+        'esta política describe cómo recopilamos',
       ],
       marcadoresNormativos: {
         tier1: [
@@ -91,6 +95,8 @@ export const REQUISITOS: Requisito[] = [
           'plan maestro', 'cronograma', 'etapa', 'hito',
           'análisis de cumplimiento', 'gestión de proyecto', 'equipo de proyecto',
           'diagnóstico de cumplimiento', 'brecha de cumplimiento',
+          // Guide/blog-type document markers
+          'qué debe incluir', 'antes de redactar', 'cómo redactar',
         ],
       },
     },

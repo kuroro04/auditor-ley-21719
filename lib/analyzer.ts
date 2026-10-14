@@ -1,5 +1,5 @@
 import { REQUISITOS } from './requisitos';
-import type { UploadedDoc, RequisitoResult, CriterioResult, Requisito } from './types';
+import type { UploadedDoc, RequisitoResult, CriterioResult, Requisito, ClasificacionConfig, ClasificacionDocumentoResult } from './types';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONSTANTES DE CONFIGURACIÓN
@@ -20,6 +20,73 @@ const UMBRAL_DENSIDAD_ALTA = 3;
 // Radio en caracteres a cada lado del término encontrado para armar el
 // fragmento de contexto que se le muestra al usuario como evidencia.
 const RADIO_FRAGMENTO = 90;
+
+// Marcadores de contexto normativo: indican que un keyword aparece en un
+// párrafo descriptivo ("la ley exige que…"), no en una declaración performativa.
+const MARCADORES_CONTEXTO_NORMATIVO = [
+  'la ley', 'el art.', 'el artículo', 'según el', 'conforme al',
+  'la norma', 'la normativa', 'exige que', 'obliga a', 'requiere que',
+  'establece que', 'dispone que',
+];
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLASIFICACIÓN DEL TIPO DE DOCUMENTO (paso previo a la evaluación)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Clasifica si el documento ES del tipo esperado o HABLA SOBRE ese tipo.
+ * Un documento que cumple usa voz performativa; uno que describe usa voz normativa.
+ */
+export function clasificarDocumento(
+  config: ClasificacionConfig,
+  texto: string,
+): ClasificacionDocumentoResult {
+  const performativosEncontrados = config.marcadoresPerformativos.filter(m =>
+    texto.includes(m.toLowerCase())
+  );
+  const normativosTier1 = config.marcadoresNormativos.tier1.filter(m =>
+    texto.includes(m.toLowerCase())
+  );
+  const normativosTier2 = config.marcadoresNormativos.tier2.filter(m =>
+    texto.includes(m.toLowerCase())
+  );
+
+  const nPerf = performativosEncontrados.length;
+  const nT1   = normativosTier1.length;
+  const nT2   = normativosTier2.length;
+
+  let tipo: 'correcto' | 'dudoso' | 'incorrecto';
+  let razon: string;
+
+  if (nPerf >= 1) {
+    if (nT1 < nPerf * 3) {
+      tipo  = 'correcto';
+      razon = `Documento con voz performativa (${nPerf} marcador${nPerf > 1 ? 'es' : ''} encontrado${nPerf > 1 ? 's' : ''}).`;
+    } else {
+      tipo  = 'dudoso';
+      razon = `Señales mixtas: ${nPerf} performativo${nPerf > 1 ? 's' : ''} pero ${nT1} marcador${nT1 > 1 ? 'es' : ''} normativos Tier 1 — posible documento híbrido.`;
+    }
+  } else if (nT1 >= 2) {
+    tipo  = 'incorrecto';
+    razon = `El documento usa lenguaje normativo (${nT1} marcadores Tier 1: describe lo que "la ley exige" o "el responsable debe") sin declarar cumplimiento en primera persona.`;
+  } else if (nT1 === 1 && nT2 >= 2) {
+    tipo  = 'incorrecto';
+    razon = `Lenguaje normativo combinado con vocabulario de gestión/consultoría (${nT1} Tier 1 + ${nT2} Tier 2).`;
+  } else if (nT2 >= 3) {
+    tipo  = 'incorrecto';
+    razon = `Vocabulario específico de documentos de gestión (${nT2} marcadores Tier 2: ${normativosTier2.slice(0, 3).join(', ')}) sin ningún marcador performativo.`;
+  } else {
+    tipo  = 'dudoso';
+    razon = 'Evidencia insuficiente para clasificar el tipo de documento con certeza.';
+  }
+
+  return {
+    tipo,
+    razon,
+    performativosEncontrados,
+    normativosEncontrados: [...normativosTier1, ...normativosTier2],
+  };
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FUNCIONES AUXILIARES INTERNAS
