@@ -71,6 +71,29 @@ export const REQUISITOS: Requisito[] = [
         validado: true,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'tratamos sus datos', 'tratamos tus datos', 'sus datos personales son tratados',
+        'usted tiene derecho a', 'usted puede ejercer', 'puede solicitar acceso',
+        'nuestros datos de contacto', 'la empresa responsable es', 'somos responsables de',
+        'recopilamos los siguientes datos', 'utilizamos sus datos para',
+        'conservamos sus datos', 'le informamos que', 'datos del responsable',
+        'el usuario podrá', 'el titular podrá', 'el usuario tendrá', 'el titular tendrá',
+        'representante legal corresponde', 'conservará los datos', 'consiente expresamente',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'el art.', 'el artículo', 'según el artículo',
+          'el responsable debe', 'debe informar', 'la normativa requiere',
+          'la empresa está obligada', 'este artículo establece', 'conforme a la ley',
+        ],
+        tier2: [
+          'plan maestro', 'cronograma', 'etapa', 'hito',
+          'análisis de cumplimiento', 'gestión de proyecto', 'equipo de proyecto',
+          'diagnóstico de cumplimiento', 'brecha de cumplimiento',
+        ],
+      },
+    },
   },
   {
     id: 'registro_actividades',
@@ -123,6 +146,23 @@ export const REQUISITOS: Requisito[] = [
         validado: true,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'este registro contiene', 'hemos registrado las siguientes actividades',
+        'el responsable registra', 'nuestras actividades de tratamiento',
+        'los datos que tratamos son', 'las categorías de datos que tratamos',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe',
+          'la normativa requiere', 'conforme al artículo', 'el registro debe incluir',
+        ],
+        tier2: [
+          'plantilla de rat', 'tabla de actividades', 'inventario de tratamiento',
+          'este template', 'guía de cumplimiento',
+        ],
+      },
+    },
   },
   {
     id: 'procedimiento_arco',
@@ -175,6 +215,23 @@ export const REQUISITOS: Requisito[] = [
         validado: true,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'puede ejercer sus derechos enviando', 'para ejercer sus derechos contacte',
+        'procesaremos su solicitud en', 'responderemos su solicitud en un plazo',
+        'enviando su solicitud a', 'podrá ejercer sus derechos a través',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley establece que', 'según el artículo', 'el responsable debe responder',
+          'la normativa obliga', 'el plazo legal es', 'conforme a la ley',
+        ],
+        tier2: [
+          'procedimiento interno', 'este procedimiento', 'guía de derechos',
+          'paso a paso', 'manual de atención',
+        ],
+      },
+    },
   },
   {
     id: 'contrato_encargado',
@@ -241,6 +298,23 @@ export const REQUISITOS: Requisito[] = [
         validado: true,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'el encargado se obliga a', 'en virtud del presente contrato',
+        'el presente contrato regula', 'el encargado tratará únicamente',
+        'las partes acuerdan que', 'el encargado garantiza',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe',
+          'la normativa requiere', 'el contrato debe incluir',
+        ],
+        tier2: [
+          'este contrato tipo', 'modelo de contrato', 'plantilla contractual',
+          'cláusula tipo',
+        ],
+      },
+    },
   },
   {
     id: 'evaluacion_impacto',
@@ -286,6 +360,23 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'esta evaluación analiza', 'el presente estudio de impacto',
+        'hemos identificado los siguientes riesgos', 'los riesgos analizados son',
+        'la presente dpia concluye', 'el responsable ha evaluado',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe realizar',
+          'la normativa requiere', 'cuando el tratamiento requiere', 'conforme al artículo',
+        ],
+        tier2: [
+          'guía de evaluación', 'metodología de evaluación', 'paso a paso',
+          'plantilla dpia', 'este análisis de cumplimiento',
+        ],
+      },
+    },
   },
   {
     id: 'politica_retencion',
@@ -331,6 +422,23 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'los datos se conservarán durante', 'eliminaremos los datos tras',
+        'esta política establece los plazos', 'destruiremos los datos cuando',
+        'el plazo de conservación que aplicamos', 'conservamos los datos durante',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe',
+          'la normativa establece', 'los datos deben eliminarse', 'conforme a la ley',
+        ],
+        tier2: [
+          'política de retención', 'ciclo de vida del dato',
+          'programa de gestión de datos', 'guía de retención', 'calendario de destrucción',
+        ],
+      },
+    },
   },
   {
     id: 'registro_rnpa',
@@ -362,6 +470,23 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'inscrito en el rnpa con número', 'nuestra empresa está inscrita',
+        'el número de inscripción es', 'inscripción vigente número',
+        'nos encontramos registrados', 'registrado ante la apdp',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe inscribirse',
+          'la normativa obliga', 'conforme al artículo', 'la obligación legal de inscripción',
+        ],
+        tier2: [
+          'trámite de inscripción', 'formulario de registro',
+          'guía de inscripción', 'requisitos para registrarse', 'cómo inscribirse',
+        ],
+      },
+    },
   },
   {
     id: 'plan_brechas',
@@ -414,6 +539,24 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'ante una brecha procederemos a', 'notificaremos a la apdp en un plazo',
+        'comunicaremos a los afectados', 'el protocolo establece que notificaremos',
+        'en caso de incidente de seguridad', 'nuestro plan de respuesta ante brechas',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe notificar',
+          'la normativa obliga a notificar', 'el plazo legal de notificación',
+          'conforme al artículo',
+        ],
+        tier2: [
+          'plan de respuesta a incidentes', 'guía de respuesta',
+          'este plan de acción', 'protocolo de gestión',
+        ],
+      },
+    },
   },
   {
     id: 'consentimiento',
@@ -459,6 +602,23 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'usted consiente expresamente', 'al aceptar esta política',
+        'hemos obtenido su consentimiento', 'puede retirar su consentimiento enviando',
+        'el titular ha otorgado su consentimiento', 'el consentimiento se obtiene mediante',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el consentimiento debe ser',
+          'la normativa requiere', 'el consentimiento válido debe', 'conforme al artículo',
+        ],
+        tier2: [
+          'formulario de consentimiento', 'gestión del consentimiento',
+          'registro de consentimientos', 'base de datos de consentimientos',
+        ],
+      },
+    },
   },
   {
     id: 'designacion_dpo',
@@ -504,5 +664,22 @@ export const REQUISITOS: Requisito[] = [
         validado: false,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: [
+        'hemos designado como delegado de protección', 'el delegado de protección de datos nombrado',
+        'nuestro dpo es', 'el dpo de esta organización es',
+        'hemos nombrado a', 'el delegado designado es',
+      ],
+      marcadoresNormativos: {
+        tier1: [
+          'la ley exige', 'según el artículo', 'el responsable debe designar',
+          'la normativa obliga', 'la obligación de designar', 'conforme al artículo',
+        ],
+        tier2: [
+          'proceso de designación', 'convocatoria para dpo',
+          'criterios de selección', 'perfil requerido para el dpo',
+        ],
+      },
+    },
   },
 ];

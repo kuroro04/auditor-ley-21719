@@ -27,6 +27,10 @@ function reqFixture(): Requisito {
         validado: true,
       },
     ],
+    clasificacion: {
+      marcadoresPerformativos: ['los datos se conservarán durante'],
+      marcadoresNormativos: { tier1: ['la ley exige'], tier2: [] },
+    },
   };
 }
 
