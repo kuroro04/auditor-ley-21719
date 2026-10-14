@@ -1,0 +1,1118 @@
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 1 de 30 
+INSTITUTO PROFESIONAL AIEP 
+Vicerrectoría Académica 
+PLAN MAESTRO DE PROYECTO DE CIBERSEGURIDAD 
+Etapa Unidad 2 — Taller Integrador Semanas 4, 5 y 6 
+DataShield 21.719 
+Plataforma SaaS de diagnóstico de cumplimiento de la Ley N° 21.719 de Protección de Datos 
+Personales para PYMEs 
+Nombre del proyecto DataShield 21.719 
+Integrantes Jason Velazquez, Paulina Carroza, Lorenzo Rios 
+Asignatura Gestión de proyecto de especialidad — CIB702-226031 
+Docente Daniel Bahamondes — AIEP Bellavista 
+Fecha de entrega Viernes 30 de junio 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 2 de 30 
+Índice 
+1. Resumen Ejecutivo ............................................................................................................................ 4 
+2. Problema de Ciberseguridad ............................................................................................................. 5 
+3. Justificación del Proyecto .................................................................................................................. 5 
+4. Objetivo General ................................................................................................................................ 6 
+5. Objetivos Específicos ......................................................................................................................... 6 
+6. Evaluación SMART de los Objetivos ................................................................................................. 7 
+7. Análisis de Factibilidad ...................................................................................................................... 7 
+8. Factibilidad Técnica ........................................................................................................................... 8 
+9. Factibilidad Operativa ........................................................................................................................ 8 
+10. Factibilidad Económica .................................................................................................................... 9 
+11. Factibilidad Legal y Regulatoria ....................................................................................................... 9 
+12. Impacto Esperado ............................................................................................................................ 9 
+13. Metodología de Levantamiento de Requisitos .............................................................................. 10 
+14. Diseño de Instrumentos de Levantamiento ................................................................................... 10 
+15. Catálogo de Requisitos .................................................................................................................. 11 
+16. Requisitos de Seguridad ................................................................................................................ 12 
+17. Matriz de Trazabilidad de Requisitos ............................................................................................ 13 
+18. Ciberseguridad como Requisito del Negocio ................................................................................ 14 
+19. Identificación de Activos Críticos ................................................................................................... 14 
+20. Security by Design ......................................................................................................................... 15 
+21. Amenazas y Controles de Seguridad ............................................................................................ 15 
+22. Plan Básico de Gestión de Incidentes ........................................................................................... 16 
+23. Declaración de Alcance ................................................................................................................. 17 
+24. Fuera de Alcance ........................................................................................................................... 18 
+25. Entregables del Proyecto ............................................................................................................... 19 
+26. Recursos Tangibles ....................................................................................................................... 19 
+27. Recursos Intangibles ..................................................................................................................... 20 
+28. Presupuesto Estimado ................................................................................................................... 20 
+29. EDT / WBS ..................................................................................................................................... 21 
+30. Diccionario WBS ............................................................................................................................ 21 
+31. Listado de Actividades ................................................................................................................... 22 
+32. Carta Gantt ..................................................................................................................................... 23 
+33. Hitos del Proyecto .......................................................................................................................... 23 
+34. Malla PERT .................................................................................................................................... 24 
+35. Ruta Crítica .................................................................................................................................... 25 
+36. Registro de Riesgos ....................................................................................................................... 25 
+37. Matriz de Probabilidad e Impacto .................................................................................................. 26 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 3 de 30 
+38. Plan de Respuesta a Riesgos ....................................................................................................... 27 
+39. Matriz RACI .................................................................................................................................... 27 
+40. Plan de Comunicación ................................................................................................................... 28 
+41. Herramientas de Gestión del Proyecto .......................................................................................... 28 
+42. Plan de Validación ......................................................................................................................... 29 
+43. Criterios de Éxito ............................................................................................................................ 29 
+44. Cierre del Proyecto ........................................................................................................................ 29 
+45. Lecciones Aprendidas Esperadas ................................................................................................. 30 
+46. Reflexión Final del Grupo .............................................................................................................. 30 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 4 de 30 
+1. Resumen Ejecutivo 
+DataShield 21.719 es una plataforma SaaS (software como servicio) multiempresa cuyo propósito es 
+entregar a las PYMEs un diagnóstico orientativo y automatizado de sus brechas documentales frente 
+a la Ley N° 21.719, que regula la protección y el tratamiento de los datos personales en Chile y crea 
+la Agencia de Protección de Datos Personales (APDP). La plataforma permite que una empresa 
+cargue sus documentos internos —políticas de privacidad, cláusulas de consentimiento, contratos de 
+encargo, registro de acti vidades de tratamiento, procedimientos de seguridad — y obtenga un 
+semáforo de cumplimiento, una lista priorizada de brechas y un plan de acción sugerido. 
+El problema que aborda es real y de alta relevancia: la Ley N° 21.719 fue publicada el 13 de diciembre 
+de 2024 y entra en plena vigencia el 1 de diciembre de 2026, elevando fuertemente el nivel de 
+exigencia respecto de la antigua Ley N° 19.628, incorporand o derechos ARCOP (acceso, 
+rectificación, cancelación, oposición y portabilidad), notificación obligatoria de brechas en 72 horas y 
+multas que llegan hasta 20.000 UTM. La mayoría de las PYMEs no tiene visibilidad sobre sus brechas 
+documentales, sus responsabilidades ni su exposición ante una eventual fiscalización. 
+El proyecto está dirigido a pequeñas y medianas empresas que tratan datos personales de clientes, 
+usuarios o trabajadores y que no cuentan con un área legal o de cumplimiento dedicada. La solución 
+propuesta es una plataforma web que combina carga de docume ntos, reconocimiento óptico de 
+caracteres (OCR), un motor de análisis basado en reglas y un checklist parametrizable de la Ley N° 
+21.719, validado por un analista legal, para producir un diagnóstico explicable. 
+Los activos críticos involucrados son los documentos confidenciales que las empresas cargan, la base 
+de datos multiempresa, el checklist legal, los registros de auditoría, las credenciales y claves de 
+cifrado, y los informes generados. El beneficio princip al es entregar a la PYME visibilidad temprana 
+de sus brechas y una hoja de ruta priorizada para reducir su exposición legal y reputacional antes de 
+la fiscalización de la APDP. 
+Es fundamental precisar el alcance: DataShield 21.719 entrega un diagnóstico orientativo y de apoyo 
+a la toma de decisiones. No reemplaza la asesoría jurídica profesional ni promete precisión absoluta 
+ni asesoría legal vinculante, ya que el análisis depend e de reglas, checklist, OCR y criterios 
+automatizados. Esta limitación se declara explícitamente en la plataforma y se mantiene como 
+principio en todo el proyecto. 
+Desde la ciberseguridad, el proyecto es relevante porque la plataforma trata documentos sensibles 
+de múltiples empresas, lo que la convierte en sí misma en un activo que debe proteger 
+confidencialidad, integridad y disponibilidad. Por ello incorpora seguri dad desde el diseño: cifrado 
+AES-256-GCM en reposo, TLS 1.3 en tránsito, aislamiento estricto por company_id, autenticación 
+con MFA, control de acceso por roles (RBAC), auditoría append-only y escaneo antivirus de archivos 
+cargados. 
+No implementar esta solución mantendría a las PYMEs en una gestión reactiva: descubrirían sus 
+brechas recién ante una fiscalización o un incidente, con riesgo de multas, daño reputacional y pérdida 
+de confianza de sus clientes. DataShield 21.719 propone pasar de esa gestión reactiva a una gestión 
+preventiva, documentada y trazable del cumplimiento. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 5 de 30 
+2. Problema de Ciberseguridad 
+2.1 Situación actual 
+Las PYMEs  chilenas tratan datos personales de manera cotidiana (clientes, trabajadores, 
+proveedores) mediante formularios, planillas, CRMs y documentos dispersos. Sin embargo, no 
+cuentan con un inventario claro de sus obligaciones bajo la Ley N° 21.719 ni con un mecanismo que 
+les permita saber qué documentos tienen, cuáles les faltan y qué tan alineados están con la norma. 
+La revisión, cuando existe, es manual, costosa y depende de una asesoría externa esporádica. 
+2.2 Brecha o debilidad identificada 
+La brecha principal es la falta de visibilidad sobre el estado de cumplimiento documental. No existe 
+en la PYME un diagnóstico que relacione cada documento con los requisitos de la ley (base de licitud, 
+registro de actividades de tratamiento, consentimient o válido, derechos ARCOP, retención, 
+notificación de brechas, contratos de encargo). A esto se suma que la información sensible que se 
+debe revisar suele estar sin clasificar ni proteger adecuadamente. 
+2.3 Activos afectados y áreas impactadas 
+Se ven afectados los datos personales de titulares, los documentos legales y contractuales de la 
+empresa, y la propia continuidad del negocio frente a una sanción. Las áreas impactadas son 
+gerencia, administración, recursos humanos, TI y el área comercial,  que es la que habitualmente 
+recolecta datos de clientes sin un marco formal. 
+2.4 Consecuencias y relación con C-I-D 
+De no resolverse, las consecuencias técnicas, operativas, legales y económicas incluyen: exposición 
+a multas de hasta 20.000 UTM, imposibilidad de responder en el plazo de 72 horas ante una brecha, 
+pérdida de confianza de clientes, contratos comerciales en riesgo (cláusulas de protección de datos) 
+y costos de remediación de urgencia. El supuesto que justifica el problema es la entrada en vigencia 
+plena de la ley el 1 de diciembre de 2026 y la operación de la APDP, que fiscaliza evidencia operativa 
+—registros, inventarios y logs—, no solo declaraciones de buena voluntad. 
+ 
+Dimensión Riesgo asociado al problema 
+Confidencialidad Acceso no autorizado a documentos y datos personales tratados sin control de acceso. 
+Integridad Modificación o pérdida no detectada de documentos, checklist o registros de cumplimiento. 
+Disponibilidad Imposibilidad de demostrar cumplimiento o responder a la APDP por falta de evidencia disponible. 
+ 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 6 de 30 
+3. Justificación del Proyecto 
+El proyecto es necesario porque existe una obligación legal con fecha cierta (1 de diciembre de 2026) 
+que afecta a toda organización que trate datos personales, sin importar su tamaño, y porque las 
+PYMEs son el segmento con menor capacidad de respuesta. Da taShield 21.719 aporta valor al 
+permitir que una empresa, sin un área legal dedicada, obtenga en minutos un diagnóstico orientativo 
+de sus brechas y una hoja de ruta priorizada. 
+El proyecto reduce el riesgo de sanciones, de daño reputacional y de incumplimiento contractual; 
+mejora la trazabilidad del cumplimiento y la cultura de protección de datos; y atiende la necesidad 
+concreta del negocio de prepararse para la fiscalización. Se aborda como proyecto —y no como una 
+acción operativa aislada— porque requiere arquitectura segura multiempresa, un motor de análisis 
+validado legalmente, controles de seguridad desde el diseño, operación continua y actualización ante 
+cambios normativos. Estos elementos no se logran con una revisión manual puntual, sino con una 
+plataforma planificada, medible y sostenible en el tiempo. 
+Desde la perspectiva de gestión de proyectos (PMBOK), se distingue claramente entre el proyecto 
+(construir y validar el MVP de la plataforma) y la operación posterior (soporte, monitoreo de seguridad, 
+actualización normativa y mejora continua del motor de análisis). El proyecto no termina al desplegar 
+la plataforma: habilita una operación que deberá mantenerse, lo que se considera explícitamente en 
+el alcance, los recursos y el cierre. 
+4. Objetivo General 
+Desarrollar un producto mínimo viable (MVP) de la plataforma SaaS DataShield 21.719 que 
+permita a las PYMEs obtener un diagnóstico orientativo y trazable de sus brechas 
+documentales frente a la Ley N° 21.719, integrando seguridad desde el diseño, con el fi n de 
+reducir su exposición legal y reputacional, en un plazo de 16 semanas. 
+El objetivo se orienta a un resultado verificable (un MVP funcional y seguro), está directamente 
+relacionado con el problema (falta de visibilidad del cumplimiento), es alcanzable con tecnologías 
+maduras y de bajo costo, y es medible de forma general a tra vés de los objetivos específicos y sus 
+indicadores. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 7 de 30 
+5. Objetivos Específicos 
+ID Objetivo específico Resultado esperado Indicador asociado Plazo 
+OE-01 
+Diseñar e implementar la 
+arquitectura SaaS 
+multiempresa con aislamiento 
+por company_id, cifrado y 
+gestión de claves. 
+Arquitectura 
+desplegada y 
+aislada. 
+100% de tablas con 
+company_id; pruebas de 
+aislamiento aprobadas. 
+Semana 4 
+OE-02 
+Implementar el módulo de 
+carga y procesamiento de 
+documentos con OCR, 
+validación MIME y escaneo 
+antivirus. 
+Carga segura 
+operativa. 
+≥6 formatos soportados; 
+100% de archivos 
+escaneados. 
+Semana 7 
+OE-03 
+Desarrollar el motor de 
+análisis por reglas y el 
+checklist parametrizable de la 
+Ley N° 21.719, validado por 
+analista legal. 
+Motor de diagnóstico 
+validado. 
+≥30 criterios evaluables; 
+concordancia ≥85% con 
+criterio legal. 
+Semana 10 
+OE-04 
+Construir el panel de 
+semáforo de cumplimiento, el 
+informe de brechas y el plan 
+de acción exportable. 
+Diagnóstico visible y 
+exportable. 
+3 vistas funcionales + 
+informe PDF exportable. Semana 12 
+OE-05 
+Implementar y validar los 
+controles de seguridad (MFA, 
+RBAC, auditoría, cifrado) 
+mediante pruebas OWASP y 
+marcha blanca. 
+Plataforma 
+endurecida y 
+validada. 
+0 hallazgos críticos OWASP; 
+≥90% de pruebas exitosas. Semana 15 
+6. Evaluación SMART de los Objetivos 
+Objetivo Específico Medible Alcanzable Realista Tiempo 
+OE-01 Sí, define aislamiento multiempresa. Pruebas de aislamiento + cobertura company_id. Sí, patrón conocido. Sí. Semana 4 
+OE-02 Sí, define carga segura + OCR. N° de formatos y % escaneado. Sí, librerías maduras. Sí. Semana 7 
+OE-03 Sí, define motor por reglas. N° de criterios y concordancia legal. Sí, con apoyo de abogado. Sí. Semana 10 
+OE-04 Sí, define panel e informe. N° de vistas + informe exportable. Sí. Sí. Semana 12 
+OE-05 Sí, define controles + pruebas. Hallazgos OWASP y % de pruebas. Sí. Sí. Semana 15 
+ 
+6.1 Objetivo más difícil de cumplir 
+El OE-03 (motor de análisis y checklist legal) es el más difícil, porque su calidad depende de traducir 
+requisitos legales en reglas verificables y de la disponibilidad de un analista legal para validar criterios 
+y reducir falsos positivos y negativos. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 8 de 30 
+6.2 Objetivo con mayor impacto en la solución 
+También el OE -03: es el corazón del producto, ya que de la precisión del diagnóstico depende la 
+utilidad y la credibilidad de toda la plataforma. 
+6.3 Objetivo más expuesto a falta de recursos, tiempo o presupuesto 
+El OE-05 (seguridad y pruebas OWASP), porque las pruebas de penetración y el endurecimiento 
+suelen postergarse cuando el tiempo o el presupuesto se reducen; por ello se declara como elemento 
+no eliminable del proyecto. 
+7. Análisis de Factibilidad 
+Tipo Análisis del proyecto Evidencia / justificación Riesgo asociado Viabilidad 
+Técnica 
+Stack maduro: Next.js, 
+FastAPI, PostgreSQL, 
+Docker, Tesseract, 
+ClamAV. 
+Tecnologías ampliamente 
+documentadas y de bajo 
+costo. 
+Falsos 
+positivos/negativos 
+del motor. 
+Alta 
+Operativa 
+Operable por un equipo 
+pequeño con soporte y 
+actualización normativa. 
+Modelo SaaS reduce 
+carga de instalación al 
+cliente. 
+Sobrecarga de 
+soporte y 
+actualización. 
+Media 
+Económica 
+Uso de software open 
+source y cloud por 
+consumo. 
+Costos acotados; sin 
+licencias propietarias. 
+Sobrecostos cloud 
+por crecimiento. Alta 
+Legal / 
+Regulatoria 
+Trata documentos y datos 
+personales de terceros. 
+Requiere DPA, base de 
+licitud y disclaimer. 
+Responsabilidad por 
+diagnóstico 
+incorrecto. 
+Media 
+Organizacional Apoyo del equipo y de un asesor legal validador. Rol de analista legal incorporado al proyecto. Disponibilidad del abogado especialista. Media 
+8. Factibilidad Técnica 
+• 8.1 Infraestructura: la plataforma se despliega en contenedores Docker sobre un proveedor 
+cloud por consumo, sin requerir infraestructura física del cliente. La PYME solo necesita un 
+navegador. 
+• 8.2 Conocimientos técnicos: el equipo maneja desarrollo full -stack (JavaScript/Python), 
+bases de datos relacionales y controles de seguridad estándar; las brechas se cubren con 
+documentación y librerías maduras. 
+• 8.3 Tecnologías nuevas o desconocidas: no se requiere IA/NLP en el MVP; el motor usa 
+reglas y palabras clave, lo que reduce el riesgo técnico. La IA semántica queda para una fase 
+posterior. 
+• 8.4 Dependencias técnicas críticas: OCR (Tesseract) para documentos escaneados, el motor 
+antivirus (ClamAV) y el servicio de gestión de claves (KMS) del proveedor cloud. 
+• 8.5 Limitaciones técnicas: documentos escaneados de baja calidad pueden no ser legibles 
+por OCR; el análisis por reglas no captura matices semánticos, por lo que se marcan casos 
+para revisión manual. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 9 de 30 
+9. Factibilidad Operativa 
+• 9.1 Operación posterior: al ser SaaS, la operación queda centralizada en el equipo del 
+proyecto, que mantiene la plataforma, el checklist y los controles de seguridad. 
+• 9.2 Área responsable: un equipo de operación y soporte, apoyado por un analista legal que 
+mantiene actualizado el checklist ante cambios de la APDP. 
+• 9.3 Nuevos procedimientos: procedimiento de actualización normativa, de respuesta a 
+incidentes y de respaldo y eliminación segura de documentos de clientes. 
+• 9.4 Cambio para los usuarios: la PYME pasa de una revisión manual esporádica a un 
+diagnóstico autoservicio periódico. 
+• 9.5 Resistencia operativa: posible desconfianza inicial ante un diagnóstico automatizado; se 
+mitiga con el disclaimer, la transparencia del método y la opción de revisión manual. 
+10. Factibilidad Económica 
+• 10.1 Costo estimado: aproximadamente $9.860.000 CLP para el MVP (ver sección 28). 
+• 10.2 Mayor costo: las horas de desarrollo full-stack y la validación legal del checklist. 
+• 10.3 Ejecución por etapas: sí; el proyecto se puede ejecutar por fases (arquitectura → 
+carga/OCR → motor → panel → seguridad), liberando valor incrementalmente. 
+• 10.4 Componentes no eliminables: seguridad (cifrado, MFA, aislamiento), validación legal del 
+motor y respaldo; eliminarlos comprometería la viabilidad y la responsabilidad legal. 
+• 10.5 Beneficio económico: reduce la probabilidad de multas (hasta 20.000 UTM) y de costos 
+de remediación de urgencia, además de habilitar un modelo de ingresos por suscripción. 
+11. Factibilidad Legal y Regulatoria 
+• 11.1 Datos tratados: sí; la plataforma trata documentos y datos personales de las empresas 
+clientes, actuando como encargado de tratamiento (tercero mandatario) respecto de ellas. 
+• 11.2 Normativas aplicables: Ley N° 21.719 (que modifica la Ley N° 19.628), buenas prácticas 
+tipo GDPR, ISO/IEC 27001 como referencia de controles y OWASP ASVS para la validación 
+de seguridad. 
+• 11.3 Riesgos legales por mala implementación: entregar un diagnóstico incorrecto que 
+genere falsa sensación de cumplimiento, o una fuga de los documentos confidenciales que las 
+empresas suben. 
+• 11.4 Controles a considerar: contrato de encargo de tratamiento (DPA) con cada cliente, base 
+de licitud documentada, cifrado en tránsito y reposo, segregación por empresa, trazabilidad, 
+eliminación segura y disclaimer de no asesoría jurídica vinculante. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 10 de 30 
+12. Impacto Esperado 
+Tipo Descripción Área afectada Nivel Acción de gestión 
+Positivo Visibilidad temprana de brechas de cumplimiento. Gerencia / Legal Alto Medir % de brechas detectadas y cerradas. 
+Positivo Reducción de exposición a multas de la APDP. Negocio Alto Seguimiento de plan de acción. 
+Positivo Trazabilidad y cultura de protección de datos. Toda la empresa Medio Registros de auditoría y reportes. 
+Negativo Falsos positivos/negativos del diagnóstico. Cliente / Legal Alto Revisión manual + validación legal. 
+Negativo Falsa sensación de cumplimiento. Cliente Alto Disclaimer y límites de responsabilidad. 
+Negativo Riesgo de fuga de documentos cargados. Seguridad Alto Cifrado, aislamiento y monitoreo. 
+ 
+12.1 Mayor impacto positivo 
+Dar visibilidad temprana y priorizada de las brechas de cumplimiento, permitiendo a la PYME actuar 
+antes de la fiscalización. 
+12.2 Principal impacto negativo 
+La posibilidad de que un diagnóstico erróneo genere una falsa sensación de cumplimiento; es el 
+riesgo reputacional y legal más delicado del proyecto. 
+12.3 Gestión de impactos negativos 
+Se gestionan combinando validación legal del checklist, derivación de casos dudosos (amarillos) a 
+revisión manual, indicadores de precisión del motor, disclaimer visible y controles de seguridad sobre 
+la información sensible. 
+13. Metodología de Levantamiento de Requisitos 
+Técnica Stakeholder objetivo Información que busca Justificación Evidencia 
+Entrevista Dueño/gerente de PYME Tipos de datos tratados, dolores y temores frente a la ley. Profundidad y contexto de negocio. Acta de entrevista. 
+Cuestionario 
+Encargados 
+administrativos / 
+RR.HH. 
+Documentos existentes y 
+prácticas actuales de 
+tratamiento. 
+Cobertura rápida de 
+varios usuarios. 
+Resultados de 
+encuesta. 
+Análisis 
+documental 
+Documentos y políticas 
+de la empresa 
+Brechas frente a requisitos 
+de la Ley 21.719. 
+Usa información 
+existente y real. 
+Listado de 
+documentos. 
+Workshop Equipo + analista legal Priorización de criterios del checklist MVP. Alinea visión técnica y legal. Acta de workshop. 
+Prototipado Usuarios piloto Validación del flujo de carga y del semáforo. Reduce riesgo de usabilidad. Prototipo + feedback. 
+ 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 11 de 30 
+ 
+14. Diseño de Instrumentos de Levantamiento 
+14.1 Guía de entrevista (dueño/gerente de PYME) 
+1. ¿Qué tipos de datos personales recolecta y trata su empresa (clientes, trabajadores, 
+proveedores)? 
+2. ¿Cuenta con política de privacidad y mecanismos de consentimiento documentados? 
+3. ¿Sabe sobre qué base de licitud trata los datos (consentimiento, contrato, ley, interés legítimo)? 
+4. ¿Qué documentos legales o de seguridad maneja hoy y dónde los guarda? 
+5. ¿Qué le preocupa más respecto de la Ley 21.719 y la fiscalización de la APDP? 
+6. ¿Ha tenido incidentes o reclamos relacionados con datos personales? 
+7. ¿Quién sería responsable del cumplimiento dentro de la empresa? 
+8. ¿Qué restricciones de tiempo, presupuesto o técnicas tiene para subir documentos a una 
+plataforma? 
+9. ¿Qué nivel de confidencialidad espera para los documentos que cargaría? 
+10. ¿Qué resultado consideraría útil y exitoso de un diagnóstico de cumplimiento? 
+14.2 Cuestionario (usuarios / áreas afectadas) 
+11. ¿Qué documentos relacionados con datos personales administra su área? (abierta) 
+12. ¿Con qué frecuencia actualiza esos documentos? (escala: nunca / anual / semestral / 
+mensual) 
+13. ¿Sabe qué es el Registro de Actividades de Tratamiento (RAT)? (sí / no / parcialmente) 
+14. ¿Su empresa tiene un procedimiento ante brechas de seguridad? (sí / no) 
+15. ¿Solicita consentimiento explícito para datos sensibles? (sí / no / no aplica) 
+16. ¿Comparte datos personales con proveedores externos? (sí / no) 
+17. ¿Existe un contrato de encargo (DPA) con esos proveedores? (sí / no / no sé) 
+18. ¿Qué tan preparada cree que está su empresa para la Ley 21.719? (escala 1-5) 
+19. ¿Qué documento le gustaría que la plataforma revise primero? (abierta) 
+20. ¿Qué le impediría confiar en un diagnóstico automatizado? (abierta) 
+14.3 Análisis documental 
+Documentos que se deberían revisar para alimentar el diagnóstico: política de privacidad, cláusulas 
+y registros de consentimiento, Registro de Actividades de Tratamiento (RAT), contratos de encargo 
+(DPA) con terceros, política de seguridad de la informació n, procedimiento de respuesta a brechas, 
+política de retención y eliminación, inventario de activos de información y, cuando exista, la 
+designación del delegado o encargado de protección de datos. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 12 de 30 
+15. Catálogo de Requisitos 
+El catálogo incluye requisitos funcionales (RF), no funcionales (RNF), de seguridad (RS) y de 
+cumplimiento (RC), cada uno con prioridad, fuente y criterio de aceptación. 
+ID Tipo Descripción del requisito Prioridad Fuente Criterio de aceptación 
+RF-01 Funcional Registro y autenticación de empresas y usuarios. Alta Product Owner Usuario creado y autenticado con MFA. 
+RF-02 Funcional Carga de documentos (PDF, DOCX, JPG, PNG) con OCR. Alta Cliente PYME Texto extraído visible en la plataforma. 
+RF-03 Funcional Análisis automático por reglas y checklist de la Ley 21.719. Alta Analista legal Resultado por criterio generado. 
+RF-04 Funcional 
+Semáforo de cumplimiento 
+(verde/amarillo/rojo) por 
+criterio. 
+Alta Product Owner Semáforo desplegado por documento. 
+RF-05 Funcional Informe de brechas y plan de acción exportable a PDF. Media Cliente PYME Informe PDF descargable. 
+RF-06 Funcional Comparación de versiones de documentos. Media Cliente Diferencias entre versiones visibles. 
+RF-07 Funcional Calendario de obligaciones y vencimientos legales. Baja Legal Recordatorios configurables. 
+RNF-
+01 No funcional Disponibilidad de la plataforma ≥ 99,5%. Alta Operaciones Monitoreo de uptime. 
+RNF-
+02 No funcional Análisis de un documento en ≤ 60 segundos. Media Analistas Prueba de rendimiento. 
+RNF-
+03 No funcional Escalabilidad a nuevas empresas sin rediseño. Media Arquitectura Alta de tenant sin downtime. 
+RNF-
+04 No funcional Interfaz web responsiva y accesible. Media Usuarios Acceso validado en móvil y escritorio. 
+RNF-
+05 No funcional Retención y eliminación segura configurable. Alta Legal Política de retención aplicada. 
+RS-01 Seguridad Autenticación reforzada con MFA (TOTP). Alta Seguridad Segundo factor obligatorio. 
+RS-02 Seguridad Control de acceso por roles (RBAC). Alta Seguridad Roles admin/analista/cliente/lectura. 
+RS-03 Seguridad Cifrado de documentos en reposo (AES-256-GCM). Alta Seguridad Datos cifrados en almacenamiento. 
+RS-04 Seguridad Cifrado en tránsito (TLS 1.3). Alta TI TLS habilitado y forzado. 
+RS-05 Seguridad Aislamiento estricto por company_id (multi-tenant). Alta Seguridad Pruebas de acceso horizontal aprobadas. 
+RS-06 Seguridad Registro de auditoría append-only e inmutable. Alta Auditoría Logs no modificables. 
+RS-07 Seguridad Escaneo antivirus y validación MIME en la carga. Alta Seguridad Archivo malicioso rechazado. 
+RS-08 Seguridad 
+Gestión y rotación de claves 
+vía KMS + eliminación 
+segura. 
+Media Seguridad Rotación y borrado verificables. 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 13 de 30 
+ID Tipo Descripción del requisito Prioridad Fuente Criterio de aceptación 
+RC-01 Cumplimiento 
+Tratamiento conforme a la 
+Ley 21.719 (base de licitud y 
+RAT propio). 
+Alta Legal Política y RAT de la plataforma aplicados. 
+RC-02 Cumplimiento 
+Disclaimer de diagnóstico 
+orientativo, no asesoría 
+vinculante. 
+Alta Legal Aviso visible y aceptado por el usuario. 
+RC-03 Cumplimiento 
+Contrato de encargo de 
+tratamiento (DPA) con cada 
+cliente. 
+Alta Legal DPA firmado antes de cargar datos. 
+16. Requisitos de Seguridad 
+Control / necesidad Requisito asociado Riesgo que reduce Evidencia de cumplimiento 
+Autenticación RS-01 (MFA) Acceso no autorizado por robo de credenciales. Prueba de login con segundo factor. 
+Autorización RS-02 (RBAC) Exposición de datos por exceso de privilegios. Matriz de roles y prueba RBAC. 
+Cifrado RS-03 / RS-04 Intercepción y lectura de documentos sensibles. Datos cifrados en reposo y tránsito. 
+Logs y auditoría RS-06 Pérdida de trazabilidad y manipulación de evidencia. Logs append-only verificados. 
+Monitoreo RS-06 + alertas Detección tardía de incidentes. Alertas de seguridad activas. 
+Respaldo RS-08 + backup cifrado Pérdida de datos por fallo o ataque. Respaldo cifrado restaurable. 
+Gestión de incidentes Plan de incidentes Respuesta desordenada ante brechas. Playbook y bitácora de incidentes. 
+Menor privilegio RS-02 / RS-05 Acceso cruzado entre empresas (multi-tenant). Pruebas de acceso horizontal. 
+Privacidad RC-01 / RNF-05 Conservación indebida de documentos. Política de retención y eliminación segura. 
+17. Matriz de Trazabilidad de Requisitos 
+ID Req. Objetivo Stakeholder origen Entregable asociado Prueba / validación Estado 
+RF-01 OE-01 Product Owner Módulo de autenticación Prueba login + MFA Propuesto 
+RF-02 OE-02 Cliente PYME Módulo carga + OCR Prueba de extracción Propuesto 
+RF-03 OE-03 Analista legal Motor de reglas + checklist Concordancia legal Propuesto 
+RF-04 OE-04 Product Owner Panel de semáforo Revisión visual Propuesto 
+RF-05 OE-04 Cliente PYME Informe de brechas Informe exportado Propuesto 
+RS-05 OE-01 Seguridad Aislamiento multi-tenant Prueba IDOR/horizontal Propuesto 
+RS-01 OE-05 Seguridad MFA Prueba de segundo factor Propuesto 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 14 de 30 
+ID Req. Objetivo Stakeholder origen Entregable asociado Prueba / validación Estado 
+RS-03 OE-05 Seguridad Cifrado de documentos Verificación de cifrado Propuesto 
+RC-01 OE-03 Legal Política + RAT propio Revisión legal Propuesto 
+RC-02 OE-04 Legal Disclaimer en plataforma Revisión legal Propuesto 
+ 
+17.1 ¿Existen requisitos sin objetivo asociado? 
+No. Cada requisito del catálogo se relaciona con al menos un objetivo específico, asegurando 
+coherencia entre necesidades y metas. 
+17.2 ¿Existen objetivos sin requisitos asociados? 
+No. Los cinco objetivos específicos tienen requisitos que los sustentan (por ejemplo, OE-03 con RF-
+03 y RC-01). 
+17.3 ¿Qué riesgo existe si un requisito no tiene criterio de aceptación? 
+Sin criterio de aceptación no es posible validar objetivamente el requisito, lo que abre la puerta a 
+interpretaciones, a entregar funcionalidades incompletas y a falsa sensación de cumplimiento; por 
+eso todos los requisitos del catálogo declaran un criterio verificable. 
+18. Ciberseguridad como Requisito del Negocio 
+En DataShield 21.719 la ciberseguridad no es una característica adicional, sino una condición de 
+existencia del producto: la plataforma concentra documentos confidenciales de múltiples empresas, 
+por lo que una brecha comprometería simultáneamente a varios clientes y destruiría la confianza en 
+el servicio. 
+• 18.1 Activos críticos que protege: documentos confidenciales de clientes, base de datos 
+multiempresa, checklist legal, registros de auditoría, credenciales/claves e informes de 
+diagnóstico. 
+• 18.2 Riesgo de negocio que reduce: fuga de información de clientes, incumplimiento de la 
+propia Ley 21.719 por parte de la plataforma y pérdida de reputación. 
+• 18.3 Relación con la continuidad operacional: la disponibilidad e integridad del diagnóstico 
+son parte del valor entregado; su caída afecta directamente al servicio comprometido con los 
+clientes. 
+• 18.4 Información sensible que podría comprometerse: políticas internas, contratos, datos 
+personales de titulares y datos sensibles contenidos en los documentos cargados. 
+• 18.5 Consecuencias de una brecha: notificación a la APDP en 72 horas, eventuales multas, 
+demandas de clientes afectados y cierre comercial del servicio. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 15 de 30 
+19. Identificación de Activos Críticos 
+Activo crítico Tipo Propietario Valor para la organización Riesgo principal Criticidad 
+Documentos 
+confidenciales de 
+clientes 
+Información Cliente / Plataforma Núcleo del servicio y datos sensibles Fuga o acceso indebido Alto 
+Base de datos 
+PostgreSQL multi-tenant Sistema Equipo técnico Almacena datos de todas las empresas Acceso cruzado entre tenants Alto 
+Checklist legal / motor 
+de reglas Información Analista legal Determina la calidad del diagnóstico Checklist desactualizado o erróneo Alto 
+Registros de auditoría 
+(logs) Información Seguridad Evidencia y trazabilidad Alteración o pérdida Alto 
+Credenciales y claves 
+de cifrado (KMS) Identidad Seguridad Protege todo el sistema Robo o exposición de claves Alto 
+Datos de cuentas 
+(empresas/usuarios) Información Plataforma Identidad de clientes (RUT, correo) Acceso no autorizado Alto 
+Informes de diagnóstico 
+generados Servicio Cliente Resultado entregable al cliente Manipulación o filtración Medio 
+20. Security by Design 
+Principio de 
+seguridad Aplicación en el proyecto Riesgo que reduce Evidencia esperada 
+Menor privilegio Roles separados: admin, analista, cliente, lectura. Abuso de privilegios. Matriz de roles. 
+Autenticación segura Login con MFA (TOTP) obligatorio. Acceso por robo de credenciales. Prueba de login. 
+Autorización por roles Permisos por función y por empresa. Exposición y acceso cruzado. RBAC configurado. 
+Cifrado de información AES-256-GCM en reposo, TLS 1.3 en tránsito. Intercepción y fuga de documentos. Verificación de cifrado. 
+Registro de eventos Auditoría append-only de accesos y acciones. Falta de trazabilidad. Logs inmutables. 
+Monitoreo continuo Alertas ante eventos anómalos. Detección tardía. Alertas activas. 
+Pruebas de seguridad Pruebas OWASP y de aislamiento multi-tenant. Vulnerabilidades en producción. Informe de pentest. 
+Gestión de incidentes Playbook y procedimiento de brechas (72h). Respuesta desordenada. Plan de incidentes. 
+Auditoría Trazabilidad de cargas y descargas. Repudio y filtración. Bitácora de auditoría. 
+Capacitación Inducción al equipo y al cliente. Error humano. Registro de capacitación. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 16 de 30 
+21. Amenazas y Controles de Seguridad 
+Amenaza Vulnerabilidad asociada Impacto posible Control propuesto Etapa 
+Acceso no 
+autorizado (cross-
+tenant) 
+Aislamiento multi-
+tenant débil. 
+Fuga de 
+documentos de otra 
+empresa. 
+Aislamiento por 
+company_id + pruebas 
+IDOR. 
+Diseño 
+Fuga de información Documentos sin cifrar. Exposición de datos sensibles. Cifrado AES-256 + cifrado por tenant. Diseño 
+Manipulación de 
+datos / logs 
+Permisos débiles 
+sobre registros. 
+Pérdida de 
+evidencia e 
+integridad. 
+Auditoría append-only + 
+solo lectura. Diseño 
+Caída de servicio Sin alta disponibilidad ni respaldo. Pérdida de disponibilidad del diagnóstico. HA + backup cifrado restaurable. Operación 
+Error humano Falta de capacitación. Mala operación o exposición. Capacitación + procedimientos. Cierre 
+Malware en la carga Sin escaneo de archivos. Compromiso del sistema. ClamAV + validación MIME. Implementación 
+Robo de 
+credenciales Ausencia de MFA. Suplantación de usuarios. MFA + bloqueo por intentos. Diseño 
+Diagnóstico legal 
+incorrecto 
+Checklist sin 
+validación. 
+Falsa sensación de 
+cumplimiento. 
+Validación legal + 
+disclaimer + revisión 
+manual. 
+Diseño 
+Inyección (SQLi / 
+XSS) 
+Validación de entrada 
+insuficiente. 
+Compromiso de 
+datos. 
+ORM parametrizado + 
+sanitización + WAF. Implementación 
+22. Plan Básico de Gestión de Incidentes 
+Fase Acción propuesta Responsable Evidencia 
+Detección Alertas de seguridad / monitoreo detectan el evento. Seguridad Registro de alerta. 
+Análisis Clasificar el incidente: alcance, tenants y datos afectados. Seguridad + Líder técnico Ticket de incidente. 
+Contención Aislar el componente, revocar accesos o sesiones. Líder técnico Acción documentada. 
+Erradicación Corregir la causa raíz y eliminar el acceso indebido. Equipo técnico Informe técnico. 
+Recuperación Restaurar servicio desde respaldo cifrado y validar. Operaciones Checklist de recuperación. 
+Notificación Notificar a la APDP (72h) y a los titulares si hay alto riesgo. Legal / PM Constancia de notificación. 
+Lecciones 
+aprendidas 
+Documentar mejoras y actualizar 
+controles. PM / Seguridad Informe de cierre. 
+ 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 17 de 30 
+22.1 Incidente más crítico 
+El acceso no autorizado a documentos de otra empresa (fallo de aislamiento multi -tenant) o la fuga 
+de los documentos confidenciales cargados, por su impacto legal y reputacional simultáneo sobre 
+varios clientes. 
+22.2 ¿Cómo se detectaría? 
+Mediante alertas de monitoreo sobre accesos anómalos, revisión de los logs de auditoría append -
+only y reglas de detección de descargas inusuales o accesos fuera del company_id del usuario. 
+22.3 Área que lidera la respuesta 
+El equipo de seguridad, con apoyo del líder técnico para la contención y del encargado legal para la 
+notificación a la APDP. 
+22.4 Evidencia que debe quedar documentada 
+Registro de la alerta, ticket de incidente, acciones de contención, informe de causa raíz, constancia 
+de notificación y registro de lecciones aprendidas, preservando la evidencia para un eventual análisis 
+forense. 
+23. Declaración de Alcance 
+El proyecto implementa un MVP de la plataforma SaaS DataShield 21.719 para el diagnóstico 
+orientativo del cumplimiento documental de PYMEs frente a la Ley N° 21.719. Cubre las áreas de 
+registro y autenticación, carga y procesamiento de documentos, motor de  análisis por reglas, panel 
+de semáforo, informe de brechas y plan de acción, junto con los controles de seguridad transversales. 
+Considera como usuarios a las empresas clientes (rol cliente), a los analistas legales que validan 
+criterios (rol analista) y a los administradores de la plataforma (rol admin), además de un rol de solo 
+lectura. Incluye las tecnologías Next.js, FastAPI, PostgreSQL, Docker, Tesseract OCR, ClamAV y un 
+servicio de gestión de claves (KMS). Contempla controles de cifrado, MFA, RBAC, aislamiento multi-
+tenant, auditoría y respaldo cifrado. Genera como entregables el MVP funcional, el informe de 
+diagnóstico, la documentación técnica y el informe de pruebas de seguridad. 
+23.1 Funcionamiento del motor de análisis (alcance técnico del MVP) 
+Para evitar sobreprometer, se precisa cómo funciona el motor de diagnóstico en el MVP. El motor no 
+emite asesoría legal: produce un diagnóstico orientativo basado en reglas explicables, con validación 
+humana en los casos dudosos. El flujo es el siguiente: 
+21. Extracción de texto del documento (lectura directa en PDF/DOCX y OCR con Tesseract para 
+imágenes o escaneos). 
+22. Normalización del texto (minúsculas, limpieza, segmentación por secciones). 
+23. Aplicación de reglas: búsqueda por palabras clave, expresiones regulares y reglas booleanas 
+asociadas a cada criterio del checklist de la Ley 21.719. 
+24. Ponderación por criterio: cada criterio tiene un peso configurable; se calcula un porcentaje de 
+cumplimiento por criterio. 
+25. Asignación de semáforo: verde (≥ 80%), amarillo (50–79%, requiere revisión) y rojo (< 50%). 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 18 de 30 
+26. Derivación a revisión manual de los casos amarillos o de baja confianza, para que el analista 
+legal valide el resultado. 
+27. Registro del resultado, su evidencia (fragmentos que activaron cada regla) y su nivel de 
+confianza. 
+Se utiliza un enfoque por reglas en el MVP —y se deja la IA/NLP semántica para una fase posterior— 
+porque prioriza la explicabilidad, el bajo costo y el control del resultado, en lugar de prometer una 
+automatización legal demasiado ambiciosa. Cada resultado es auditable: se puede mostrar qué regla 
+y qué fragmento del documento llevaron a la conclusión. 
+Documentos aceptados y requisitos evaluados en el MVP 
+Documentos aceptados (MVP): política de privacidad, cláusulas y registros de consentimiento, 
+Registro de Actividades de Tratamiento (RAT), contratos de encargo (DPA), política de seguridad, 
+procedimiento de respuesta a brechas y política de retención. Form atos: PDF, DOCX, JPG y PNG; 
+tamaño máximo 20 MB por archivo. 
+Requisitos legales evaluados inicialmente (checklist MVP, ampliable a 30+): existencia de política de 
+privacidad; identificación de base de licitud; mecanismo de consentimiento válido (libre, específico, 
+informado e inequívoco); existencia de RAT; cláusulas de finalidad y proporcionalidad; procedimiento 
+de ejercicio de derechos ARCOP; plazo de conservación y política de retención; procedimiento de 
+notificación de brechas en 72 horas; contrato de encargo con terceros; medidas de seguridad 
+declaradas; tratami ento de datos sensibles con consentimiento explícito; y transferencias 
+internacionales. 
+Indicadores de precisión del motor 
+Para no presentar el porcentaje de cumplimiento como una verdad absoluta, el motor se mide con 
+indicadores: precisión (precision), exhaustividad (recall), tasa de falsos positivos y falsos negativos, 
+porcentaje de casos derivados a revisión manual y concordancia con el criterio del analista legal (meta 
+≥ 85%). Estos indicadores se reportan y se usan para mejorar continuamente el checklist. 
+24. Fuera de Alcance 
+Elemento fuera de alcance Justificación Riesgo de no aclararlo 
+Asesoría jurídica vinculante La plataforma entrega un diagnóstico orientativo. Falsa expectativa y responsabilidad legal. 
+Representación ante la APDP Excede el propósito del MVP. Confusión de responsabilidades. 
+IA/NLP semántica avanzada Reservada para una fase posterior. Sobreexpectativa técnica. 
+Integración automática con 
+sistemas del cliente 
+El MVP trabaja con carga manual de 
+documentos. Aumento de plazo y complejidad. 
+Remediación automática de 
+documentos El MVP solo diagnostica y sugiere. Expectativas irreales. 
+Firma electrónica avanzada de 
+documentos No es parte del diagnóstico. Desviación de alcance. 
+Soporte 24/7 / SOC dedicado No hay personal dedicado en la etapa inicial. Expectativas de servicio irreales. 
+Certificación oficial de 
+cumplimiento La plataforma no certifica ante terceros. Riesgo legal y reputacional. 
+App móvil nativa El MVP es web responsiva. Aumento de costo y plazo. 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 19 de 30 
+Elemento fuera de alcance Justificación Riesgo de no aclararlo 
+Análisis de bases de datos del 
+cliente 
+El MVP analiza documentos, no datos 
+en producción. 
+Confusión de alcance y riesgo de 
+datos. 
+25. Entregables del Proyecto 
+ID Entregable Descripción Responsable Criterio de aceptación 
+E-01 Documento de requisitos Catálogo y matriz de trazabilidad validados. Analista Aprobado por stakeholders. 
+E-02 Arquitectura SaaS Diseño multi-tenant + seguridad. Líder técnico Diagrama aprobado. 
+E-03 Módulo de autenticación Registro, login y MFA. Desarrollo Prueba login + MFA OK. 
+E-04 Módulo carga + OCR Carga segura con OCR y antivirus. Desarrollo Documento procesado. 
+E-05 Motor de reglas + checklist Diagnóstico por criterios de la Ley 21.719. Desarrollo + Legal Concordancia ≥ 85%. 
+E-06 Panel + informe de brechas Semáforo, informe y plan de acción. Desarrollo Informe exportable. 
+E-07 Controles de seguridad Cifrado, RBAC, auditoría, aislamiento. Seguridad Controles verificados. 
+E-08 Informe de pruebas OWASP Evidencia de pentest y correcciones. Seguridad / QA 0 hallazgos críticos. 
+E-09 Manual y capacitación Manual operativo y sesión de capacitación. PM Lista de asistencia. 
+E-10 Informe de cierre Acta de aceptación y lecciones aprendidas. PM Acta firmada. 
+26. Recursos Tangibles 
+Recurso tangible Cantidad Uso en el proyecto Costo estimado Justificación 
+Servidor / VM cloud 1 Despliegue de contenedores Docker. $0 (consumo cloud incluido abajo) Infraestructura base. 
+Servicio cloud (cómputo + 
+red) 1 Hosting de la plataforma SaaS. $600.000 
+Operación por 
+consumo del 
+MVP. 
+Object Storage cifrado 1 TB Almacenamiento de documentos. $300.000 Documentos cifrados de clientes. 
+Servicio KMS 1 Gestión y rotación de claves. $120.000 Protección de claves de cifrado. 
+Licencias de software — 
+Next.js, FastAPI, PostgreSQL, 
+ClamAV, Tesseract (open 
+source). 
+$0 Reducción de costos. 
+Equipos de desarrollo 3 notebooks Desarrollo y pruebas. Existente Trabajo técnico del equipo. 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 20 de 30 
+27. Recursos Intangibles 
+Recurso intangible Descripción Quién lo aporta Importancia 
+Conocimiento técnico Desarrollo full-stack y DevOps. Equipo técnico Alta 
+Experiencia en 
+ciberseguridad 
+Cifrado, RBAC, pentest, multi-
+tenant. Líder de seguridad Alta 
+Conocimiento normativo Interpretación de la Ley 21.719. Analista legal Alta 
+Apoyo directivo Priorización y patrocinio. Sponsor Alta 
+Cultura de seguridad Buenas prácticas y disciplina operativa. Todo el equipo Media 
+28. Presupuesto Estimado 
+Ítem Categoría Costo estimado Justificación Tipo 
+Licencias de software Software $0 Stack open source. Obligatorio 
+Infraestructura cloud + storage 
++ KMS Hardware / Cloud $1.020.000 
+Hosting, 
+almacenamiento y 
+claves del MVP. 
+Obligatorio 
+Horas de desarrollo full-stack RRHH $5.200.000 Construcción del MVP. Obligatorio 
+Horas de seguridad / pentest RRHH $1.400.000 Controles y pruebas OWASP. Obligatorio 
+Asesoría legal (validación 
+checklist) Servicios externos $1.000.000 Validación del motor por abogado. Obligatorio 
+Capacitación Operación $340.000 Transferencia de conocimiento. Obligatorio 
+Contingencia (≈10%) Riesgos $900.000 Reserva para imprevistos. Opcional 
+ 
+• 28.1 Costo total estimado: $9.860.000 CLP (incluida la contingencia). 
+• 28.2 Supuestos: uso de software open source, cloud por consumo, equipo existente y 
+disponibilidad parcial de un analista legal. 
+• 28.3 Restricciones presupuestarias: presupuesto acotado de proyecto académico/MVP; sin 
+licencias propietarias. 
+• 28.4 Elementos eliminables si baja el presupuesto: calendario legal (RF-07), comparación 
+de versiones (RF-06) y parte de la contingencia. 
+• 28.5 Elementos no eliminables: seguridad (cifrado, MFA, aislamiento), validación legal del 
+checklist, respaldo y pruebas OWASP; son la base de la confianza y la responsabilidad legal 
+del servicio. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 21 de 30 
+29. EDT / WBS 
+La Estructura de Desglose del Trabajo organiza el proyecto en ocho fases con tres niveles de detalle, 
+desde la gestión hasta el cierre. 
+ 
+Figura 1. EDT / WBS del proyecto DataShield 21.719. 
+30. Diccionario WBS 
+Código Paquete de trabajo Descripción Responsable Entregable Criterio de finalización 
+1.1 Acta de proyecto Autoriza el inicio del proyecto. PM Acta Firmada 
+1.3 Seguimiento y control Control de avance y riesgos. PM Informes Continuo 
+2.1 Entrevistas Levantamiento con stakeholders. Analista Actas Completas 
+2.3 Análisis documental Revisión de documentos del cliente. Analista Listado Realizado 
+2.4 Validación de requisitos Aprobación del catálogo. PM + Legal Matriz Validada 
+3.1 Arquitectura SaaS Diseño técnico multi-tenant. Líder técnico Diagrama Aprobado 
+3.2 Diseño de seguridad Cifrado, RBAC, aislamiento. Seguridad Diseño Aprobado 
+4.1 Autenticación Registro, login y MFA. Desarrollo Módulo Pruebas OK 
+4.2 Carga + OCR Carga segura y extracción. Desarrollo Módulo Documento OK 
+
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 22 de 30 
+Código Paquete de trabajo Descripción Responsable Entregable Criterio de finalización 
+4.3 Motor de reglas Checklist Ley 21.719. Desarrollo + Legal Motor Concordancia ≥85% 
+4.4 Dashboard Semáforo e informe. Desarrollo Panel Revisado 
+5.1 Controles de acceso RBAC y permisos. Seguridad Matriz roles Probada 
+5.3 Pruebas de seguridad Pentest OWASP. Seguridad Informe 0 críticos 
+6.2 Capacitación Entrenamiento de uso. PM Registro Realizada 
+7.1 Marcha blanca / piloto Validación con usuarios. Equipo Informe piloto Aprobado 
+8.1 Entrega formal Cierre y aceptación. PM Acta Firmada 
+31. Listado de Actividades 
+ID Actividad Responsable Duración Predecesora 
+A-01 Inicio formal del proyecto PM 1 día — 
+A-02 Identificar stakeholders PM 1 día A-01 
+A-03 Entrevistas y cuestionarios Analista 5 días A-02 
+A-04 Análisis documental Analista 4 días A-02 
+A-05 Catálogo de requisitos Analista 4 días A-03/A-04 
+A-06 Validar requisitos (legal) PM + Legal 3 días A-05 
+A-07 Diseño de arquitectura SaaS Líder técnico 5 días A-06 
+A-08 Diseño seguridad / multi-tenant Seguridad 4 días A-07 
+A-09 Modelo de datos (company_id) Líder técnico 4 días A-07 
+A-10 Setup infraestructura Docker/cloud Infraestructura 3 días A-09 
+A-11 Módulo de autenticación (JWT+MFA) Desarrollo 5 días A-10 
+A-12 Carga de documentos + OCR + ClamAV Desarrollo 7 días A-11 
+A-13 Motor de reglas + checklist Desarrollo 9 días A-12 
+A-14 Validación del checklist (abogado) Legal 4 días A-13 
+A-15 Dashboard de semáforo Desarrollo 6 días A-13 
+A-16 Informe de brechas + plan de acción Desarrollo 5 días A-15 
+A-17 RBAC + auditoría append-only Seguridad 5 días A-15 
+A-18 Cifrado AES-256 + KMS Seguridad 4 días A-17 
+A-19 Pruebas funcionales (QA) QA 5 días A-16 
+A-20 Pruebas de seguridad OWASP Seguridad 5 días A-19 
+A-21 Ajustes y hardening Desarrollo 4 días A-20 
+A-22 Manual + capacitación PM 3 días A-21 
+A-23 Marcha blanca / piloto Equipo 6 días A-22 
+A-24 Ajustes finales Desarrollo 3 días A-23 
+A-25 Entrega y cierre PM 2 días A-24 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 23 de 30 
+32. Carta Gantt 
+El cronograma se distribuye en 16 semanas (días hábiles). Las barras azules corresponden a 
+actividades clave o de ruta crítica; las grises, a actividades con holgura o paralelas. Las líneas rojas 
+marcan los hitos. 
+ 
+Figura 2. Carta Gantt del proyecto (16 semanas). 
+33. Hitos del Proyecto 
+Hito Descripción Fecha estimada Evidencia 
+H1 Inicio formal del proyecto Semana 1 Acta de inicio 
+H2 Requisitos aprobados Semana 3 Matriz validada 
+H3 Diseño y arquitectura validados Semana 4 Diagrama aprobado 
+H4 Carga + OCR operativos Semana 7 Documento procesado 
+H5 Motor + dashboard funcionando Semana 12 Diagnóstico generado 
+H6 Pruebas de seguridad aprobadas Semana 14 Informe OWASP 
+H7 Cierre formal Semana 16 Acta de cierre 
+ 
+  
+
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 24 de 30 
+34. Malla PERT 
+La malla PERT muestra la secuencia y dependencias de las actividades relevantes, destacando en 
+rojo la ruta crítica. 
+ 
+Figura 3. Malla PERT con ruta crítica resaltada. 
+ 
+Actividad Duración Predecesora Sucesora Paralelo 
+A-01 1 día — A-02 No 
+A-02 1 día A-01 A-03/A-04 Sí 
+A-03 5 días A-02 A-05 Sí 
+A-04 4 días A-02 A-05 Sí 
+A-05 4 días A-03/A-04 A-06 No 
+A-07 5 días A-06 A-08/A-09 Sí 
+A-12 7 días A-11 A-13 No 
+A-13 9 días A-12 A-15/A-19 No 
+A-15 6 días A-13 A-23 No 
+A-23 6 días A-22 A-24 No 
+35. Ruta Crítica 
+A-01 → A-02 → A-03 → A-05 → A-06 → A-07 → A-09 → A-11 → A-12 → A-13 → A-15 → A-16 → A-19 → A-
+20 → A-21 → A-22 → A-23 → A-24 → A-25 
+35.1 Secuencia más larga 
+La ruta crítica anterior es la secuencia más larga: integra levantamiento, diseño, construcción del 
+motor y del panel, pruebas de seguridad y cierre. 
+  
+
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 25 de 30 
+35.2 Actividades que no pueden retrasarse 
+Validación de requisitos, diseño de arquitectura, módulo de carga + OCR, motor de reglas, dashboard, 
+pruebas OWASP, marcha blanca y entrega final; ninguna tiene holgura. 
+35.3 ¿Qué ocurre si una actividad crítica se retrasa? 
+Cualquier retraso en una actividad crítica retrasa directamente la fecha de entrega del MVP. 
+35.4 Acciones preventivas 
+• Validar accesos y disponibilidad del analista legal antes de iniciar. 
+• Reservar ventanas técnicas y ambientes de prueba con anticipación. 
+• Definir responsables suplentes para roles clave. 
+• Mantener reuniones semanales de control y revisión de riesgos. 
+35.5 Actividades con holgura 
+Tienen holgura el análisis documental (A-04), el calendario legal (RF-07), la comparación de versiones 
+(RF-06) y parte de los controles que pueden ejecutarse en paralelo (A-08, A-17, A-18). 
+36. Registro de Riesgos 
+ID Riesgo Categoría Prob. Imp. Nivel Respuesta Responsable 
+R01 Falsos positivos/negativos del motor de reglas. Seguridad 4 4 16 Mitigar Líder técnico / Legal 
+R02 Fallo de aislamiento multi-tenant (acceso cruzado). Seguridad 3 5 15 Evitar Seguridad 
+R03 Fuga de documentos confidenciales de clientes. Seguridad 2 5 10 Mitigar Seguridad 
+R04 Cambios normativos / instrucciones de la APDP. Legal 4 3 12 Mitigar Legal 
+R05 Falta de abogado especialista para validar. Operativo 3 4 12 Mitigar PM 
+R06 Carga de malware en documentos. Seguridad 3 4 12 Mitigar Seguridad 
+R07 Caída del proveedor cloud. Operativo 2 4 8 Transferir Infraestructura 
+R08 Documentos escaneados ilegibles para OCR. Técnico 3 3 9 Mitigar Desarrollo 
+R09 Responsabilidad legal por diagnóstico incorrecto. Legal 3 5 15 Evitar Legal / PM 
+R10 Baja adopción por parte de las PYMEs. Adopción 3 3 9 Mitigar PM 
+R11 Sobrecostos cloud por crecimiento. Económico 3 3 9 Mitigar PM 
+R12 Dependencia del proveedor (lock-in). Proveedor 2 3 6 Aceptar/Mitigar Líder técnico 
+R13 Checklist desactualizado frente a la ley. Cumplimiento 3 4 12 Mitigar Legal 
+R14 Pérdida de datos / fallo de respaldo. Técnico 2 5 10 Mitigar Infraestructura 
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 26 de 30 
+ID Riesgo Categoría Prob. Imp. Nivel Respuesta Responsable 
+R15 Robo de credenciales. Seguridad 3 4 12 Mitigar Seguridad 
+R16 Falsa sensación de cumplimiento del cliente. Cumplimiento 3 4 12 Mitigar Legal / PM 
+R17 Retraso en la validación legal del motor. Plazos 3 4 12 Mitigar PM 
+37. Matriz de Probabilidad e Impacto 
+La matriz 5x5 clasifica los riesgos según probabilidad e impacto en niveles bajo, medio, alto y crítico. 
+Los riesgos R02 y R09 se ubican en zona crítica, y R01 en el límite superior de alto. 
+ 
+Figura 4. Mapa de calor de riesgos (5x5). 
+ 
+• 37.1 Tres riesgos más críticos: R01 (falsos positivos/negativos), R02 (fallo de aislamiento 
+multi-tenant) y R09 (responsabilidad por diagnóstico incorrecto). 
+• 37.2 Riesgo que más afecta el cronograma: R17 (retraso en la validación legal del motor), 
+por estar en la ruta crítica. 
+• 37.3 Riesgo que más afecta el presupuesto: R11 (sobrecostos cloud) y R05 (necesidad de 
+más horas de abogado). 
+• 37.4 Riesgo que más compromete la seguridad: R02 (acceso cruzado entre empresas), el 
+más grave en una plataforma SaaS multiempresa. 
+• 37.5 Riesgo que más rechazo puede generar en usuarios: R16 (falsa sensación de 
+cumplimiento) y R10 (baja adopción por desconfianza en el diagnóstico automatizado). 
+
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 27 de 30 
+38. Plan de Respuesta a Riesgos 
+Riesgo crítico Estrategia Acción concreta Responsable Plazo Evidencia 
+R02 Aislamiento 
+multi-tenant Evitar 
+Aislamiento por company_id + 
+pruebas de acceso horizontal 
+(IDOR). 
+Seguridad Antes del piloto Informe de pruebas 
+R09 Diagnóstico 
+incorrecto Evitar 
+Validación legal del checklist + 
+revisión manual de amarillos + 
+disclaimer. 
+Legal / PM Continuo Acta de validación 
+R01 Falsos 
+positivos/negativos Mitigar 
+Ponderación, indicadores de 
+precisión y mejora continua del 
+checklist. 
+Líder técnico Continuo Reporte de métricas 
+R03 Fuga de 
+documentos Mitigar 
+Cifrado por tenant, control de 
+acceso, monitoreo y 
+eliminación segura. 
+Seguridad Diseño Verificación de cifrado 
+R07 Caída cloud Transferir Alta disponibilidad, respaldo cifrado y SLA del proveedor. Infraestructura Operación SLA + backup 
+R13 Checklist 
+desactualizado Mitigar 
+Proceso formal de 
+actualización normativa ante la 
+APDP. 
+Legal Continuo Bitácora de versiones 
+39. Matriz RACI 
+La matriz incorpora explícitamente al analista legal, rol crítico para validar criterios del checklist y 
+evitar diagnósticos erróneos. 
+Actividad Sponsor PM Líder Téc. Seguridad Analista Legal Infraest. Usuarios 
+Aprobar alcance A R C C C I I 
+Levantar requisitos I R C C C C C 
+Diseñar solución I A R C C C I 
+Construir motor + 
+checklist I A R C R I I 
+Implementar controles I A R R I C I 
+Validar seguridad I A C R I C I 
+Validar criterios legales I A C C R I I 
+Capacitar usuarios I R C C C I R 
+Marcha blanca / cierre A R R C C C I 
+ 
+Leyenda: R = Responsable de ejecutar · A = Aprobador / responsable final · C = Consultado · I = 
+Informado. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 28 de 30 
+40. Plan de Comunicación 
+Stakeholder Información requerida Frecuencia Canal Responsable Formato 
+Sponsor / 
+Gerencia 
+Avance ejecutivo y 
+riesgos Semanal Reunión / correo PM Informe ejecutivo 
+Equipo técnico Tareas y bloqueos Diario / semanal Teams / Slack Líder técnico Tablero 
+Analista legal Criterios y cambios normativos Semanal Reunión técnica PM Checklist / minuta 
+Seguridad Riesgos y controles Semanal Reunión técnica Líder seguridad Informe 
+Usuarios piloto Cambios y capacitación Según etapa Correo / workshop PM Presentación 
+Proveedor cloud Actividades y SLA Según planificación Correo / portal Infraestructura Acta / tickets 
+ 
+• 40.1 Stakeholder que requiere mayor comunicación: el analista legal, por su rol en la 
+validación continua del checklist. 
+• 40.2 Información inmediata: incidentes de seguridad, fugas o accesos cruzados, cambios de 
+alcance, riesgos críticos y retrasos en la ruta crítica. 
+• 40.3 Cambios de alcance: se comunican mediante solicitud de cambio formal, evaluada por el 
+PM y aprobada por el sponsor. 
+• 40.4 Documentación de acuerdos: actas de reunión y registro en el repositorio de evidencias 
+del proyecto. 
+41. Herramientas de Gestión del Proyecto 
+Necesidad Herramienta seleccionada Justificación 
+Gestión de tareas Trello / Jira Tableros visuales y seguimiento ágil. 
+Carta Gantt Excel / GanttProject Fácil de elaborar y compartir. 
+Documentación Google Drive / Notion Colaborativo y centralizado. 
+Diagramas Draw.io Gratuito y exportable. 
+Comunicación Microsoft Teams / Slack Uso corporativo y mensajería de equipo. 
+Control de versiones 
+(código) GitHub privado Versionado y revisión de código. 
+Gestión de riesgos Excel (matriz de riesgos) Registro y mapa de calor. 
+Repositorio de evidencias OneDrive / Drive Respaldo centralizado de entregables. 
+ 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 29 de 30 
+42. Plan de Validación 
+Entregable Método de validación Responsable Evidencia esperada 
+Requisitos Revisión con stakeholders PM Acta de aprobación 
+Arquitectura / 
+aislamiento 
+Revisión técnica + prueba 
+multi-tenant Líder técnico Informe de pruebas 
+Motor + checklist Concordancia con criterio legal Analista legal Reporte de concordancia 
+Panel + informe Prueba funcional y de usabilidad QA Informe de pruebas 
+Controles de seguridad Prueba OWASP / pentest Seguridad Evidencia técnica 
+Capacitación Evaluación de usuarios PM Encuesta / asistencia 
+Puesta en marcha Validación operativa (marcha blanca) Equipo Acta de paso a producción 
+43. Criterios de Éxito 
+Criterio de éxito Indicador Meta Evidencia 
+Cumplimiento de alcance % de entregables completados 100% Acta de aceptación 
+Cumplimiento de plazo Desviación del cronograma ≤ 10% Seguimiento Gantt 
+Seguridad Hallazgos críticos OWASP 0 Informe de pentest 
+Aislamiento multi-tenant Pruebas de acceso horizontal 100% aprobadas Informe de pruebas 
+Precisión del motor Concordancia con criterio legal ≥ 85% Reporte de métricas 
+Adopción Usuarios piloto capacitados 100% Lista de asistencia 
+Operación Servicio funcionando en marcha blanca Estable Acta de marcha blanca 
+44. Cierre del Proyecto 
+El proyecto se cerrará formalmente con la entrega de la documentación final, la aprobación del 
+patrocinador y la validación de los entregables. Incluye la transferencia a operación (soporte, 
+monitoreo de seguridad y actualización normativa), la capacitació n final del equipo de operación, el 
+registro de lecciones aprendidas y el informe de cierre con el acta de aceptación firmada. 
+• Validación de entregables y acta de aceptación del sponsor. 
+• Entrega de manual operativo y documentación técnica. 
+• Entrega de la matriz de requisitos y del informe de pruebas de seguridad. 
+• Transferencia a operación continua (PDCA: planificar, hacer, verificar, actuar). 
+• Registro de lecciones aprendidas e informe de cierre. 
+  
+DataShield 21.719 — Plan Maestro de Ciberseguridad Instituto Profesional AIEP 
+Página 30 de 30 
+45. Lecciones Aprendidas Esperadas 
+Área Aprendizaje esperado 
+Técnico (45.1) El aislamiento multi-tenant requiere pruebas de acceso horizontal desde el diseño, no al final. 
+Gestión (45.2) El alcance debe cerrarse temprano para evitar sobreprometer funcionalidades legales. 
+Stakeholders (45.3) La participación temprana del analista legal es clave para la credibilidad del diagnóstico. 
+Ciberseguridad (45.4) La explicabilidad del motor por reglas facilita la auditoría y la confianza del cliente. 
+46. Reflexión Final del Grupo 
+• 46.1 Parte más difícil de planificar: el motor de análisis y el checklist  legal, porque exige 
+traducir requisitos jurídicos en reglas verificables y validarlas con un abogado, equilibrando 
+automatización y responsabilidad. 
+• 46.2 Supuesto que podría afectar gravemente la ejecución: la disponibilidad del analista 
+legal para validar el checklist; sin ella, el diagnóstico pierde credibilidad y se retrasa la ruta 
+crítica. 
+• 46.3 Requisito de seguridad que no puede eliminarse: el aislamiento estricto por 
+company_id y el cifrado de los documentos; sin ellos la plataforma no es viable ni responsable. 
+• 46.4 Decisión técnica que más impacta el presupuesto: usar un motor por reglas en el MVP 
+en vez de IA/NLP, lo que reduce costos y riesgo; la incorporación de IA en una fase posterior 
+aumentaría el presupuesto. 
+• 46.5 Stakeholder a gestionar con mayor cuidado: el analista legal, por su rol validador, y el 
+cliente PYME, por la expectativa de no sobreprometer asesoría legal. 
+• 46.6 Riesgo que más afecta la fecha de entrega: el retraso en la validación legal del motor 
+(R17), por estar en la ruta crítica. 
+• 46.7 Evidencia de viabilidad: uso de tecnologías maduras y open source, alcance acotado al 
+MVP, objetivos medibles, planificación por etapas y seguridad desde el diseño. 
+• 46.8 Qué reforzar antes de implementar: precisar más el motor de diagnóstico y sus 
+indicadores de precisión, formalizar el proceso de actualización normativa, fortalecer la 
+arquitectura SaaS de seguridad, definir límites legales del servicio y los contratos de encargo 
+(DPA), y mejorar la trazabi lidad y la eliminación segura de los documentos que los clientes 
+suben. 
+ 
+Coherencia del plan: Problema → Objetivos → Requisitos → Seguridad → Alcance → Entregables → WBS → 
+Gantt → Recursos → Riesgos → Validación → Cierre. Cada objetivo tiene requisitos asociados, cada requisito 
+un entregable y una prueba, cada actividad aparece  en la WBS y el Gantt, cada riesgo crítico tiene respuesta, 
+cada control responde a una amenaza y cada stakeholder está considerado en la comunicación y la matriz RACI. 
