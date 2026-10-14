@@ -198,8 +198,10 @@ interface EvaluacionCriterio {
   frasesEncontradas: string[];
   kwsValidas: string[];
   kwsNegadas: string[];
+  kwsEnContextoNormativo: string[];
   sinonimosValidos: string[];
   densidad: number;
+  densidadRelativa?: number;
   proximidad: boolean;
   requiereRevisionManual: boolean;
   status: 'ok' | 'warn' | 'fail';
@@ -207,24 +209,40 @@ interface EvaluacionCriterio {
   fragmento: string;
 }
 
+// Ventana en palabras para considerar un keyword como "en contexto normativo"
+const VENTANA_NORMATIVA = 8;
+
+function enContextoNormativo(palabras: string[], kw: string): boolean {
+  const posicionesKw = encontrarPosiciones(palabras, kw);
+  if (posicionesKw.length === 0) return false;
+  for (const marker of MARCADORES_CONTEXTO_NORMATIVO) {
+    const posicionesMarker = encontrarPosiciones(palabras, marker);
+    for (const posKw of posicionesKw) {
+      for (const posMarker of posicionesMarker) {
+        if (Math.abs(posKw - posMarker) <= VENTANA_NORMATIVA) return true;
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * Evalúa un criterio individual contra el texto del documento.
  * Aplica detección de negaciones, proximidad, densidad y frases legales exactas.
  */
-function evaluarCriterio(
+export function evaluarCriterio(
   texto: string,
   palabras: string[],
   keywords: string[],
   synonyms: string[],
   frasesLegales: string[],
+  wordCount?: number,
 ): EvaluacionCriterio {
 
   // ── 1. Frases legales exactas ──────────────────────────────────────────
-  // Peso máximo: evidencia de lenguaje jurídico correcto.
   const frasesEncontradas = buscarFrasesExactas(texto, frasesLegales);
 
   // ── 2. Keywords: separar válidas de negadas ────────────────────────────
-  // Un keyword contado como negada NO contribuye al cumplimiento.
   const kwsValidas: string[] = [];
   const kwsNegadas: string[] = [];
 
@@ -238,7 +256,7 @@ function evaluarCriterio(
         hayNegada = true;
       } else {
         hayValida = true;
-        break; // basta con una ocurrencia válida para contar
+        break;
       }
     }
 
@@ -246,8 +264,12 @@ function evaluarCriterio(
     else if (hayNegada) kwsNegadas.push(kw);
   }
 
+  // ── Cambio 4: detectar keywords en contexto normativo ─────────────────
+  // Un keyword válido que aparece junto a "la ley", "según el", etc. es
+  // probable que esté en una oración descriptiva, no performativa.
+  const kwsEnContextoNormativo = kwsValidas.filter(kw => enContextoNormativo(palabras, kw));
+
   // ── 3. Sinónimos (solo cuando no hay evidencia primaria) ───────────────
-  // Peso menor: indican el concepto pero con lenguaje no exacto.
   const sinonimosValidos: string[] = [];
   if (kwsValidas.length === 0 && frasesEncontradas.length === 0) {
     for (const syn of synonyms) {
@@ -258,63 +280,67 @@ function evaluarCriterio(
   }
 
   // ── 4. Densidad de menciones ───────────────────────────────────────────
-  // Más menciones coherentes = mayor confianza en el cumplimiento.
   const densidad = calcularDensidad(texto, [...keywords, ...frasesLegales]);
 
+  // ── Cambio 3: densidad relativa al tamaño del documento ───────────────
+  const densidadRelativa = wordCount && wordCount > 0
+    ? densidad * 1000 / wordCount
+    : undefined;
+
   // ── 5. Proximidad de conceptos ─────────────────────────────────────────
-  // Términos juntos forman una idea coherente; dispersos son menos confiables.
   const terminosPositivos = [...kwsValidas, ...frasesEncontradas];
   const proximidad = terminosPositivos.length >= 2
     ? calcularProximidad(palabras, terminosPositivos)
     : false;
 
   // ── 6. ¿Requiere revisión manual? ─────────────────────────────────────
-  // Solo cuando la evidencia es exclusivamente negada (posible contradicción).
   const requiereRevisionManual =
     kwsNegadas.length > 0 &&
     kwsValidas.length === 0 &&
     frasesEncontradas.length === 0 &&
     sinonimosValidos.length === 0;
 
-  // ── 7. Determinar status ───────────────────────────────────────────────
-  // ok: evidencia sólida. warn: evidencia débil o negada. fail: sin evidencia.
+  // ── 7. Determinar status (Cambio 2 aplicado) ──────────────────────────
+  // Cambio 2: frase legal SOLA ya no alcanza para 'ok'; requiere frase + kw.
   const umbralOk = Math.max(1, Math.ceil(keywords.length * 0.6));
   let status: 'ok' | 'warn' | 'fail';
 
-  if (frasesEncontradas.length > 0 || kwsValidas.length >= umbralOk) {
+  if ((frasesEncontradas.length > 0 && kwsValidas.length >= 1) || kwsValidas.length >= umbralOk) {
     status = 'ok';
-  } else if (kwsValidas.length > 0 || sinonimosValidos.length > 0 || requiereRevisionManual) {
+  } else if (frasesEncontradas.length > 0 || kwsValidas.length > 0 || sinonimosValidos.length > 0 || requiereRevisionManual) {
     status = 'warn';
   } else {
     status = 'fail';
   }
 
   // ── 8. Determinar confianza ────────────────────────────────────────────
-  // Refleja qué tan segura es la detección automática.
   let confianza: 'alta' | 'media' | 'baja';
 
-  if (frasesEncontradas.length > 0) {
-    // Frase legal exacta = señal más fuerte
+  if (frasesEncontradas.length > 0 && kwsValidas.length >= 1) {
     confianza = 'alta';
   } else if (kwsValidas.length >= umbralOk && (densidad > UMBRAL_DENSIDAD_ALTA || proximidad)) {
-    // Keywords suficientes con buena densidad o proximidad
     confianza = 'alta';
-  } else if (kwsValidas.length > 0) {
-    // Keywords encontradas pero sin densidad/proximidad buena
+  } else if (kwsValidas.length > 0 || frasesEncontradas.length > 0) {
     confianza = 'media';
   } else if (sinonimosValidos.length > 0) {
-    // Solo sinónimos — concepto presente pero no con lenguaje preciso
     confianza = 'media';
   } else {
     confianza = 'baja';
   }
 
-  // Si hay revisión manual, la confianza baja al menos un nivel
   if (requiereRevisionManual && confianza === 'alta') confianza = 'media';
 
-  // ── 9. Fragmento exacto del documento que respalda la detección ────────
-  // Prioridad: frase legal exacta > keyword válida > sinónimo. Sin evidencia
-  // (fail) no hay nada que citar.
+  // Cambio 3: densidad relativa baja → reducir confianza
+  if (densidadRelativa !== undefined && densidadRelativa < 1.0 && confianza === 'alta') {
+    confianza = 'media';
+  }
+
+  // Cambio 4: mayoría de kws en contexto normativo → reducir confianza
+  if (kwsEnContextoNormativo.length > kwsValidas.length / 2 && confianza === 'alta') {
+    confianza = 'media';
+  }
+
+  // ── 9. Fragmento exacto del documento ─────────────────────────────────
   const terminoClave = frasesEncontradas[0] ?? kwsValidas[0] ?? sinonimosValidos[0] ?? null;
   const fragmento = terminoClave ? extraerFragmento(texto, terminoClave) : '';
 
@@ -322,8 +348,10 @@ function evaluarCriterio(
     frasesEncontradas,
     kwsValidas,
     kwsNegadas,
+    kwsEnContextoNormativo,
     sinonimosValidos,
     densidad,
+    densidadRelativa,
     proximidad,
     requiereRevisionManual,
     status,
@@ -360,6 +388,7 @@ export function analyzeDocument(
         frasesLegalesEncontradas: [],
         requiereRevisionManual: false,
         densidad: 0,
+        kwsEnContextoNormativo: [],
         fragmentoDocumento: '',
       })),
       gap: `Documento obligatorio según ${req.art}. Sin este documento su empresa queda expuesta a multas de ${req.multa}.`,
@@ -383,6 +412,7 @@ export function analyzeDocument(
         frasesLegalesEncontradas: [],
         requiereRevisionManual: false,
         densidad: 0,
+        kwsEnContextoNormativo: [],
         fragmentoDocumento: '',
       })),
       gap: `El archivo "${doc.name}" parece ser un PDF escaneado o una imagen. No es posible extraer su texto para verificar el cumplimiento. Súbalo como PDF con texto seleccionable, Word o TXT.`,
@@ -393,7 +423,7 @@ export function analyzeDocument(
   const palabras = texto.split(/\s+/);
 
   const criterios: CriterioResult[] = req.criterios.map(c => {
-    const ev = evaluarCriterio(texto, palabras, c.keywords, c.synonyms, c.frasesLegales);
+    const ev = evaluarCriterio(texto, palabras, c.keywords, c.synonyms, c.frasesLegales, doc.wordCount);
 
     // ── Construir texto explicativo (campo 'found') ──────────────────────
     // Explica qué evidencia encontró el motor para este criterio.
@@ -430,6 +460,8 @@ export function analyzeDocument(
       frasesLegalesEncontradas: ev.frasesEncontradas,
       requiereRevisionManual: ev.requiereRevisionManual,
       densidad: ev.densidad,
+      kwsEnContextoNormativo: ev.kwsEnContextoNormativo,
+      densidadRelativa: ev.densidadRelativa,
       fragmentoDocumento: ev.fragmento,
     };
   });

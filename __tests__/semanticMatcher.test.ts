@@ -47,6 +47,7 @@ function criterioFixture(status: 'fail' | 'warn' | 'ok') {
     frasesLegalesEncontradas: [],
     requiereRevisionManual: false,
     densidad: status === 'fail' ? 0 : 1,
+    kwsEnContextoNormativo: [],
     fragmentoDocumento: status === 'fail' ? '' : 'algo de contexto',
   };
 }
