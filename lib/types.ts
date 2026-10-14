@@ -30,6 +30,21 @@ export interface LegalDetail {
   exigenciaSimple: string;    // Explicación en lenguaje llano (2-3 oraciones)
 }
 
+export interface ClasificacionConfig {
+  marcadoresPerformativos: string[];
+  marcadoresNormativos: {
+    tier1: string[];
+    tier2: string[];
+  };
+}
+
+export interface ClasificacionDocumentoResult {
+  tipo: 'correcto' | 'dudoso' | 'incorrecto';
+  razon: string;
+  performativosEncontrados: string[];
+  normativosEncontrados: string[];
+}
+
 export interface Requisito {
   id: string;
   num: string;
@@ -41,6 +56,7 @@ export interface Requisito {
   plazo: Plazo;
   criterios: Criterio[];
   legalDetail: LegalDetail;
+  clasificacion: ClasificacionConfig;
 }
 
 export interface UploadedDoc {
@@ -66,6 +82,8 @@ export interface CriterioResult {
   frasesLegalesEncontradas: string[];
   requiereRevisionManual: boolean;
   densidad: number;
+  kwsEnContextoNormativo: string[];
+  densidadRelativa?: number;
   // Fragmento textual EXACTO del documento (recorte con contexto alrededor
   // del término/frase que respalda la detección). Vacío cuando no hay
   // evidencia (status 'fail').
@@ -87,10 +105,12 @@ export interface CriterioResult {
 
 export interface RequisitoResult {
   // 'unanalyzable' = documento escaneado, no se pudo extraer texto
-  estado: 'green' | 'yellow' | 'red' | 'unanalyzable';
+  // 'wrong_type'   = documento del tipo incorrecto (clasificación previa)
+  estado: 'green' | 'yellow' | 'red' | 'unanalyzable' | 'wrong_type';
   cobertura: number;
   criterios: CriterioResult[];
   gap: string;
+  clasificacionDocumento?: ClasificacionDocumentoResult;
 }
 
 export interface HistorialSnapshot {
