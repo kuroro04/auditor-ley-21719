@@ -1,0 +1,102 @@
+ Política de Privacidad de Datos
+Escuela de Seguros de Chile S.A.
+1. Introducción
+En la Escuela de Seguros de Chile S.A. (en adelante “la Escuela”), valoramos la privacidad y
+seguridad de la información personal de nuestros usuarios, alumnos, docentes, clientes y
+visitantes del sitio web www.escueladeseguros.cl.
+Esta Política describe cómo recopilamos, utilizamos, almacenamos y protegemos los datos
+personales conforme a la legislación chilena vigente y a los estándares internacionales de
+protección de datos aplicables en plataformas digitales como Google, Meta (Facebook e
+Instagram) y LinkedIn.
+2. Normativa aplicable
+El tratamiento de datos personales realizado por la Escuela se ajusta a:
+• Ley N° 19.628 sobre Protección de la Vida Privada.
+• Ley N° 21.459 sobre Delitos Informáticos y su reglamento.
+• Ley N° 21.180 de Transformación Digital del Estado (principios de interoperabilidad
+y seguridad).
+• Reglamentos y políticas de privacidad de plataformas de terceros:
+o Google Ads, Analytics, Tag Manager y reCAPTCHA.
+o Meta Platforms (Facebook, Instagram, WhatsApp Business).
+o LinkedIn Ads y LinkedIn Insight Tag.
+3. Datos que recopilamos
+Podemos recopilar las siguientes categorías de información:
+a. Datos personales de identificación: nombre, RUT, correo electrónico, teléfono, cargo,
+empresa, país.
+b. Datos académicos o profesionales: programas cursados, evaluaciones, certificados,
+historial formativo.
+c. Datos de navegación y comportamiento digital: dirección IP, dispositivo, navegador,
+páginas visitadas, duración de la sesión, formularios completados y acciones dentro del
+sitio.
+d. Datos de origen de campañas: medios de contacto (formulario web, redes sociales,
+anuncios, correo electrónico, WhatsApp, o inscripción directa).
+4. Finalidad del tratamiento
+Los datos personales serán utilizados para:
+1. Gestionar inscripciones, matrículas, pagos y certificados.
+2. Enviar información académica y comercial relacionada con programas de
+capacitación, diplomados, seminarios y cursos.
+3. Cumplir obligaciones legales y contractuales con entidades reguladoras (SENCE,
+CMF, etc.).
+4. Mejorar la experiencia digital mediante análisis de comportamiento y
+personalización de contenidos.
+5. Implementar acciones de marketing digital (remarketing, retargeting, audiencias
+personalizadas y similares), siempre dentro del marco de consentimiento
+informado.
+6. Mantener comunicación con nuestros usuarios a través de correo electrónico, SMS
+o mensajería instantánea con fines informativos o promocionales.
+5. Bases de legitimación
+El tratamiento de datos se efectúa con base en:
+• Consentimiento expreso del titular al completar formularios o participar en
+nuestras actividades.
+• Cumplimiento contractual o precontractual, en procesos de matrícula o prestación
+de servicios educativos.
+• Interés legítimo en la mejora de procesos, análisis estadístico y seguridad de los
+sistemas.
+6. Uso de cookies y tecnologías similares
+Nuestro sitio utiliza cookies propias y de terceros (Google, Meta, LinkedIn) para analizar
+tráfico, optimizar publicidad y medir conversiones.
+Puedes gestionar o desactivar las cookies desde la configuración de tu navegador.
+• Google Analytics y Tag Manager: Medición de rendimiento del sitio.
+• Meta Pixel y Conversion API: Seguimiento de conversiones y personalización de
+anuncios.
+• LinkedIn Insight Tag: Análisis de visitas y audiencias profesionales.
+Ninguna cookie recopila información que permita identificarte directamente sin tu
+consentimiento.
+7. Comunicación y transferencia de datos
+Los datos podrán ser compartidos únicamente con:
+• Proveedores tecnológicos (hosting, CRM, sistemas de pago, e-learning).
+• Autoridades reguladoras o fiscales, cuando la ley lo exija.
+• Plataformas de terceros con las cuales mantenemos integraciones publicitarias o
+analíticas (Google, Meta, LinkedIn), conforme a sus políticas de privacidad y a
+cláusulas de confidencialidad.
+No se venden, arriendan ni transfieren datos personales a terceros no autorizados.
+8. Derechos de los titulares
+De acuerdo con la Ley N°19.628, el titular de los datos tiene derecho a:
+• Acceder, rectificar, cancelar u oponerse al tratamiento de sus datos personales.
+• Solicitar la eliminación o portabilidad de sus datos.
+• Revocar su consentimiento en cualquier momento.
+Las solicitudes pueden realizarse al correo: privacidad@escueladeseguros.cl, adjuntando
+nombre completo, RUT y descripción de la solicitud.
+9. Seguridad de la información
+La Escuela implementa medidas técnicas y organizativas adecuadas para proteger los datos
+contra accesos no autorizados, pérdida, destrucción o alteración, incluyendo:
+• Cifrado SSL/TLS del sitio web.
+• Control de accesos y contraseñas seguras.
+• Copias de seguridad periódicas.
+• Políticas de retención y anonimización de datos.
+10. Conservación de los datos
+Los datos personales serán conservados durante el tiempo necesario para cumplir las
+finalidades declaradas, o mientras exista una relación contractual o académica activa. Una
+vez finalizado dicho periodo, los datos se eliminarán o anonimizarán conforme a la
+normativa aplicable.
+11. Actualización de la política
+Esta Política podrá actualizarse periódicamente para reflejar cambios legales, tecnológicos
+o de las plataformas de terceros. La versión vigente estará siempre disponible en
+www.escueladeseguros.cl/politica-de-privacidad.
+Última actualización: noviembre 2025.
+12. Contacto
+Para consultas o ejercicio de derechos sobre sus datos personales:
+Escuela de Seguros de Chile S.A.
+RUT: 76.622.870-4
+Correo: proyectos@escueladeseguros.cl
+Teléfono: +56 2 2562 8200
+Dirección: La Concepción 322, Of. 402. Providencia. Santiago.
