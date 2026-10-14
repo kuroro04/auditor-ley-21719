@@ -1435,3 +1435,36 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - **Frase legal y 0 keywords → warn:** cubierto por `evaluarCriterio.test.ts` Task 4: "criterio con frase legal exacta pero cero keywords → status warn, confianza alta".
 - **Doc largo con pocas menciones:** cubierto por `evaluarCriterio.test.ts` Task 4: "doc muy largo con pocas menciones no alcanza confianza alta solo por keywords".
 - **`kwsEnContextoNormativo` inicializado en todos los paths:** cubierto implícitamente por `tsc --noEmit` (tipo requerido) y verificado en `evaluarCriterio.test.ts` Task 4: "kwsEnContextoNormativo está presente en CriterioResult".
+
+---
+
+## Estado de ejecución (2026-10-13, última sesión)
+
+**Commits:** dc66ea7 → 68e5ea4 → f0359a9 → 0f848b5 → 8537753
+
+**Completados:** Task 1, Task 2, Task 3, Task 4, Task 5
+
+**Tabla de baseline B5 — ESTADO ACTUAL:**
+
+| Fixture | Words | estado | cobertura | Identidad | Finalidad | Base legal | ARCO | Plazo |
+|---------|-------|--------|-----------|-----------|-----------|------------|------|-------|
+| F1 Plan Maestro | 9039 | **wrong_type** | **0%** | fail/baja | fail/baja | fail/baja | fail/baja | fail/baja |
+| F2 Centro Médico | 1625 | yellow | 70% | ok/alta | warn/media | warn/media | ok/alta | warn/media |
+| F3 Escuela Seguros | 776 | yellow | 70% | warn/media | ok/alta | warn/media | warn/media | ok/alta |
+| F4 Cencosud | 1578 | yellow | 70% | ok/alta | warn/media | warn/media | ok/alta | warn/media |
+| F5 Blog | 1961 | **wrong_type** | **0%** | fail/baja | fail/baja | fail/baja | fail/baja | fail/baja |
+
+**Fallos de test actuales (todos esperados):**
+- `documentClassification.test.ts` F1/F5 `[BASELINE]`: documentaban el bug antiguo, fallan porque el bug está corregido ✓
+- `documentClassification.test.ts` F2 `[POST-IMPL]` estado green: F2 está en yellow 70%, necesita Task 6 para llegar a green ≥75%
+- `analyzer.test.ts` "documento completo → green": usa fixture keyword-soup que el gate rechaza como wrong_type, necesita Task 7
+
+**Próximo paso:** Task 6 — Vocabulario 19.628.
+- Agregar frases a `lib/frasesLegales.ts`: "base de licitud", "bases de legitimación", "vigencia del tratamiento", "acceder, rectificar, cancelar u oponerse", "conservará los datos", "durante el tiempo necesario", "domicilio del responsable", "datos del representante legal".
+- Agregar sinónimos verbales a `lib/sinonimos.ts`: "acceder", "rectificar", "oponerse", "conservará", "vigencia", "razón social", "domiciliada", "base de licitud".
+- Crear `__tests__/vocabularyRegression.test.ts` primero (TDD iron law).
+- Medir B6 — esperar que F2 suba a green ≥75%, F3/F4 mejoren.
+
+**Condiciones de usuario activas:**
+1. Revisor final: subagente con contexto fresco, revisa contra spec+baseline, NO contra tests.
+2. Baseline después de CADA task; si algún fixture se mueve en dirección contraria, PARAR.
