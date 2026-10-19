@@ -1465,6 +1465,39 @@ Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 - Crear `__tests__/vocabularyRegression.test.ts` primero (TDD iron law).
 - Medir B6 — esperar que F2 suba a green ≥75%, F3/F4 mejoren.
 
+**Completados (sesión 2026-10-19):** Task 6, Task 7
+
+**Tabla de baseline B6 — ESTADO FINAL:**
+
+| Fixture | Words | estado | cobertura | Identidad | Finalidad | Base legal | ARCO | Plazo |
+|---------|-------|--------|-----------|-----------|-----------|------------|------|-------|
+| F1 Plan Maestro | 9039 | **wrong_type** | 0% | fail | fail | fail | fail | fail |
+| F2 Centro Médico | 1625 | **green** | **100%** | ok/alta | ok/alta | ok/alta | ok/alta | ok/alta |
+| F3 Escuela Seguros | 776 | **green** | **90%** | warn/media | ok/alta | ok/alta | ok/alta | ok/alta |
+| F4 Cencosud | 1578 | **green** | **80%** | ok/alta | warn/media | warn/media | ok/alta | ok/alta |
+| F5 Blog | 1961 | **wrong_type** | 0% | fail | fail | fail | fail | fail |
+
+**Fallos de test residuales (permanentes, esperados):**
+- `documentClassification.test.ts` F1/F5 `[BASELINE]`: documentaban el bug antiguo; fallan porque el bug fue corregido. No tocar.
+
+**Commits de esta rama:** dc66ea7 → 68e5ea4 → f0359a9 → 0f848b5 → 8537753 → 318354b → 8a0c57e
+
+---
+
+## Tarea siguiente — Criterios bloqueantes en `buildRequisitoResult`
+
+**Problema identificado en B6:** F3 alcanza `green/90%` con el criterio Identidad en `warn`. Un documento puede mostrar "Cumple" sin identificar al responsable del tratamiento (Art. 14 letra a), que es el requisito más básico de cualquier política. Es el mismo patrón corregido en esta rama (documento del tipo equivocado puntúa alto) pero un nivel más arriba: documento del tipo correcto pero incompleto en lo esencial.
+
+**Propuesta técnica:**
+- Añadir campo `required?: true` en la interfaz `Criterio` (`lib/types.ts`)
+- En `buildRequisitoResult`: si cualquier criterio con `required: true` tiene `status !== 'ok'`, el estado máximo es `'yellow'` (nunca `'green'`), independientemente de la cobertura
+- Candidatos obvios en `politica_privacidad`: Identidad (Art. 14a), Base legal (Art. 14b) — el resto necesita revisión legal
+- **Alcance pendiente:** revisar los 10 requisitos y determinar qué criterios de cada uno son bloqueantes — esto requiere su propio spec antes de implementar
+
+**Por qué no se hizo en esta rama:** fuera del alcance de `clasificacion-tipo-documento`. La rama corrige clasificación y endurecimiento de evidencia; los criterios bloqueantes son una capa de agregación diferente.
+
+---
+
 **Condiciones de usuario activas:**
 1. Revisor final: subagente con contexto fresco, revisa contra spec+baseline, NO contra tests.
 2. Baseline después de CADA task; si algún fixture se mueve en dirección contraria, PARAR.
