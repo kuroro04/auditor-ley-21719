@@ -68,13 +68,6 @@ describe('Fixture 1 — Plan Maestro (documento normativo/académico)', () => {
     expect(res.clasificacionDocumento?.performativosEncontrados).toHaveLength(0);
   });
 
-  // ── Baseline actual (pre-implementación) — documenta el falso positivo ────
-  it('[BASELINE] actualmente el motor lo evalúa (no debería después de la implementación)', () => {
-    const res = analyzeDocument('politica_privacidad', docs);
-    // Después de la implementación este test fallará: esperamos wrong_type
-    // Este test vale para confirmar el bug que motiva el cambio
-    expect(['green', 'yellow', 'red']).toContain(res.estado);
-  });
 });
 
 // ── FIXTURE 2: Política de privacidad completa — Centro Médico Antofagasta ───
@@ -225,13 +218,6 @@ describe('Fixture 5 — Artículo de blog (normativo, no es una política)', () 
     expect(res.clasificacionDocumento?.tipo).toBe('incorrecto');
   });
 
-  // ── Baseline actual ───────────────────────────────────────────────────────
-  it('[BASELINE] actualmente lo evalúa como si fuera documento válido', () => {
-    const res = analyzeDocument('politica_privacidad', docs);
-    console.log(`F5 baseline: estado=${res.estado} cobertura=${res.cobertura}%`);
-    res.criterios.forEach(c => console.log(`  ${c.name}: ${c.status} (kw=${c.kwFound}, frases=${c.frasesLegalesEncontradas.length})`));
-    expect(['green', 'yellow', 'red']).toContain(res.estado);
-  });
 });
 
 // ── FIXTURE 6: RAT en slot de politica_privacidad — PENDIENTE ────────────────
