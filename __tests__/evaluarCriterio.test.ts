@@ -15,6 +15,8 @@ describe('evaluarCriterio — Cambio 2', () => {
     expect(ev.frasesEncontradas.length).toBeGreaterThan(0);
     expect(ev.kwsValidas.length).toBe(0);
     expect(ev.status).toBe('warn');
+    // Hallazgo 5: spec dice confianza='alta' para frase sola sin keywords
+    expect(ev.confianza).toBe('alta');
   });
 
   it('frase legal + al menos un keyword → ok', () => {
@@ -50,7 +52,7 @@ describe('evaluarCriterio — Cambio 3', () => {
     expect(ev.densidadRelativa).toBeUndefined();
   });
 
-  it('confianza baja de alta a media cuando densidadRelativa < 1.0', () => {
+  it('confianza baja de alta a media cuando densidadRelativa < 1.0 (solo keywords, sin frase)', () => {
     // Setup: 3 keywords in proximity → confianza='alta' sin Cambio 3
     // wordCount=10000 → densidadRelativa ≈ 3*1000/10000 = 0.3 < 1.0 → alta→media
     const { texto, palabras } = ctx('conservación retención plazo mas texto');
@@ -64,6 +66,24 @@ describe('evaluarCriterio — Cambio 3', () => {
     expect(ev.densidadRelativa).toBeDefined();
     expect(ev.densidadRelativa!).toBeLessThan(1.0);
     expect(ev.confianza).not.toBe('alta');
+  });
+
+  it('confianza permanece alta cuando hay frase legal aunque densidadRelativa < 1.0', () => {
+    // Hallazgo 7: Cambio 3 solo aplica "cuando solo hay keywords sin frase"
+    // frase + kw en doc largo → alta, NO media
+    const { texto, palabras } = ctx('período de guarda cumplido conservación de datos');
+    const ev = evaluarCriterio(
+      texto, palabras,
+      ['conservación', 'retención'],
+      [],
+      ['período de guarda'],
+      10000,
+    );
+    expect(ev.frasesEncontradas.length).toBeGreaterThan(0);
+    expect(ev.kwsValidas.length).toBeGreaterThan(0);
+    expect(ev.densidadRelativa!).toBeLessThan(1.0);
+    // Spec: frase+kw → confianza 'alta' incondicional (no penalizar por densidad)
+    expect(ev.confianza).toBe('alta');
   });
 });
 

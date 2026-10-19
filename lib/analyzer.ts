@@ -317,10 +317,14 @@ export function evaluarCriterio(
   let confianza: 'alta' | 'media' | 'baja';
 
   if (frasesEncontradas.length > 0 && kwsValidas.length >= 1) {
+    // Frase + keyword: señal fuerte, confianza alta incondicional
+    confianza = 'alta';
+  } else if (frasesEncontradas.length > 0 && kwsValidas.length === 0) {
+    // Cambio 2: frase sola sin keywords → warn pero confianza alta (señal semántica exacta)
     confianza = 'alta';
   } else if (kwsValidas.length >= umbralOk && (densidad > UMBRAL_DENSIDAD_ALTA || proximidad)) {
     confianza = 'alta';
-  } else if (kwsValidas.length > 0 || frasesEncontradas.length > 0) {
+  } else if (kwsValidas.length > 0) {
     confianza = 'media';
   } else if (sinonimosValidos.length > 0) {
     confianza = 'media';
@@ -330,8 +334,10 @@ export function evaluarCriterio(
 
   if (requiereRevisionManual && confianza === 'alta') confianza = 'media';
 
-  // Cambio 3: densidad relativa baja → reducir confianza
-  if (densidadRelativa !== undefined && densidadRelativa < 1.0 && confianza === 'alta') {
+  // Cambio 3: densidad relativa baja → reducir confianza, pero solo cuando NO hay frase legal.
+  // Frase+kw (o frase sola) ya implica lenguaje jurídico exacto; penalizar densidad en ese
+  // caso viola la tabla del spec (frase+kw → confianza 'alta' incondicional).
+  if (densidadRelativa !== undefined && densidadRelativa < 1.0 && confianza === 'alta' && frasesEncontradas.length === 0) {
     confianza = 'media';
   }
 

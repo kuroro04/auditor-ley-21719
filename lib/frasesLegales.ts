@@ -26,6 +26,7 @@ export const FRASES_LEGALES: Record<string, Record<string, string[]>> = {
       'consentimiento libre e informado',
       'base legal del tratamiento',
       'interés legítimo del responsable',
+      'interés legítimo',
       'habilitación legal para el tratamiento',
       'base jurídica del tratamiento',
       'base de licitud',
