@@ -9,6 +9,7 @@ export const SINONIMOS: Record<string, Record<string, string[]>> = {
     'Identidad y contacto del responsable de datos': [
       'controlador', 'data controller', 'encargado del tratamiento',
       'representante legal', 'titular del tratamiento', 'responsable del tratamiento',
+      'razón social', 'domiciliada',
     ],
     'Finalidad y propósito del tratamiento': [
       'motivo del tratamiento', 'uso de datos', 'razón del tratamiento',
@@ -17,14 +18,17 @@ export const SINONIMOS: Record<string, Record<string, string[]>> = {
     'Base legal (consentimiento / interés legítimo)': [
       'habilitación legal', 'fundamento jurídico', 'licitud',
       'título legal', 'base jurídica', 'legitimación',
+      'base de licitud', 'bases de legitimación',
     ],
     'Derechos ARCO del titular (acceso, rectificación...)': [
       'derechos del titular', 'portabilidad', 'supresión',
       'derecho al olvido', 'derecho de supresión',
+      'acceder', 'rectificar', 'oponerse',
     ],
     'Plazo de conservación de los datos': [
       'período de guarda', 'ciclo de vida', 'tiempo de almacenamiento',
       'período de retención', 'duración del tratamiento',
+      'conservará', 'vigencia',
     ],
   },
 

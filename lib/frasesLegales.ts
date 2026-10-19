@@ -18,6 +18,9 @@ export const FRASES_LEGALES: Record<string, Record<string, string[]>> = {
       'para qué se utilizan sus datos',
       'uso de los datos personales',
       'fines del tratamiento',
+      'finalidades del tratamiento',
+      'datos personales serán utilizados para',
+      'tratará sus datos personales',
     ],
     'Base legal (consentimiento / interés legítimo)': [
       'consentimiento libre e informado',
@@ -25,6 +28,9 @@ export const FRASES_LEGALES: Record<string, Record<string, string[]>> = {
       'interés legítimo del responsable',
       'habilitación legal para el tratamiento',
       'base jurídica del tratamiento',
+      'base de licitud',
+      'bases de legitimación',
+      'consentimiento expreso del titular',
     ],
     'Derechos ARCO del titular (acceso, rectificación...)': [
       'derecho de acceso',
@@ -34,6 +40,9 @@ export const FRASES_LEGALES: Record<string, Record<string, string[]>> = {
       'derechos arco',
       'acceso rectificación cancelación y oposición',
       'derechos del titular de los datos',
+      'acceder, rectificar, cancelar u oponerse',
+      'revocar su consentimiento',
+      'solicitar la eliminación',
     ],
     'Plazo de conservación de los datos': [
       'plazo de conservación',
@@ -41,6 +50,10 @@ export const FRASES_LEGALES: Record<string, Record<string, string[]>> = {
       'tiempo de conservación de los datos',
       'plazo máximo de conservación',
       'período de conservación de los datos',
+      'conservará los datos',
+      'durante el tiempo necesario',
+      'vigencia del tratamiento',
+      'serán conservados durante',
     ],
   },
 
