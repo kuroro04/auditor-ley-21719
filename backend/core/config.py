@@ -76,3 +76,8 @@ CLAMAV_TIMEOUT_SECONDS = float(os.getenv('CLAMAV_TIMEOUT_SECONDS', '15'))
 # tests que lo necesitan inyectan un enviador con transporte HTTP simulado.
 BETTERSTACK_SOURCE_TOKEN = None if TESTING else (os.getenv('BETTERSTACK_SOURCE_TOKEN') or None)
 BETTERSTACK_INGEST_HOST = None if TESTING else (os.getenv('BETTERSTACK_INGEST_HOST') or None)
+
+# Si hay un proxy inverso de confianza delante (Nginx, balanceador, etc.),
+# poner 'true' para que client_ip() lea X-Forwarded-For.
+# En desarrollo local o si la app queda expuesta directo a internet: 'false'.
+TRUST_PROXY = os.getenv('TRUST_PROXY', 'false').lower() == 'true'

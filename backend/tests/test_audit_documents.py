@@ -11,6 +11,7 @@ import json
 import clamd as clamd_lib
 from sqlalchemy.orm import Session, sessionmaker
 
+import core.deps as deps_module
 import main as main_module
 import services.quarantine_service as qs
 from core.config import COOKIE_NAME
@@ -103,7 +104,8 @@ def test_subida_exitosa_registra_evento_con_metadatos(client, tmp_path):
     assert _archivos_en(tmp_path, 'quarantine') == []
 
 
-def test_subida_usa_x_forwarded_for_como_ip_de_origen(client):
+def test_con_trust_proxy_usa_x_forwarded_for_como_ip(client, monkeypatch):
+    monkeypatch.setattr(deps_module, 'TRUST_PROXY', True)
     _registrar(client)
     client.post(
         '/documents/upload',
@@ -112,6 +114,21 @@ def test_subida_usa_x_forwarded_for_como_ip_de_origen(client):
         headers={'X-Forwarded-For': '203.0.113.7, 10.0.0.1'},
     )
     assert _eventos(client, audit.EVENTO_DOCUMENTO_SUBIDO)[0].ip_origen == '203.0.113.7'
+
+
+def test_sin_trust_proxy_ignora_x_forwarded_for_falso(client, monkeypatch):
+    # Caso de seguridad: sin proxy de confianza, X-Forwarded-For enviado
+    # por el cliente se ignora — no puede falsificarse la IP en la bitácora.
+    monkeypatch.setattr(deps_module, 'TRUST_PROXY', False)
+    _registrar(client)
+    client.post(
+        '/documents/upload',
+        data={'req_id': 'politica_privacidad'},
+        files={'file': ('politica.pdf', io.BytesIO(PDF_BYTES), 'application/pdf')},
+        headers={'X-Forwarded-For': '203.0.113.7, 10.0.0.1'},
+    )
+    ip = _eventos(client, audit.EVENTO_DOCUMENTO_SUBIDO)[0].ip_origen
+    assert ip != '203.0.113.7'
 
 
 # --- Documento rechazado ----------------------------------------------------
