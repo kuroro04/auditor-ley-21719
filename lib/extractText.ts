@@ -59,9 +59,14 @@ async function extractXlsxText(file: File): Promise<string> {
   // read-excel-file reemplaza a xlsx (SheetJS CE), que no tiene fix para
   // prototype pollution y ReDoS. Solo soporta .xlsx (OOXML); el formato
   // .xls (OLE2 legacy) ya no se acepta en este flujo.
-  const readXlsxFile = (await import('read-excel-file')).default;
-  const rows = await readXlsxFile(file as unknown as File);
-  return rows.map((row: unknown[]) => row.map(cell => (cell == null ? '' : String(cell))).join('\t')).join('\n');
+  // La v9 no exporta la raíz del paquete (solo /browser, /node, etc.) y
+  // devuelve todas las hojas como [{ sheet, data }].
+  const readXlsxFile = (await import('read-excel-file/browser')).default;
+  const sheets = await readXlsxFile(file);
+  return sheets
+    .flatMap(({ data }) => data)
+    .map(row => row.map(cell => (cell == null ? '' : String(cell))).join('\t'))
+    .join('\n');
 }
 
 function countWords(text: string): number {

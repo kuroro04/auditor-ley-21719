@@ -5,6 +5,24 @@ import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
+// script-src difiere entre desarrollo y producción:
+// - Producción: 'wasm-unsafe-eval' solo permite compilar WebAssembly
+//   (onnxruntime-web, @xenova/transformers); eval() y new Function() de código
+//   JavaScript quedan bloqueados.
+// - Desarrollo (`next dev`): el Fast Refresh de Next.js
+//   (@next/react-refresh-utils) y los bundles de webpack en modo dev ejecutan
+//   módulos con eval(). Sin 'unsafe-eval' el navegador lo rechaza, React no se
+//   hidrata y ningún botón responde. Por eso en dev se añade 'unsafe-eval'; ese
+//   código nunca llega al build de producción, que no lo necesita.
+// 'unsafe-inline' es necesario en ambos para los <script> inline que Next.js
+// inyecta para __NEXT_DATA__ y la hidratación del cliente; eliminarlo
+// requeriría implementar un sistema de nonces CSP en el servidor de Next.js,
+// lo que queda fuera del alcance de esta fase.
+const isDev = process.env.NODE_ENV !== 'production';
+const SCRIPT_SRC = isDev
+  ? "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline'"
+  : "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'";
+
 // Self-host the PDF.js worker — removes the unpkg.com CDN dependency.
 // pdfjs-dist 4.x+ ships the worker as .mjs (ESM). The legacy .js is gone.
 try {
@@ -59,14 +77,8 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              // 'unsafe-eval' reemplazado por 'wasm-unsafe-eval': solo permite
-              // ejecutar WebAssembly (onnxruntime-web, @xenova/transformers),
-              // no eval() ni new Function() de código JavaScript arbitrario.
-              // 'unsafe-inline' es necesario para los <script> inline que
-              // Next.js inyecta para __NEXT_DATA__ y la hidratación del cliente;
-              // eliminarlo requeriría implementar un sistema de nonces CSP en
-              // el servidor de Next.js, lo que queda fuera del alcance de esta fase.
-              "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'",
+              // Condicional según NODE_ENV; ver SCRIPT_SRC al inicio del archivo.
+              SCRIPT_SRC,
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' https://fonts.gstatic.com",
               `connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com ${API_URL}`,
