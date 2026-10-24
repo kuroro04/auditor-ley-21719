@@ -32,4 +32,8 @@ USER appuser
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+# No --proxy-headers: la app lee X-Forwarded-For directamente en client_ip()
+# y _rate_limit_key() según TRUST_PROXY. Dejar que uvicorn lo reescriba con
+# --forwarded-allow-ips * permitiría que cualquier cliente suplante su IP
+# antes de llegar a esa lógica.
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
