@@ -163,7 +163,7 @@ server {
         proxy_pass http://127.0.0.1:3000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
@@ -175,11 +175,21 @@ server {
     ssl_certificate     /etc/letsencrypt/live/api.tudominio.cl/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/api.tudominio.cl/privkey.pem;
 
+    # Límite de tamaño de carga: debe ser >= MAX_UPLOAD_BYTES del backend (defecto 20 MB).
+    # Nginx rechaza la request antes de que llegue al backend si supera este valor.
+    client_max_body_size 22M;
+
+    # Timeouts para cargas grandes: evitan que conexiones lentas o archivos pesados
+    # consuman workers del backend indefinidamente.
+    proxy_read_timeout   120s;
+    proxy_send_timeout   120s;
+    client_body_timeout  60s;
+
     location / {
         proxy_pass http://127.0.0.1:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
@@ -187,6 +197,11 @@ server {
 
 Con esta configuración: `TRUST_PROXY=true`, `FRONTEND_ORIGIN=https://tudominio.cl`,
 `NEXT_PUBLIC_API_URL=https://api.tudominio.cl`.
+
+> **Nota sobre `client_max_body_size`:** el valor de Nginx debe ser ligeramente mayor que
+> `MAX_UPLOAD_BYTES` del backend (defecto 20 MB) para que sea el backend quien devuelva un
+> 413 con mensaje claro al usuario, no Nginx con su respuesta genérica. Un buen criterio:
+> `client_max_body_size = MAX_UPLOAD_BYTES + 2 MB`.
 
 ---
 

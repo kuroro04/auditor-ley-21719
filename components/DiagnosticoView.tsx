@@ -248,6 +248,17 @@ export default function DiagnosticoView({
         </div>
       </div>
 
+      {/* Descargo de responsabilidad legal — visible junto al resultado */}
+      <div className="disclaimer-legal" role="note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>
+          Este diagnóstico es <strong>orientativo</strong> y no constituye asesoría legal.
+          Los resultados dependen de la información aportada y no reemplazan la revisión de un abogado especializado en protección de datos.
+        </span>
+      </div>
+
       {/* Nota de aislamiento multi-tenant: evidencia visible de la segregación por empresa */}
       <div className="tenant-isolation-note">
         <span className="tenant-isolation-icon"><LockIcon size={13} /></span>
@@ -550,7 +561,7 @@ export default function DiagnosticoView({
       </div>
 
       <input ref={fileInputRef} type="file" aria-label="Seleccionar documento para subir" style={{ display: 'none' }}
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" onChange={handleFile} />
+        accept=".pdf,.doc,.docx,.xlsx,.txt" onChange={handleFile} />
     </div>
   );
 }

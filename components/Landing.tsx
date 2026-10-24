@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import LoginCard from './LoginCard';
 import { ScaleIcon, FileTextIcon, SearchCheckIcon, AlertCircleIcon, BarChart2Icon } from './Icons';
 import type { UserRole } from '@/lib/types';
@@ -84,6 +85,13 @@ export default function Landing({ onLogin, onLoginMfa, onRegister, onDemo, onToa
 
         <LoginCard onLogin={onLogin} onLoginMfa={onLoginMfa} onRegister={onRegister} onDemo={onDemo} onToast={onToast} />
       </div>
+
+      {/* Pie de página */}
+      <footer className="landing-footer">
+        <Link href="/privacidad" className="landing-footer-link">
+          Aviso de Privacidad
+        </Link>
+      </footer>
     </div>
   );
 }

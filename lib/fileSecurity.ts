@@ -18,7 +18,9 @@ const DANGEROUS_EXTENSIONS = [
   'wsf', 'wsh', 'lnk', 'reg', 'apk', 'dmg', 'app', 'dll', 'sys', 'jse',
 ];
 
-const ALLOWED_EXTENSIONS = ['txt', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
+// .xls (OLE2 legacy, Excel 97-2003) eliminado: el parser de navegador (read-excel-file)
+// solo soporta .xlsx (OOXML). Documentos de cumplimiento modernos usan .xlsx.
+const ALLOWED_EXTENSIONS = ['txt', 'pdf', 'doc', 'docx', 'xlsx'];
 
 // Firmas binarias (magic bytes) de los formatos soportados.
 const SIGNATURES = {

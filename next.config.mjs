@@ -5,11 +5,12 @@ import { fileURLToPath } from 'url';
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
-// Self-host the PDF.js worker — removes the unpkg.com CDN dependency
+// Self-host the PDF.js worker — removes the unpkg.com CDN dependency.
+// pdfjs-dist 4.x+ ships the worker as .mjs (ESM). The legacy .js is gone.
 try {
-  const src = resolve(__dirname, 'node_modules/pdfjs-dist/build/pdf.worker.min.js');
+  const src = resolve(__dirname, 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs');
   const destDir = resolve(__dirname, 'public');
-  const dest = resolve(destDir, 'pdf.worker.min.js');
+  const dest = resolve(destDir, 'pdf.worker.min.mjs');
   if (!existsSync(destDir)) mkdirSync(destDir);
   copyFileSync(src, dest);
 } catch {
@@ -39,6 +40,9 @@ try {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // output: 'standalone' genera un directorio .next/standalone listo para
+  // copiar en el Dockerfile.frontend sin node_modules completos.
+  output: 'standalone',
   poweredByHeader: false,
 
   async headers() {
@@ -55,7 +59,14 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+              // 'unsafe-eval' reemplazado por 'wasm-unsafe-eval': solo permite
+              // ejecutar WebAssembly (onnxruntime-web, @xenova/transformers),
+              // no eval() ni new Function() de código JavaScript arbitrario.
+              // 'unsafe-inline' es necesario para los <script> inline que
+              // Next.js inyecta para __NEXT_DATA__ y la hidratación del cliente;
+              // eliminarlo requeriría implementar un sistema de nonces CSP en
+              // el servidor de Next.js, lo que queda fuera del alcance de esta fase.
+              "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
               "font-src 'self' https://fonts.gstatic.com",
               `connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com ${API_URL}`,

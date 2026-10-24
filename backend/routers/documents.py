@@ -6,13 +6,37 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Uplo
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.orm import Session
 
+from core.config import MAX_UPLOAD_BYTES
 from core.deps import CurrentUser, client_ip, get_clamav_client, get_current_user, get_tenant_db
+from core.limiter import limiter
 from db.models import Document
 from models.schemas import DocumentOut
 from services import audit
 from services import quarantine_service as qs
 from services.quarantine_service import clean_destination, move_to_clean, secure_delete
 from services.secure_upload_service import process_secure_upload
+
+
+async def _read_limited(file: UploadFile, limit: int) -> bytes:
+    """Lee el archivo cargado en bloques de 64 KB y aborta si supera `limit` bytes.
+
+    Impide que un archivo enorme se cargue completo en memoria antes de ser
+    validado, evitando el agotamiento de RAM con cargas simultáneas o maliciosas.
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(65536)
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > limit:
+            raise HTTPException(
+                status_code=413,
+                detail=f'El archivo supera el límite de {limit // (1024 * 1024)} MB permitido.',
+            )
+        chunks.append(chunk)
+    return b''.join(chunks)
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +52,7 @@ def _to_document_out(doc: Document) -> DocumentOut:
 
 
 @router.post('/upload', response_model=DocumentOut, status_code=201)
+@limiter.limit('20/hour')
 async def upload_document(
     request: Request,
     req_id: str = Form(...),
@@ -36,7 +61,7 @@ async def upload_document(
     db: Session = Depends(get_tenant_db),
     clamav_client=Depends(get_clamav_client),
 ):
-    content = await file.read()
+    content = await _read_limited(file, MAX_UPLOAD_BYTES)
     ip = client_ip(request)
     # Carga segura (Fase 4): cuarentena -> validación MIME/magic bytes ->
     # escaneo ClamAV. Fail-closed: si ClamAV no responde, outcome.accepted

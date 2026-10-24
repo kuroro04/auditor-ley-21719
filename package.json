@@ -16,11 +16,11 @@
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "mammoth": "^1.7.1",
-    "next": "14.2.29",
-    "pdfjs-dist": "3.11.174",
+    "next": "14.2.35",
+    "pdfjs-dist": "6.4.299",
     "react": "^18",
     "react-dom": "^18",
-    "xlsx": "^0.18.5"
+    "read-excel-file": "^9.3.12"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

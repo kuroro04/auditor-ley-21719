@@ -7,6 +7,7 @@ out/
 
 # generated assets — copied from node_modules at build time
 public/pdf.worker.min.js
+public/pdf.worker.min.mjs
 public/ort/
 
 # modelo de embeddings del analisis semantico — se descarga via postinstall
@@ -31,6 +32,11 @@ tsconfig.tsbuildinfo
 
 # worktrees aislados
 .worktrees/
+
+# archivos de trabajo de agentes — no forman parte del código fuente
+.agents/
+.codex/
+docs/superpowers/
 
 # estado de scratch de subagent-driven-development
 .superpowers/

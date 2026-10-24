@@ -23,7 +23,8 @@ function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
 
 async function extractPdfText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+  // pdfjs-dist 4.x+ ships an ESM worker (.mjs); the legacy .js no longer exists.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
   const arrayBuffer = await readAsArrayBuffer(file);
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
@@ -55,17 +56,12 @@ async function extractDocxText(file: File): Promise<string> {
 }
 
 async function extractXlsxText(file: File): Promise<string> {
-  const XLSX = await import('xlsx');
-  const arrayBuffer = await readAsArrayBuffer(file);
-  const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-
-  const texts: string[] = [];
-  workbook.SheetNames.forEach(sheetName => {
-    const sheet = workbook.Sheets[sheetName];
-    texts.push(XLSX.utils.sheet_to_csv(sheet));
-  });
-
-  return texts.join('\n');
+  // read-excel-file reemplaza a xlsx (SheetJS CE), que no tiene fix para
+  // prototype pollution y ReDoS. Solo soporta .xlsx (OOXML); el formato
+  // .xls (OLE2 legacy) ya no se acepta en este flujo.
+  const readXlsxFile = (await import('read-excel-file')).default;
+  const rows = await readXlsxFile(file as unknown as File);
+  return rows.map((row: unknown[]) => row.map(cell => (cell == null ? '' : String(cell))).join('\t')).join('\n');
 }
 
 function countWords(text: string): number {
@@ -107,7 +103,7 @@ export async function extractDocumentText(
     } else if (ext === 'docx' || ext === 'doc') {
       rawText = await extractDocxText(file);
       method = 'Word';
-    } else if (ext === 'xlsx' || ext === 'xls') {
+    } else if (ext === 'xlsx') {
       rawText = await extractXlsxText(file);
       method = 'Excel';
     }

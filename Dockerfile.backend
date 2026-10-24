@@ -1,0 +1,35 @@
+# ── Stage 1: dependencias ────────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Instalar solo las dependencias del sistema que pip necesita para compilar
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ── Stage 2: imagen final ─────────────────────────────────────────────────────
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copiar paquetes instalados en el stage anterior
+COPY --from=builder /install /usr/local
+
+# Copiar código fuente del backend
+COPY backend/ .
+
+# Usuario sin privilegios: el proceso no corre como root
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]

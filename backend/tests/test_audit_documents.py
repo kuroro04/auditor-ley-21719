@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 import core.deps as deps_module
 import main as main_module
+import routers.documents as documents_router
 import services.quarantine_service as qs
 from core.config import COOKIE_NAME
 from core.deps import get_clamav_client
@@ -105,15 +106,22 @@ def test_subida_exitosa_registra_evento_con_metadatos(client, tmp_path):
 
 
 def test_con_trust_proxy_usa_x_forwarded_for_como_ip(client, monkeypatch):
+    # Con la configuración corregida (X-Forwarded-For $remote_addr en Nginx) el
+    # header llega con un solo valor — la IP real del peer TCP de Nginx.
+    # client_ip() lee el ÚLTIMO valor para que incluso con $proxy_add_x_forwarded_for
+    # mal configurado el campo registrado sea el añadido por el proxy de confianza
+    # (el más a la derecha), no uno fabricado por el cliente (los de la izquierda).
     monkeypatch.setattr(deps_module, 'TRUST_PROXY', True)
     _registrar(client)
     client.post(
         '/documents/upload',
         data={'req_id': 'politica_privacidad'},
         files={'file': ('politica.pdf', io.BytesIO(PDF_BYTES), 'application/pdf')},
+        # Simula una cadena: 203.0.113.7 = valor fabricado por el cliente,
+        # 10.0.0.1 = valor añadido por el proxy de confianza (el más reciente).
         headers={'X-Forwarded-For': '203.0.113.7, 10.0.0.1'},
     )
-    assert _eventos(client, audit.EVENTO_DOCUMENTO_SUBIDO)[0].ip_origen == '203.0.113.7'
+    assert _eventos(client, audit.EVENTO_DOCUMENTO_SUBIDO)[0].ip_origen == '10.0.0.1'
 
 
 def test_sin_trust_proxy_ignora_x_forwarded_for_falso(client, monkeypatch):
@@ -393,3 +401,10 @@ def test_cadena_de_hashes_con_eventos_de_documentos_es_integra(client):
         db.close()
     assert resultado.intacta is True
     assert resultado.eventos_revisados == 5
+
+
+def test_archivo_que_excede_limite_devuelve_413(client, monkeypatch):
+    monkeypatch.setattr(documents_router, 'MAX_UPLOAD_BYTES', 10)
+    _registrar(client)
+    res = _subir(client, contenido=b'%PDF-1.4\ncontenido que excede 10 bytes')
+    assert res.status_code == 413

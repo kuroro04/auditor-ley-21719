@@ -61,7 +61,11 @@ def client_ip(request: Request) -> Optional[str]:
     if TRUST_PROXY:
         forwarded = request.headers.get('x-forwarded-for')
         if forwarded:
-            return forwarded.split(',')[0].strip()
+            # Leer el último valor: Nginx (con X-Forwarded-For $remote_addr) escribe
+            # solo su IP real aquí. En una cadena de proxies, el último valor es el
+            # añadido por el proxy más cercano a nosotros (el de confianza), mientras
+            # que los valores anteriores pueden haber sido fabricados por el cliente.
+            return forwarded.split(',')[-1].strip()
     return request.client.host if request.client else None
 
 

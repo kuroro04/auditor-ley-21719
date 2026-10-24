@@ -232,7 +232,7 @@ export default function UploadView({ uploadedDocs, role, authSource, onUpload, o
         type="file"
         aria-label="Seleccionar documento para subir"
         style={{ display: 'none' }}
-        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+        accept=".pdf,.doc,.docx,.xlsx,.txt"
         onChange={handleFileSelected}
       />
     </div>

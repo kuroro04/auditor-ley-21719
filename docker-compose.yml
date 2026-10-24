@@ -1,22 +1,60 @@
-# Fase 4 — ClamAV real para el escaneo antivirus de la carga segura.
+# Levanta los tres servicios de DataShield + ClamAV.
 #
-# Levantar:      docker compose up -d clamav
-# Ver progreso:  docker compose logs -f clamav   (la primera vez demora unos
-#                minutos: freshclam descarga las firmas de virus)
-# Estado:        docker compose ps               (debe decir "healthy")
+# Uso rápido:
+#   docker compose up -d
 #
-# El backend se conecta a clamd por TCP (ver CLAMAV_HOST/CLAMAV_PORT en
-# backend/.env). No se comparte ningún volumen con el backend: los archivos
-# se envían a clamd por el socket (INSTREAM), no por ruta de archivo.
+# Primer arranque: ClamAV tarda ~3 min mientras freshclam descarga firmas.
+# Estado:   docker compose ps
+# Logs:     docker compose logs -f backend
+#
+# Variables de entorno del backend: copiar backend/.env.example → backend/.env
+# y completar los valores reales antes de levantar.
+#
+# Los puertos solo se exponen en localhost (127.0.0.1): Nginx (el proxy real
+# en producción) es el único que debe recibir tráfico externo.
+
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: datashield-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    ports:
+      - '127.0.0.1:3000:3000'
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: datashield-backend
+    env_file:
+      - backend/.env
+    environment:
+      # El backend necesita conocer la IP del proxy de confianza: Nginx/el
+      # propio compose llega al backend desde la red interna de Docker.
+      TRUST_PROXY: 'true'
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: '3310'
+    ports:
+      - '127.0.0.1:8000:8000'
+    restart: unless-stopped
+    depends_on:
+      clamav:
+        condition: service_healthy
+
   clamav:
     image: clamav/clamav:stable
     container_name: datashield-clamav
     ports:
-      - '3310:3310'
+      - '127.0.0.1:3310:3310'
     volumes:
-      # Persiste las firmas de virus entre reinicios del contenedor para
-      # no volver a descargarlas cada vez.
+      # Persiste las firmas de virus entre reinicios para no volver a
+      # descargarlas desde cero en cada arranque del contenedor.
       - clamav-db:/var/lib/clamav
     healthcheck:
       test: ['CMD', 'clamdcheck.sh']

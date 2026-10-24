@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from core.config import COOKIE_SECURE, COOKIE_NAME, COOKIE_MAX_AGE_SECONDS
 from core.deps import CurrentUser, client_ip, get_current_user, get_tenant_db
+from core.limiter import limiter
 from core.security import (
     create_access_token,
     create_mfa_challenge_token,
@@ -71,7 +72,8 @@ def _issue_session(response: Response, user: User, company: Company) -> SessionR
 
 
 @router.post('/register', response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
-def register(payload: RegisterRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+@limiter.limit('5/hour')
+def register(request: Request, payload: RegisterRequest, response: Response, db: Session = Depends(get_db)):
     if not is_valid_rut(payload.rut):
         raise HTTPException(status_code=400, detail='RUT inválido')
 
@@ -118,7 +120,8 @@ def register(payload: RegisterRequest, request: Request, response: Response, db:
 
 
 @router.post('/login')
-def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+@limiter.limit('10/5minute')
+def login(request: Request, payload: LoginRequest, response: Response, db: Session = Depends(get_db)):
     email_normalizado = payload.email.lower()
     user = find_user_by_email(db, email_normalizado)
     ip = client_ip(request)
@@ -167,7 +170,8 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
 
 
 @router.post('/login/mfa', response_model=SessionResponse)
-def login_mfa(payload: MfaLoginRequest, request: Request, response: Response, db: Session = Depends(get_db)):
+@limiter.limit('5/5minute')
+def login_mfa(request: Request, payload: MfaLoginRequest, response: Response, db: Session = Depends(get_db)):
     """Segundo paso del login con MFA: canjea el token corto + código por la sesión."""
     ip = client_ip(request)
 

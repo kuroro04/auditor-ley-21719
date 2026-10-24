@@ -44,6 +44,20 @@ else:
     MFA_ENC_KEY = Fernet.generate_key().decode()
 
 DATABASE_URL = os.getenv('DATABASE_URL', f"sqlite:///{BASE_DIR / 'backend.db'}")
+
+# Entorno de ejecución. Defecto: 'production' (fail-closed): si alguien despliega
+# sin fijar esta variable, SQLite queda bloqueado y la app no arranca, lo que es
+# el comportamiento correcto. Para desarrollo local sin Supabase hay que fijar
+# explícitamente ENVIRONMENT=development en backend/.env.
+APP_ENV = os.getenv('ENVIRONMENT', 'production')
+
+if not TESTING and APP_ENV != 'development' and DATABASE_URL.startswith('sqlite'):
+    raise RuntimeError(
+        "DATABASE_URL apunta a SQLite, que no soporta Row-Level Security. "
+        "Sin RLS no hay aislamiento entre empresas (multi-tenant). "
+        "Opciones: (1) define una URL de PostgreSQL en backend/.env, "
+        "o (2) pon ENVIRONMENT=development para desarrollo local sin Supabase."
+    )
 FRONTEND_ORIGIN = os.getenv('FRONTEND_ORIGIN', 'http://localhost:3000')
 
 _cookie_secure = os.getenv('COOKIE_SECURE')
@@ -64,6 +78,8 @@ STORAGE_DIR = BASE_DIR / 'storage'
 # STORAGE_DIR si ClamAV lo declaró limpio.
 QUARANTINE_DIR = BASE_DIR / 'quarantine'
 SCAN_LOG_PATH = BASE_DIR / 'logs' / 'document_scans.log'
+
+MAX_UPLOAD_BYTES = int(os.getenv('MAX_UPLOAD_BYTES', str(20 * 1024 * 1024)))  # 20 MB por defecto
 
 CLAMAV_HOST = os.getenv('CLAMAV_HOST', 'localhost')
 CLAMAV_PORT = int(os.getenv('CLAMAV_PORT', '3310'))
