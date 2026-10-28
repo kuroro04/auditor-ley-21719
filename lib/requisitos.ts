@@ -1,4 +1,4 @@
-﻿import type { Requisito } from './types';
+import type { Requisito } from './types';
 import { SINONIMOS } from './sinonimos';
 import { FRASES_LEGALES } from './frasesLegales';
 
@@ -157,6 +157,12 @@ export const REQUISITOS: Requisito[] = [
         'este registro contiene', 'hemos registrado las siguientes actividades',
         'el responsable registra', 'nuestras actividades de tratamiento',
         'los datos que tratamos son', 'las categorías de datos que tratamos',
+        'este registro interno documenta', 'actividades en las que la empresa trata',
+        'actividades de tratamiento registradas', 'identificación del responsable',
+        'nombre de la actividad:', 'categorías de datos tratados:',
+        'finalidad del tratamiento:', 'destinatarios o terceros receptores:',
+        'plazos de supresión o eliminación:', 'medidas de seguridad aplicadas:',
+        'flujos de datos personales registrados',
       ],
       marcadoresNormativos: {
         tier1: [
@@ -164,7 +170,7 @@ export const REQUISITOS: Requisito[] = [
           'la normativa requiere', 'conforme al artículo', 'el registro debe incluir',
         ],
         tier2: [
-          'plantilla de rat', 'tabla de actividades', 'inventario de tratamiento',
+          'plantilla de rat', 'tabla de actividades',
           'este template', 'guía de cumplimiento',
         ],
       },

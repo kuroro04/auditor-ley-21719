@@ -64,3 +64,31 @@ describe('clasificarDocumento — politica_privacidad', () => {
     expect(Array.isArray(res.normativosEncontrados)).toBe(true);
   });
 });
+
+const configRAT = REQUISITOS.find(r => r.id === 'registro_actividades')!.clasificacion;
+
+describe('clasificarDocumento — registro_actividades', () => {
+  it('Plan Maestro en registro_actividades → incorrecto (documento de gestión/proyecto)', () => {
+    const texto = loadFixture('plan-maestro-proyecto.txt');
+    const res = clasificarDocumento(configRAT, texto);
+    expect(res.tipo).toBe('incorrecto');
+    expect(res.performativosEncontrados).toHaveLength(0);
+  });
+
+  it('Registro de actividades real con encabezados de tabla → correcto', () => {
+    const textoReal = `
+      registro de actividades de tratamiento de datos personales
+      responsable: comercializadora andina spa
+      actividades de tratamiento:
+      1. gestión de nómina
+      categorías de datos tratados: identificación y financieros
+      finalidad del tratamiento: pago de remuneraciones
+      destinatarios o terceros receptores: banco y previred
+      medidas de seguridad aplicadas: cifrado en reposo y tránsito
+      plazos de supresión o eliminación: 5 años
+    `.toLowerCase();
+    const res = clasificarDocumento(configRAT, textoReal);
+    expect(res.tipo).toBe('correcto');
+    expect(res.performativosEncontrados.length).toBeGreaterThan(0);
+  });
+});

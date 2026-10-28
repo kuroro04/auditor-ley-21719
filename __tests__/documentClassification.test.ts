@@ -57,6 +57,14 @@ describe('Fixture 1 — Plan Maestro (documento normativo/académico)', () => {
     expect(res.estado).toBe('wrong_type');
   });
 
+  it('[POST-IMPL] clasifica como wrong_type para registro_actividades (y demás requisitos)', () => {
+    const docsRAT = docFrom(texto, 'DataShield_21719_Plan_Maestro_1.pdf', 'registro_actividades');
+    const res = analyzeDocument('registro_actividades', docsRAT);
+    expect(res.estado).toBe('wrong_type');
+    expect(res.cobertura).toBe(0);
+    expect(res.clasificacionDocumento?.tipo).toBe('incorrecto');
+  });
+
   it('[POST-IMPL] cobertura es 0 cuando wrong_type', () => {
     const res = analyzeDocument('politica_privacidad', docs);
     expect(res.cobertura).toBe(0);

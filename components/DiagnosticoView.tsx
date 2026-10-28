@@ -362,8 +362,53 @@ export default function DiagnosticoView({
                         Por favor subalo en un formato con texto seleccionable (PDF con texto, Word o TXT).
                       </div>
                     </div>
+                  ) : isWrongType ? (
+                    <div className="scanned-warning" style={{ background: '#fff7ed', borderColor: '#fed7aa', color: '#9a3412' }}>
+                      <div className="scanned-warning-icon" aria-hidden="true" style={{ color: '#ea580c' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="8" x2="12" y2="12"/>
+                          <line x1="12" y1="16" x2="12.01" y2="16"/>
+                        </svg>
+                      </div>
+                      <div className="scanned-warning-text">
+                        <strong>Tipo de documento no corresponde a este requisito</strong>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px' }}>{gap}</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '12px', color: '#c2410c' }}>
+                          El sistema detectó que este archivo no es un documento operativo formal para este requisito (ej: parece ser un plan de proyecto, informe académico, cronograma o guía teórica). Para cumplir con la ley, suba el documento formal de su empresa o genere la plantilla oficial abajo.
+                        </p>
+                      </div>
+                    </div>
                   ) : (
                     <>
+                      {estado === 'yellow' && cobertura >= 75 && (
+                        <div style={{
+                          background: '#fffbeb',
+                          border: '1px solid #fde68a',
+                          borderRadius: '8px',
+                          padding: '12px 14px',
+                          marginBottom: '14px',
+                          fontSize: '13px',
+                          color: '#92400e',
+                          lineHeight: '1.5'
+                        }}>
+                          <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                            <span>⚠️</span> Cobertura al {cobertura}%, pero en Revisión Preventiva (Amarillo)
+                          </div>
+                          <div>
+                            El documento contiene los conceptos evaluados, pero el semáforo se mantiene en amarillo por precaución:
+                            <ul style={{ margin: '6px 0 6px 18px', padding: 0 }}>
+                              {res.clasificacionDocumento?.tipo === 'dudoso' && (
+                                <li><strong>Formato en validación:</strong> {res.clasificacionDocumento.razon}</li>
+                              )}
+                              {criterios.some(c => c.confianza !== 'alta') && (
+                                <li><strong>Confianza media:</strong> Ciertos criterios tienen baja frecuencia de mención o carecen de fórmulas jurídicas exactas.</li>
+                              )}
+                            </ul>
+                            <em>Para alcanzar semáforo <strong>VERDE</strong>: suba el documento legal definitivo de la empresa o use la plantilla recomendada abajo.</em>
+                          </div>
+                        </div>
+                      )}
                       {criterios.some(c => c.confianza !== 'alta') && (
                         <p className="confianza-nota">
                           La confianza indica qué tan segura es la detección automática.
@@ -455,7 +500,15 @@ export default function DiagnosticoView({
                       </div>
                       <div className={`gap-box ${gapColor}`} style={{ marginTop: 10 }}>
                         <strong>
-                          {estado === 'green' ? 'Cumple' : estado === 'yellow' ? 'Brecha detectada' : 'Documento faltante'}:
+                          {isWrongType
+                            ? 'Tipo de documento'
+                            : estado === 'green'
+                            ? 'Cumple'
+                            : estado === 'yellow' && cobertura >= 75
+                            ? 'Revisión recomendada'
+                            : estado === 'yellow'
+                            ? 'Brecha detectada'
+                            : 'Documento faltante'}:
                         </strong>{' '}{gap}
                       </div>
 

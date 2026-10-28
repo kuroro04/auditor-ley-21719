@@ -33,6 +33,18 @@ const MARCADORES_CONTEXTO_NORMATIVO = [
 // CLASIFICACIÓN DEL TIPO DE DOCUMENTO (paso previo a la evaluación)
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Marcadores transversales de documentos de gestión, académicos o planes de proyecto.
+// Ningún documento operativo de cumplimiento real (política, RAT, contrato) los contiene
+// como vocabulario principal sin declaraciones en primera persona.
+const MARCADORES_PROYECTO_O_GESTION = [
+  'plan maestro', 'cronograma', 'etapa', 'hito',
+  'análisis de cumplimiento', 'gestión de proyecto', 'equipo de proyecto',
+  'diagnóstico de cumplimiento', 'brecha de cumplimiento',
+  'taller integrador', 'instituto profesional', 'vicerrectoría académica',
+  'asignatura', 'docente', 'carta gantt', 'malla pert', 'edt / wbs',
+  'diccionario wbs', 'criterios de éxito', 'evaluación smart',
+];
+
 /**
  * Clasifica si el documento ES del tipo esperado o HABLA SOBRE ese tipo.
  * Un documento que cumple usa voz performativa; uno que describe usa voz normativa.
@@ -47,7 +59,13 @@ export function clasificarDocumento(
   const normativosTier1 = config.marcadoresNormativos.tier1.filter(m =>
     texto.includes(m.toLowerCase())
   );
-  const normativosTier2 = config.marcadoresNormativos.tier2.filter(m =>
+  // Se combinan los marcadores Tier 2 específicos del requisito con los marcadores
+  // universales de planes de proyectos e informes académicos.
+  const tier2Combinados = Array.from(new Set([
+    ...config.marcadoresNormativos.tier2,
+    ...MARCADORES_PROYECTO_O_GESTION,
+  ]));
+  const normativosTier2 = tier2Combinados.filter(m =>
     texto.includes(m.toLowerCase())
   );
 
@@ -59,12 +77,15 @@ export function clasificarDocumento(
   let razon: string;
 
   if (nPerf >= 1) {
-    if (nT1 < nPerf * 3) {
-      tipo  = 'correcto';
-      razon = `Documento con voz performativa (${nPerf} marcador${nPerf > 1 ? 'es' : ''} encontrado${nPerf > 1 ? 's' : ''}).`;
-    } else {
+    if (nT2 >= 3 && nT2 > nPerf * 2) {
+      tipo  = 'incorrecto';
+      razon = `El documento contiene vocabulario predominante de gestión o proyecto (${nT2} marcadores: ${normativosTier2.slice(0, 3).join(', ')}), lo que indica que es un informe o plan y no el documento operativo.`;
+    } else if (nT1 >= nPerf * 3) {
       tipo  = 'dudoso';
       razon = `Señales mixtas: ${nPerf} performativo${nPerf > 1 ? 's' : ''} pero ${nT1} marcador${nT1 > 1 ? 'es' : ''} normativos Tier 1 — posible documento híbrido.`;
+    } else {
+      tipo  = 'correcto';
+      razon = `Documento con voz performativa (${nPerf} marcador${nPerf > 1 ? 'es' : ''} encontrado${nPerf > 1 ? 's' : ''}).`;
     }
   } else if (nT1 >= 2) {
     tipo  = 'incorrecto';
@@ -74,7 +95,7 @@ export function clasificarDocumento(
     razon = `Lenguaje normativo combinado con vocabulario de gestión/consultoría (${nT1} Tier 1 + ${nT2} Tier 2).`;
   } else if (nT2 >= 3) {
     tipo  = 'incorrecto';
-    razon = `Vocabulario específico de documentos de gestión (${nT2} marcadores Tier 2: ${normativosTier2.slice(0, 3).join(', ')}) sin ningún marcador performativo.`;
+    razon = `Vocabulario específico de documentos de gestión/proyecto (${nT2} marcadores Tier 2: ${normativosTier2.slice(0, 3).join(', ')}) sin ningún marcador performativo.`;
   } else {
     tipo  = 'dudoso';
     razon = 'Evidencia insuficiente para clasificar el tipo de documento con certeza.';
@@ -531,7 +552,12 @@ export function analyzeDocument(
     ? 'yellow'
     : resultado.estado;
 
-  return { ...resultado, estado: estadoFinal, clasificacionDocumento };
+  let gapFinal = resultado.gap;
+  if (clasificacionDocumento.tipo === 'dudoso' && resultado.estado === 'green') {
+    gapFinal = `Cumplimiento de criterios (${resultado.cobertura}%), pero se mantiene en revisión preventiva: ${clasificacionDocumento.razon}`;
+  }
+
+  return { ...resultado, estado: estadoFinal, gap: gapFinal, clasificacionDocumento };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
