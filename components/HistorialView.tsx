@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import type { HistorialSnapshot } from '@/lib/types';
 
 interface HistorialViewProps {
@@ -72,7 +72,7 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
       {/* Encabezado */}
       <div className="historial-header">
         <h2>Progreso histórico de cumplimiento</h2>
-        <p>{snapshots.length} análisis registrado{snapshots.length !== 1 ? 's' : ''} en esta sesión</p>
+        <p>{snapshots.length} análisis registrado{snapshots.length !== 1 ? 's' : ''} para su empresa</p>
       </div>
 
       {/* Indicador de tendencia (solo cuando hay ≥2 análisis) */}

@@ -34,16 +34,16 @@ export default function SectorComparisonCard({ sector, companyCumplimiento }: Se
         <div className="sector-stat-label">Su empresa</div>
         <div className="sector-bar-track">
           <div ref={empresaRef} className="sector-bar empresa" style={{ width: 0 }} />
-          <span className="sector-bar-pct">{companyCumplimiento}%</span>
         </div>
+        <span className="sector-bar-pct">{companyCumplimiento}%</span>
       </div>
 
       <div className="sector-stat">
         <div className="sector-stat-label">Promedio {benchmark.label}</div>
         <div className="sector-bar-track">
           <div ref={promedioRef} className="sector-bar promedio" style={{ width: 0 }} />
-          <span className="sector-bar-pct">{benchmark.promedio}%</span>
         </div>
+        <span className="sector-bar-pct">{benchmark.promedio}%</span>
       </div>
 
       <div className={`sector-delta ${delta >= 0 ? 'positivo' : 'negativo'}`}>

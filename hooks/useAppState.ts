@@ -91,6 +91,44 @@ const DEMO_DOCS: Record<string, UploadedDoc> = {
 // Contador global para IDs únicos de eventos de auditoría
 let auditCounter = 0;
 
+// ═══════════════════════════════════════════════════════════════════════════
+// PERSISTENCIA POR EMPRESA (Historial de diagnósticos y Bitácora de auditoría)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function getStoredSnapshots(companyId: string): HistorialSnapshot[] {
+  if (typeof window === 'undefined' || !companyId) return [];
+  try {
+    const raw = localStorage.getItem(`datashield_snapshots_${companyId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistSnapshots(companyId: string, snaps: HistorialSnapshot[]): void {
+  if (typeof window === 'undefined' || !companyId) return;
+  try {
+    localStorage.setItem(`datashield_snapshots_${companyId}`, JSON.stringify(snaps));
+  } catch {}
+}
+
+function getStoredAudit(companyId: string): AuditEvent[] {
+  if (typeof window === 'undefined' || !companyId) return [];
+  try {
+    const raw = localStorage.getItem(`datashield_audit_${companyId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistAudit(companyId: string, logs: AuditEvent[]): void {
+  if (typeof window === 'undefined' || !companyId) return;
+  try {
+    localStorage.setItem(`datashield_audit_${companyId}`, JSON.stringify(logs));
+  } catch {}
+}
+
 export function useAppState() {
   const [screen, setScreen] = useState<Screen>('landing');
   const [activeTab, setActiveTab] = useState<ActiveTab>('subir');
@@ -123,6 +161,7 @@ export function useAppState() {
   // de la contraseña y la del código TOTP).
   const [mfaEnabled, setMfaEnabled] = useState(false);
   const [pendingMfaToken, setPendingMfaToken] = useState<string | null>(null);
+  const companyIdRef = useRef('');
   // Generación del análisis vigente. Se incrementa al lanzar un análisis y al
   // cambiar de sesión; un enriquecimiento semántico en segundo plano solo
   // escribe si su generación sigue siendo la actual.
@@ -135,7 +174,7 @@ export function useAppState() {
     return () => generacionAnalisis.current === generacion;
   }, []);
 
-  // Registra un evento en el audit log (más reciente primero)
+  // Registra un evento en el audit log (más reciente primero) y lo persiste por empresa
   const addAuditEvent = useCallback((
     accion: AuditEvent['accion'],
     currentRole: UserRole,
@@ -143,15 +182,21 @@ export function useAppState() {
     archivo?: string,
     detalle?: string,
   ) => {
-    setAuditLog(prev => [{
-      id: ++auditCounter,
-      timestamp: new Date().toISOString(),
-      rol: currentRole,
-      usuario: currentUser,
-      accion,
-      archivo,
-      detalle,
-    }, ...prev]);
+    setAuditLog(prev => {
+      const next = [{
+        id: ++auditCounter,
+        timestamp: new Date().toISOString(),
+        rol: currentRole,
+        usuario: currentUser,
+        accion,
+        archivo,
+        detalle,
+      }, ...prev];
+      if (companyIdRef.current) {
+        persistAudit(companyIdRef.current, next);
+      }
+      return next;
+    });
   }, []);
 
   // Aplica una sesión ya obtenida del backend al estado de la app. Único
@@ -160,6 +205,7 @@ export function useAppState() {
     // Entrar a una sesión (aunque no haya pasado por logout) invalida
     // cualquier enriquecimiento semántico de la sesión anterior.
     nuevaGeneracionAnalisis();
+    companyIdRef.current = session.companyId;
     setCompanyName(session.companyNombre);
     setCompanyId(session.companyId);
     setRole(session.role);
@@ -167,6 +213,20 @@ export function useAppState() {
     setAuthSource('backend');
     setMfaEnabled(session.mfaEnabled);
     setPendingMfaToken(null);
+
+    // Rehidratar historial de diagnósticos y bitácora persistida de esta empresa
+    const savedSnaps = getStoredSnapshots(session.companyId);
+    if (savedSnaps.length > 0) {
+      setSnapshots(savedSnaps);
+      setAnalyzed(true);
+    }
+    const savedAudit = getStoredAudit(session.companyId);
+    if (savedAudit.length > 0) {
+      setAuditLog(savedAudit);
+      const maxId = Math.max(...savedAudit.map(a => a.id), 0);
+      if (maxId > auditCounter) auditCounter = maxId;
+    }
+
     // El tour solo se abre automáticamente la primera vez: si el backend ya
     // registra que este usuario lo vio (o lo cerró) antes, no se repite.
     setTourActive(!session.onboardingCompleted);
@@ -207,17 +267,8 @@ export function useAppState() {
 
   const registerCompany = useCallback(async (payload: RegisterPayload) => {
     const session = await registerCompanyApi(payload);
-    nuevaGeneracionAnalisis();
-    setCompanyName(session.companyNombre);
-    setCompanyId(session.companyId);
-    setRole(session.role);
-    setSector(session.companySector ?? payload.sector);
-    setAuthSource('backend');
-    setTourActive(!session.onboardingCompleted);
-    setTourStep(0);
-    setScreen('app');
-    setActiveTab('subir');
-  }, [nuevaGeneracionAnalisis]);
+    applySession(session);
+  }, [applySession]);
 
   const demo = useCallback((demoRole: UserRole) => {
     setCompanyName('Empresa Demo S.A.');
@@ -295,6 +346,7 @@ export function useAppState() {
     } catch (err) {
       console.error('[logout] logoutUser() falló:', err);
     } finally {
+      companyIdRef.current = '';
       setCompanyName('');
       setCompanyId('');
       setSecurityEvents([]);
@@ -369,14 +421,22 @@ export function useAppState() {
     // Calcular métricas para el snapshot histórico usando la función centralizada
     const { pct, green: greenCount, yellow: yellowCount, red: redCount } = calcPct(newResults);
 
-    setSnapshots(prev => [...prev, {
+    const nextSnapshot: HistorialSnapshot = {
       fecha: new Date().toISOString(),
       pct,
       green: greenCount,
       yellow: yellowCount,
       red: redCount,
       checklistVersion: CHECKLIST_VERSION_LABEL,
-    }]);
+    };
+
+    setSnapshots(prev => {
+      const updated = [...prev, nextSnapshot];
+      if (companyIdRef.current) {
+        persistSnapshots(companyIdRef.current, updated);
+      }
+      return updated;
+    });
 
     setResults(newResults);
     setAnalyzed(true);

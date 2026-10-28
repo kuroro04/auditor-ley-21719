@@ -301,7 +301,7 @@ export async function generarInformePDF(
 }
 
 // ────────────────────────────────────────────────────────────
-// 2. PLANTILLA PDF DE DOCUMENTO LEGAL
+// 2. PLANTILLA PDF DE DOCUMENTO LEGAL (Diseño Ejecutivo y Profesional)
 // ────────────────────────────────────────────────────────────
 export async function generarPlantillaPDF(reqId: string, companyName: string): Promise<void> {
   const tpl = TEMPLATES[reqId];
@@ -312,7 +312,7 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const PW = doc.internal.pageSize.getWidth();
   const PH = doc.internal.pageSize.getHeight();
-  const margin = 22;
+  const margin = 20;
   let y = 0;
 
   const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -320,197 +320,332 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
   const addPage = () => {
     doc.addPage();
     y = margin;
-    // Header pequeño en páginas siguientes
-    doc.setFillColor(...C.navy);
-    doc.rect(0, 0, PW, 10, 'F');
-    doc.setFontSize(7);
-    doc.setTextColor(...C.white);
-    doc.text(`DataShield · ${tpl.titulo}`, margin, 7);
+    // Header minimalista y elegante en páginas 2+
+    doc.setFillColor(15, 23, 42); // slate-900
+    doc.rect(0, 0, PW, 2.5, 'F');
+    doc.setFillColor(37, 99, 235); // blue-600
+    doc.rect(0, 2.5, PW, 0.8, 'F');
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(71, 85, 105);
+    doc.text(`DataShield · ${tpl.titulo}`, margin, 9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184);
+    doc.text('Ley N° 21.719 (Chile)', PW - margin, 9, { align: 'right' });
+
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.3);
+    doc.line(margin, 12, PW - margin, 12);
+
     y = 18;
   };
 
   const checkY = (needed: number) => {
-    if (y + needed > PH - 20) addPage();
+    if (y + needed > PH - 22) addPage();
   };
 
-  // ── Portada ──
-  doc.setFillColor(...C.navy);
-  doc.rect(0, 0, PW, 45, 'F');
+  // ── Portada / Encabezado Ejecutivo (Página 1) ──
+  // Doble barra superior de prestigio corporativo
+  doc.setFillColor(15, 23, 42); // deep navy
+  doc.rect(0, 0, PW, 3.5, 'F');
+  doc.setFillColor(37, 99, 235); // electric sapphire
+  doc.rect(0, 3.5, PW, 1.2, 'F');
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 200, 255);
-  doc.text('DataShield · Ley 21.719 de Protección de Datos Personales', margin, 13);
-  doc.text(tpl.articulo, margin, 20);
+  // Badge legal
+  y = 12;
+  doc.setFillColor(241, 245, 249);
+  doc.setDrawColor(203, 213, 225);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, y, 98, 6.5, 1.5, 1.5, 'FD');
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 58, 138);
+  doc.text('INSTRUMENTO LEGAL OFICIAL · LEY N° 21.719', margin + 3.5, y + 4.3);
 
-  doc.setFontSize(8);
-  doc.setTextColor(...C.gray);
-  doc.text(`Empresa: ${companyName || '[NOMBRE EMPRESA]'}  ·  Fecha: ${fecha}`, margin, 30);
-  doc.text('DOCUMENTO PLANTILLA — Completar los campos indicados', margin, 37);
-
-  y = 57;
-
-  // Título
+  // Título del documento
+  y = 26;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.text);
+  doc.setTextColor(15, 23, 42);
   const titleLines = doc.splitTextToSize(tpl.titulo, PW - margin * 2);
   doc.text(titleLines, margin, y);
-  y += titleLines.length * 8 + 4;
+  y += titleLines.length * 6.5 + 2;
 
-  // Línea separadora
-  doc.setDrawColor(...C.lightGray);
-  doc.line(margin, y, PW - margin, y);
-  y += 8;
-
-  // Propósito
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.blue);
-  doc.text('Propósito de este documento:', margin, y);
-  y += 5;
+  // Subtítulo con el artículo legal
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...C.text2);
-  const propLines = doc.splitTextToSize(tpl.proposito, PW - margin * 2);
-  doc.text(propLines, margin, y);
-  y += propLines.length * 5 + 10;
+  doc.setTextColor(37, 99, 235);
+  doc.text(tpl.articulo, margin, y);
+  y += 7;
 
-  // Instrucción de uso
-  doc.setFillColor(239, 246, 255);
-  doc.setDrawColor(147, 197, 253);
-  doc.roundedRect(margin, y, PW - margin * 2, 12, 2, 2, 'FD');
-  doc.setFontSize(8);
+  // Tarjeta de Metadatos Ejecutivos
+  const metaBoxH = 18;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(226, 232, 240);
+  doc.roundedRect(margin, y, PW - margin * 2, metaBoxH, 2, 2, 'FD');
+
+  const colWidth = (PW - margin * 2) / 3;
+  // Columna 1: Empresa
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.blue);
-  doc.text('INSTRUCCIÓN: Complete todos los campos marcados con [COMPLETAR] antes de usar este documento.', margin + 4, y + 8);
-  y += 18;
+  doc.setTextColor(100, 116, 139);
+  doc.text('EMPRESA / TITULAR', margin + 4, y + 5.5);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  const safeComp = companyName && companyName.trim() ? companyName : '[EMPRESA REGISTRADA]';
+  doc.text(doc.splitTextToSize(safeComp, colWidth - 8)[0], margin + 4, y + 12);
 
-  // ── Secciones ──
-  for (const seccion of tpl.secciones) {
-    checkY(30);
+  // Columna 2: Fecha de emisión
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 116, 139);
+  doc.text('FECHA DE EMISIÓN', margin + colWidth + 4, y + 5.5);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(15, 23, 42);
+  doc.text(fecha, margin + colWidth + 4, y + 12);
 
-    // Título de sección
-    doc.setFontSize(11);
+  // Columna 3: Estado del documento
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(100, 116, 139);
+  doc.text('FINALIDAD', margin + colWidth * 2 + 4, y + 5.5);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(5, 150, 105);
+  doc.text('Plantilla de Cumplimiento', margin + colWidth * 2 + 4, y + 12);
+
+  y += metaBoxH + 8;
+
+  // Propósito del documento (Callout con acento lateral)
+  if (tpl.proposito) {
+    const propLines = doc.splitTextToSize(tpl.proposito, PW - margin * 2 - 12);
+    const propH = propLines.length * 4.2 + 10;
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, PW - margin * 2, propH, 1.5, 1.5, 'FD');
+    doc.setFillColor(37, 99, 235);
+    doc.rect(margin, y, 2, propH, 'F');
+
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.navy);
-    doc.text(seccion.titulo, margin, y);
-    y += 6;
+    doc.setTextColor(37, 99, 235);
+    doc.text('OBJETIVO Y ALCANCE NORMATIVO:', margin + 6, y + 5);
 
-    // Instrucción
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(51, 65, 85);
+    doc.text(propLines, margin + 6, y + 9.5);
+
+    y += propH + 8;
+  }
+
+  // Banner de Instrucción
+  doc.setFillColor(239, 246, 255);
+  doc.setDrawColor(191, 219, 254);
+  doc.roundedRect(margin, y, PW - margin * 2, 8.5, 1.5, 1.5, 'FD');
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(30, 64, 175);
+  doc.text('INSTRUCCIÓN: Complete los campos marcados entre corchetes [COMPLETAR] con la información verídica de su organización.', margin + 4, y + 5.5);
+  y += 14;
+
+  // ── Secciones y Cláusulas ──
+  for (let sIdx = 0; sIdx < tpl.secciones.length; sIdx++) {
+    const seccion = tpl.secciones[sIdx];
+    checkY(32);
+
+    // Encabezado de cláusula/sección con estilo legal
+    doc.setFontSize(10.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(15, 23, 42);
+    doc.text(seccion.titulo, margin, y);
+    y += 5.5;
+
+    // Instrucción para el redactor
     if (seccion.instruccion) {
-      checkY(12);
+      checkY(10);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'italic');
-      doc.setTextColor(...C.gray);
+      doc.setTextColor(100, 116, 139);
       const instrLines = doc.splitTextToSize(`» ${seccion.instruccion}`, PW - margin * 2);
       doc.text(instrLines, margin, y);
-      y += instrLines.length * 4.5 + 3;
+      y += instrLines.length * 4 + 3;
     }
 
-    // Recuadro "Por qué la ley lo exige": explica el riesgo legal que cubre la sección
+    // Callout de justificación jurídica
     if (seccion.porQue) {
-      const porQueLines = doc.splitTextToSize(seccion.porQue, PW - margin * 2 - 8);
-      const boxH = porQueLines.length * 4.2 + 8;
-      checkY(boxH + 4);
-      doc.setFillColor(247, 248, 252);
-      doc.setDrawColor(...C.lightGray);
+      const porQueLines = doc.splitTextToSize(seccion.porQue, PW - margin * 2 - 10);
+      const boxH = porQueLines.length * 3.8 + 8;
+      checkY(boxH + 5);
+      doc.setFillColor(250, 250, 252);
+      doc.setDrawColor(226, 232, 240);
       doc.roundedRect(margin, y, PW - margin * 2, boxH, 1.5, 1.5, 'FD');
-      doc.setFontSize(7.5);
+      doc.setFillColor(100, 116, 139);
+      doc.rect(margin, y, 1.5, boxH, 'F');
+
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...C.navy2);
-      doc.text('POR QUÉ LA LEY LO EXIGE', margin + 4, y + 5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('JUSTIFICACIÓN NORMATIVA APDP', margin + 5, y + 4.5);
+
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...C.text2);
-      doc.text(porQueLines, margin + 4, y + 9.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(porQueLines, margin + 5, y + 8.5);
       y += boxH + 5;
     }
 
-    // Contenido placeholder
+    // Contenido del modelo
     const lineas = seccion.placeholder.split('\n');
     for (const linea of lineas) {
       checkY(6);
-      const isPlaceholder = linea.includes('[COMPLETAR');
-
-      if (isPlaceholder) {
-        doc.setFontSize(9.5);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...C.blue);
-      } else if (linea === '') {
-        y += 2;
+      if (linea.trim() === '') {
+        y += 2.5;
         continue;
-      } else {
-        doc.setFontSize(9.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...C.text);
       }
 
-      const wrappedLines = doc.splitTextToSize(linea, PW - margin * 2);
-      doc.text(wrappedLines, margin, y);
-      y += wrappedLines.length * 5 + 1;
+      const isPlaceholder = linea.includes('[COMPLETAR');
+      if (isPlaceholder) {
+        // Separar etiqueta del placeholder
+        const parts = linea.split(':');
+        if (parts.length >= 2) {
+          const label = parts[0] + ':';
+          const rest = parts.slice(1).join(':').trim();
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(30, 41, 59);
+          doc.text(label, margin + 2, y);
+          const labelW = doc.getTextWidth(label) + 2;
+
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(37, 99, 235);
+          const valLines = doc.splitTextToSize(rest, PW - margin * 2 - labelW - 4);
+          doc.text(valLines, margin + 2 + labelW, y);
+          y += valLines.length * 4.8 + 1;
+        } else {
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(37, 99, 235);
+          const pLines = doc.splitTextToSize(linea, PW - margin * 2 - 4);
+          doc.text(pLines, margin + 2, y);
+          y += pLines.length * 4.8 + 1;
+        }
+      } else {
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(30, 41, 59);
+        const wrapped = doc.splitTextToSize(linea, PW - margin * 2 - 4);
+        doc.text(wrapped, margin + 2, y);
+        y += wrapped.length * 4.8 + 1;
+      }
     }
 
-    // Separador entre secciones
-    checkY(8);
-    doc.setDrawColor(...C.lightGray);
+    // Divisor sutil
+    checkY(10);
+    doc.setDrawColor(241, 245, 249);
     doc.line(margin, y + 3, PW - margin, y + 3);
-    y += 10;
+    y += 8;
   }
 
-  // ── Checklist de verificación ──
-  checkY(20);
+  // ── Bloque Formal de Firmas (para documentos que lo ameritan) ──
+  checkY(45);
+  doc.setDrawColor(226, 232, 240);
+  doc.line(margin, y, PW - margin, y);
+  y += 8;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(71, 85, 105);
+  doc.text('FORMALIZACIÓN Y SUSCRIPCIÓN:', margin, y);
+  y += 18;
+
+  const signW = (PW - margin * 2 - 15) / 2;
+  // Firma 1
+  doc.setDrawColor(100, 116, 139);
+  doc.line(margin, y, margin + signW, y);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  doc.text('POR EL RESPONSABLE', margin, y + 4.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+  doc.text('Nombre / Representante Legal:\nRUT:\nFecha: ____ / ____ / ________', margin, y + 8.5);
+
+  // Firma 2
+  doc.line(margin + signW + 15, y, PW - margin, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(15, 23, 42);
+  doc.text('POR EL ENCARGADO / TESTIGO', margin + signW + 15, y + 4.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 116, 139);
+  doc.text('Nombre / Cargo:\nRUT:\nFecha: ____ / ____ / ________', margin + signW + 15, y + 8.5);
+
+  y += 24;
+
+  // ── Checklist de Verificación Final ──
+  checkY(24);
   doc.setFillColor(240, 253, 244);
-  doc.setDrawColor(167, 243, 208);
-  doc.roundedRect(margin, y, PW - margin * 2, 8, 2, 2, 'FD');
-  doc.setFontSize(10);
+  doc.setDrawColor(187, 247, 208);
+  doc.roundedRect(margin, y, PW - margin * 2, 7.5, 1.5, 1.5, 'FD');
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.text);
-  doc.text('Antes de usar este documento, confirme que:', margin + 4, y + 5.5);
-  y += 13;
-  for (const item of tpl.checklist) {
-    checkY(8);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C.text2);
-    // Casilla de verificación dibujada (cuadro vacío) + texto del ítem
-    doc.setDrawColor(...C.gray);
-    doc.rect(margin, y - 3, 3.5, 3.5);
-    const itemLines = doc.splitTextToSize(item, PW - margin * 2 - 8);
-    doc.text(itemLines, margin + 6, y);
-    y += itemLines.length * 4.5 + 3;
-  }
-  y += 6;
+  doc.setTextColor(22, 101, 52);
+  doc.text('Lista de Verificación antes de implementar:', margin + 4, y + 5);
+  y += 11;
 
-  // ── Notas legales ──
-  checkY(35);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.text);
-  doc.text('Notas legales:', margin, y);
-  y += 6;
-  for (const nota of tpl.notas) {
-    checkY(8);
-    doc.setFontSize(8.5);
+  for (const item of tpl.checklist) {
+    checkY(7);
+    doc.setDrawColor(148, 163, 184);
+    doc.roundedRect(margin, y - 2.8, 3.2, 3.2, 0.5, 0.5);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C.text2);
+    doc.setTextColor(51, 65, 85);
+    const itemLines = doc.splitTextToSize(item, PW - margin * 2 - 7);
+    doc.text(itemLines, margin + 5.5, y);
+    y += itemLines.length * 4.2 + 2;
+  }
+  y += 4;
+
+  // ── Notas Legales ──
+  checkY(20);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(71, 85, 105);
+  doc.text('Notas y consideraciones legales:', margin, y);
+  y += 5;
+
+  for (const nota of tpl.notas) {
+    checkY(6);
+    doc.setFontSize(7.8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
     const notaLines = doc.splitTextToSize(`• ${nota}`, PW - margin * 2);
     doc.text(notaLines, margin, y);
-    y += notaLines.length * 4.5 + 2;
+    y += notaLines.length * 3.8 + 1.5;
   }
 
   // ── Pie de página en todas las páginas ──
   const totalPages = (doc as any).internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFillColor(...C.bgGray);
-    doc.rect(0, PH - 12, PW, 12, 'F');
+    doc.setFillColor(248, 250, 252);
+    doc.rect(0, PH - 10, PW, 10, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(0, PH - 10, PW, PH - 10);
+
     doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C.gray);
+    doc.setTextColor(148, 163, 184);
     doc.text(
-      'Plantilla generada por DataShield · No constituye asesoría legal · Consulte a un abogado especializado en protección de datos.',
-      margin, PH - 5,
+      'Documento generado por DataShield · No constituye asesoría jurídica vinculante · Válido para implementación bajo Ley N° 21.719.',
+      margin, PH - 4,
     );
-    doc.text(`Pág. ${i} / ${totalPages}`, PW - margin, PH - 5, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Página ${i} de ${totalPages}`, PW - margin, PH - 4, { align: 'right' });
   }
 
   doc.save(`plantilla_${reqId}_${companyName.replace(/[^a-z0-9]/gi, '_') || 'empresa'}.pdf`);

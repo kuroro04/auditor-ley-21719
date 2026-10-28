@@ -930,12 +930,59 @@ html, body {
    TOAST
    ═══════════════════════════════════════════════════════════ */
 
-.toast-item {
-  display: flex; align-items: center; gap: 10px; padding: 12px 16px;
-  background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 13px; font-weight: 500; box-shadow: var(--shadow-lg);
-  animation: toastIn 0.26s var(--ease-out); max-width: 340px;
-  font-family: var(--font-sora),'Sora',sans-serif;
+.toast-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 36px -6px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  animation: toastIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+  font-family: var(--font-sora), 'Sora', sans-serif;
+  transition: transform 0.2s var(--ease-out);
+}
+.toast-card:hover {
+  transform: translateY(-2px);
+}
+.toast-card.toast-green  { border-left: 3px solid #10b981; }
+.toast-card.toast-yellow { border-left: 3px solid #f59e0b; }
+.toast-card.toast-red    { border-left: 3px solid #ef4444; }
+.toast-card.toast-blue   { border-left: 3px solid #3b82f6; }
+
+.toast-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.toast-icon-wrap.green  { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+.toast-icon-wrap.yellow { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+.toast-icon-wrap.red    { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.toast-icon-wrap.blue   { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+
+.toast-content {
+  flex: 1;
+  min-width: 0;
+}
+.toast-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+.toast-body {
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.45;
+  word-break: break-word;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1089,21 +1136,38 @@ html, body {
 .role-lock-btn { display: inline-flex; align-items: center; gap: 6px; padding: 11px 18px; background: var(--surface2); border: 1.5px dashed var(--border2); border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; color: var(--text3); cursor: default; white-space: nowrap; }
 
 /* ── SECTOR COMPARISON ── */
-.sector-card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 20px; box-shadow: var(--shadow); animation: fadeInUp 0.4s var(--ease-out) both; }
-.sector-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.sector-card-header h3 { font-size: 14px; font-weight: 600; color: var(--text); margin: 0; }
-.sector-badge { font-size: 11px; font-weight: 600; letter-spacing: 0.02em; background: var(--blue-dim); color: var(--blue); padding: 3px 10px; border-radius: 99px; border: 1px solid rgba(37,99,235,0.18); }
-.sector-stat { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-.sector-stat-label { font-size: 12px; color: var(--text2); width: 160px; flex-shrink: 0; }
-.sector-bar-track { flex: 1; height: 8px; background: var(--surface2); border-radius: 99px; position: relative; }
-.sector-bar { height: 8px; border-radius: 99px; position: absolute; top: 0; left: 0; transition: width 0.9s var(--ease-out); }
-.sector-bar.empresa  { background: var(--blue); }
-.sector-bar.promedio { background: var(--gray-300); }
-.sector-bar-pct { position: absolute; right: -42px; top: 50%; transform: translateY(-50%); font-size: 11px; font-weight: 700; color: var(--text2); white-space: nowrap; }
-.sector-delta { font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: var(--radius-sm); margin-top: 14px; }
-.sector-delta.positivo { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.sector-delta.negativo { background: var(--red-bg);   color: var(--red);   border: 1px solid var(--red-border); }
-.sector-desc { font-size: 11px; color: var(--text3); margin-top: 8px; }
+.sector-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  margin-bottom: 22px;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  animation: fadeInUp 0.4s var(--ease-out) both;
+}
+.sector-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.sector-card-header h3 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0; letter-spacing: -0.01em; }
+.sector-badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  padding: 4px 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+.sector-stat { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.sector-stat-label { font-size: 13px; font-weight: 500; color: var(--text2); width: 170px; flex-shrink: 0; }
+.sector-bar-track { flex: 1; height: 10px; background: #f1f5f9; border-radius: 99px; position: relative; overflow: hidden; }
+.sector-bar { height: 100%; border-radius: 99px; position: absolute; top: 0; left: 0; transition: width 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
+.sector-bar.empresa  { background: linear-gradient(90deg, #2563eb, #3b82f6); box-shadow: 0 0 12px rgba(37, 99, 235, 0.25); }
+.sector-bar.promedio { background: #cbd5e1; }
+.sector-bar-pct { font-size: 13px; font-weight: 700; color: var(--text); width: 44px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.sector-delta { font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: var(--radius-sm); margin-top: 16px; display: inline-flex; align-items: center; gap: 6px; }
+.sector-delta.positivo { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.sector-delta.negativo { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+.sector-desc { font-size: 12px; color: var(--text3); margin-top: 10px; line-height: 1.5; }
 
 /* ── ONBOARDING TOUR ── */
 .tour-spotlight { position: fixed; z-index: 1001; background: transparent; border-radius: 12px; pointer-events: none; box-shadow: 0 0 0 3px #60a5fa, 0 0 0 9999px rgba(8,14,30,0.75); transition: top 0.35s var(--ease-out), left 0.35s var(--ease-out), width 0.35s var(--ease-out), height 0.35s var(--ease-out); }

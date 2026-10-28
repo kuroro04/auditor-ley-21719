@@ -66,7 +66,7 @@ export default function RegistroView({ auditLog, securityEvents }: RegistroViewP
       <div className="registro-hdr">
         <div>
           <h2>Registro de auditoría</h2>
-          <p>Historial de todas las acciones realizadas en esta sesión</p>
+          <p>Historial de acciones y trazabilidad de su empresa</p>
         </div>
         <div className="registro-count">{auditLog.length} evento{auditLog.length !== 1 ? 's' : ''}</div>
       </div>
@@ -82,7 +82,7 @@ export default function RegistroView({ auditLog, securityEvents }: RegistroViewP
             </svg>
           </div>
           <div className="empty-state-title">Sin eventos registrados</div>
-          <div className="empty-state-sub">Las acciones de esta sesión aparecerán aquí automáticamente</div>
+          <div className="empty-state-sub">Las acciones de su empresa aparecerán aquí automáticamente</div>
         </div>
       ) : (
         <div className="registro-table-wrap">
