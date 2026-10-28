@@ -4,6 +4,8 @@ import { useAppState } from '@/hooks/useAppState';
 import { useToast } from '@/hooks/useToast';
 import { useSessionTimeout } from '@/hooks/useSessionTimeout';
 import { ApiError } from '@/lib/api/client';
+import { fetchMe } from '@/lib/api/auth';
+import { listDocuments } from '@/lib/api/documents';
 import { preloadEmbeddingModel } from '@/lib/semantic/embeddingModel';
 import Landing from '@/components/Landing';
 import AppShell from '@/components/AppShell';
@@ -23,9 +25,36 @@ export default function Home() {
     preloadEmbeddingModel();
   }, []);
 
+  // Rehidratación de sesión activa (F5 / recarga del navegador)
+  useEffect(() => {
+    let cancelled = false;
+    async function rehydrateSession() {
+      try {
+        const session = await fetchMe();
+        if (!cancelled && session) {
+          state.applySession(session);
+          try {
+            const docs = await listDocuments();
+            if (!cancelled && docs.length > 0) {
+              state.hydrateBackendDocuments(docs, session);
+            }
+          } catch (docErr) {
+            console.error('[rehydrate] Error al sincronizar documentos:', docErr);
+          }
+        }
+      } catch {
+        // Sin sesión activa previa o cookie no válida: permanece en landing
+      }
+    }
+    void rehydrateSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   useSessionTimeout(
     () => toast('Su sesión expirará en 1 minuto por inactividad', 'yellow'),
-    () => { state.logout(); toast('Sesión cerrada por inactividad', 'yellow'); },
+    () => { void state.logout(); toast('Sesión cerrada por inactividad', 'yellow'); },
     state.screen === 'app',
   );
 

@@ -30,6 +30,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from core.deps import CurrentUser, client_ip, get_current_user, get_tenant_db
+from core.limiter import limiter
 from models.schemas import ClientEventRequest
 from services import audit
 
@@ -41,6 +42,7 @@ ORIGEN_CLIENTE = 'reportado_por_cliente'
 
 
 @router.post('/client-events', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('20/minute')
 def report_client_event(
     payload: ClientEventRequest,
     request: Request,

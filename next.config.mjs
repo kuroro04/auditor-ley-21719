@@ -63,6 +63,13 @@ const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
 
+  // El optimizador de imágenes queda deshabilitado de forma explícita: la app no
+  // usa next/image en ninguna pantalla y el endpoint /_next/image es la
+  // superficie de las dos RCE conocidas de Next 14 (AVIF GHSA-2xp9-vwfh-vxw4,
+  // SVG GHSA-2464-fhr4-w9xw) y de los DoS de caché de imágenes. Apagarlo elimina
+  // esa ruta en vez de depender de que nadie la invoque.
+  images: { unoptimized: true },
+
   async headers() {
     return [
       {

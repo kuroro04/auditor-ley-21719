@@ -69,9 +69,10 @@ export default function MfaSettings({ mfaEnabled, onChanged, onClose, onToast }:
     }
     setBusy(true);
     try {
-      // Un valor de exactamente 6 dígitos se trata como código; cualquier
-      // otra cosa, como contraseña. El backend acepta cualquiera de los dos.
-      const confirm = /^\d{6}$/.test(value) ? { code: value } : { password: value };
+      // Un código TOTP (6 dígitos) o de respaldo (10 caracteres alfanuméricos)
+      // se envía en la propiedad 'code'; cualquier otra cosa se evalúa como contraseña.
+      const isCode = /^\d{6}$/.test(value) || /^[A-Za-z0-9]{10}$/.test(value);
+      const confirm = isCode ? { code: value } : { password: value };
       await mfaDisable(confirm);
       onToast('✓ Verificación en dos pasos desactivada', 'green');
       onChanged(false);

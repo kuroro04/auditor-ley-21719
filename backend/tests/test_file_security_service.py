@@ -60,3 +60,5 @@ def test_rechaza_txt_que_en_realidad_es_binario():
 def test_sanitize_filename_quita_rutas_y_caracteres_de_control():
     assert sanitize_filename('../../etc/passwd.pdf') == 'passwd.pdf'
     assert sanitize_filename('C:\\Users\\a\\archivo.pdf') == 'archivo.pdf'
+    assert sanitize_filename('report"; filename="evil.bat') == 'report filename=evil.bat'
+    assert sanitize_filename("doc'test;name.pdf\r\n") == 'doctestname.pdf'

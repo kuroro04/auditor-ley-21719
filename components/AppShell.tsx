@@ -137,7 +137,7 @@ export default function AppShell({
               {mfaEnabled ? '🔒 Seguridad' : 'Seguridad'}
             </button>
           )}
-          <button className="btn-logout" onClick={onLogout}>Salir</button>
+          <button className="btn-logout" onClick={() => void onLogout()}>Salir</button>
         </div>
       </header>
 

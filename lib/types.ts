@@ -67,6 +67,7 @@ export interface UploadedDoc {
   extractMethod?: string;
   scanned?: boolean; // true cuando el PDF no tiene texto seleccionable
   rejected?: boolean; // true cuando la capa de seguridad rechazó el archivo (no debe persistirse)
+  pending?: true; // true cuando se rehidrató desde el backend: nombre conocido, sin texto ni análisis
 }
 
 export interface CriterioResult {
@@ -106,7 +107,9 @@ export interface CriterioResult {
 export interface RequisitoResult {
   // 'unanalyzable' = documento escaneado, no se pudo extraer texto
   // 'wrong_type'   = documento del tipo incorrecto (clasificación previa)
-  estado: 'green' | 'yellow' | 'red' | 'unanalyzable' | 'wrong_type';
+  // 'pending'      = documento rehidratado desde el backend sin texto disponible;
+  //                  no se analiza y no aporta al porcentaje de cumplimiento
+  estado: 'green' | 'yellow' | 'red' | 'unanalyzable' | 'wrong_type' | 'pending';
   cobertura: number;
   criterios: CriterioResult[];
   gap: string;

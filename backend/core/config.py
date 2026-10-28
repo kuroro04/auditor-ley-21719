@@ -94,6 +94,33 @@ BETTERSTACK_SOURCE_TOKEN = None if TESTING else (os.getenv('BETTERSTACK_SOURCE_T
 BETTERSTACK_INGEST_HOST = None if TESTING else (os.getenv('BETTERSTACK_INGEST_HOST') or None)
 
 # Si hay un proxy inverso de confianza delante (Nginx, balanceador, etc.),
-# poner 'true' para que client_ip() lea X-Forwarded-For.
+# poner 'true' para que client_ip() lea X-Forwarded-For solo si proviene de KNOWN_PROXIES.
 # En desarrollo local o si la app queda expuesta directo a internet: 'false'.
 TRUST_PROXY = os.getenv('TRUST_PROXY', 'false').lower() == 'true'
+
+_known_proxies_raw = os.getenv('KNOWN_PROXIES', '127.0.0.1,::1,localhost,testclient,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16')
+KNOWN_PROXIES = [p.strip() for p in _known_proxies_raw.split(',') if p.strip()]
+
+
+def is_trusted_proxy(ip: str | None, trust_proxy_enabled: bool | None = None) -> bool:
+    enabled = TRUST_PROXY if trust_proxy_enabled is None else trust_proxy_enabled
+    if not ip or not enabled:
+        return False
+    ip = ip.strip()
+    if ip in ('localhost', '127.0.0.1', '::1') and ('localhost' in KNOWN_PROXIES or '127.0.0.1' in KNOWN_PROXIES or '::1' in KNOWN_PROXIES):
+        return True
+    import ipaddress
+    try:
+        ip_obj = ipaddress.ip_address(ip)
+    except ValueError:
+        return ip in KNOWN_PROXIES
+
+    for proxy in KNOWN_PROXIES:
+        if proxy == ip:
+            return True
+        try:
+            if '/' in proxy and ip_obj in ipaddress.ip_network(proxy, strict=False):
+                return True
+        except ValueError:
+            continue
+    return False

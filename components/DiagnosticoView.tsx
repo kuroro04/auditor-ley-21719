@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useEffect, useRef, useState } from 'react';
 import { REQUISITOS } from '@/lib/requisitos';
 import { processDocumentUpload, type UploadFailure } from '@/lib/documentUpload';
@@ -44,7 +44,7 @@ export default function DiagnosticoView({
   const canDownload = role === 'administrador' || role === 'auditor';   // descargar informe y plantillas
 
   // ── Metricas de cumplimiento ──
-  const { pct, green, yellow, red, unanalyzable, analyzable } = calcPct(results);
+  const { pct, green, yellow, red, unanalyzable, wrong_type, pending, analyzable } = calcPct(results);
 
   const docsSubidos = Object.keys(uploadedDocs).length;
   const totalWords  = Object.values(uploadedDocs).reduce((acc, d) => acc + (d.wordCount ?? 0), 0);
@@ -120,9 +120,9 @@ export default function DiagnosticoView({
     pendingReqId.current = null;
   };
 
-  // Ordenar: red -> yellow -> unanalyzable -> green
+  // Ordenar: red/wrong_type -> pending -> yellow -> unanalyzable -> green
   const sorted = [...REQUISITOS].sort((a, b) => {
-    const order: Record<string, number> = { red: 0, yellow: 1, unanalyzable: 2, green: 3 };
+    const order: Record<string, number> = { red: 0, wrong_type: 0, pending: 1, yellow: 2, unanalyzable: 3, green: 4 };
     return (order[results[a.id]?.estado ?? 'red'] ?? 0) - (order[results[b.id]?.estado ?? 'red'] ?? 0);
   });
 
@@ -284,9 +284,11 @@ export default function DiagnosticoView({
           const { estado, cobertura, criterios, gap } = res;
           const isOpen    = openCards.has(r.id);
           const isScanned = estado === 'unanalyzable';
-          const stateClass = isScanned ? 'state-unanalyzable' : `state-${estado}`;
-          const icon       = estado === 'green' ? '✓' : estado === 'yellow' ? '⚠' : isScanned ? '⊘' : '✕';
-          const gapColor   = estado === 'green' ? 'green' : estado === 'yellow' ? 'yellow' : isScanned ? 'gray' : 'red';
+          const isWrongType = estado === 'wrong_type';
+          const isPending = estado === 'pending';
+          const stateClass = isScanned ? 'state-unanalyzable' : isWrongType ? 'state-wrong-type' : isPending ? 'state-pending' : `state-${estado}`;
+          const icon       = estado === 'green' ? '✓' : estado === 'yellow' ? '⚠' : isScanned ? '⊘' : isPending ? '⌛' : '✕';
+          const gapColor   = estado === 'green' ? 'green' : estado === 'yellow' ? 'yellow' : (isScanned || isPending) ? 'gray' : 'red';
 
           const prevRes            = previousResults[r.id];
           const covDelta           = prevRes ? res.cobertura - prevRes.cobertura : 0;
@@ -307,8 +309,8 @@ export default function DiagnosticoView({
                   <div className="brecha-art">{r.art}</div>
                 </div>
                 <div className="brecha-progress-wrap">
-                  <div className="brecha-pct">{isScanned ? '—' : `${cobertura}%`}</div>
-                  {!isScanned && (
+                  <div className="brecha-pct">{isScanned || isPending || isWrongType ? '—' : `${cobertura}%`}</div>
+                  {!(isScanned || isPending || isWrongType) && (
                     <div className="prog-bar">
                       <div className="prog-fill" style={{ width: `${cobertura}%` }} />
                     </div>

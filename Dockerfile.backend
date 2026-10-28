@@ -27,7 +27,9 @@ COPY --from=builder /install /usr/local
 COPY backend/ .
 
 # Usuario sin privilegios: el proceso no corre como root
-RUN adduser --disabled-password --gecos "" appuser
+RUN adduser --disabled-password --gecos "" appuser && \
+    mkdir -p /app/storage /app/quarantine /app/logs && \
+    chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8000

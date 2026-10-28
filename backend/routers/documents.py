@@ -12,6 +12,7 @@ from core.limiter import limiter
 from db.models import Document
 from models.schemas import DocumentOut
 from services import audit
+from services.file_security_service import sanitize_filename
 from services import quarantine_service as qs
 from services.quarantine_service import clean_destination, move_to_clean, secure_delete
 from services.secure_upload_service import process_secure_upload
@@ -219,7 +220,8 @@ def download_document(
             detail='No se pudo registrar la consulta en la bitácora de auditoría; el documento no se entregó.',
         )
 
-    return FileResponse(ruta, media_type=doc.content_type, filename=doc.filename)
+    safe_filename = sanitize_filename(doc.filename)
+    return FileResponse(ruta, media_type=doc.content_type, filename=safe_filename)
 
 
 @router.delete('/{doc_id}', status_code=204)

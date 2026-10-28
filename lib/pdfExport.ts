@@ -26,6 +26,8 @@ function estadoLabel(estado: string): string {
   if (estado === 'green')        return 'Cumple';
   if (estado === 'yellow')       return 'Parcial';
   if (estado === 'unanalyzable') return 'Sin datos';
+  if (estado === 'wrong_type')   return 'Tipo incorrecto';
+  if (estado === 'pending')      return 'Pendiente';
   return 'Faltante';
 }
 
@@ -47,7 +49,7 @@ export async function generarInformePDF(
   let y = 0;
 
   // ── Calcular métricas (fuente única: lib/metrics.ts) ──
-  const { pct, green, yellow, red, unanalyzable, analyzable } = calcPct(results);
+  const { pct, green, yellow, red, unanalyzable, wrong_type, pending, analyzable } = calcPct(results);
   const totalWords = Object.values(uploadedDocs).reduce((acc, d) => acc + (d.wordCount ?? 0), 0);
 
   const totalExposure = REQUISITOS.reduce((acc, r) => {
@@ -101,19 +103,26 @@ export async function generarInformePDF(
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text2);
   doc.text('cumplimiento confirmado', margin, y + 26);
-  if (unanalyzable > 0) {
+  const noAnalizables = unanalyzable + wrong_type + pending;
+  if (noAnalizables > 0) {
+    const partes: string[] = [];
+    if (unanalyzable > 0) partes.push(`${unanalyzable} sin datos`);
+    if (wrong_type   > 0) partes.push(`${wrong_type} tipo incorrecto`);
+    if (pending      > 0) partes.push(`${pending} pendientes`);
     doc.setFontSize(10);
     doc.setTextColor(...C.gray);
-    doc.text(`(${analyzable} de ${REQUISITOS.length} requisitos analizables · ${unanalyzable} sin datos)`, margin, y + 34);
+    doc.text(`(${analyzable} de ${REQUISITOS.length} analizables · ${partes.join(' · ')})`, margin, y + 34);
   }
 
   // ── Semáforo ──
   const semX = PW - 80;
   const semData = [
-    { label: 'Cumple',    count: green,        color: C.green  },
-    { label: 'Parcial',   count: yellow,       color: C.yellow },
-    { label: 'Faltante',  count: red,          color: C.red    },
-    { label: 'Sin datos', count: unanalyzable, color: C.gray   },
+    { label: 'Cumple',          count: green,        color: C.green  },
+    { label: 'Parcial',         count: yellow,       color: C.yellow },
+    { label: 'Faltante',        count: red,          color: C.red    },
+    { label: 'Sin datos',       count: unanalyzable, color: C.gray   },
+    ...(wrong_type > 0 ? [{ label: 'Tipo incorrecto', count: wrong_type, color: C.gray }] : []),
+    ...(pending    > 0 ? [{ label: 'Pendiente',       count: pending,    color: C.gray }] : []),
   ];
   semData.forEach((s, i) => {
     const sy = y + i * 12;
@@ -128,7 +137,7 @@ export async function generarInformePDF(
     doc.text(s.label, semX + 22, sy + 6.5);
   });
 
-  y += 54;
+  y += Math.max(54, semData.length * 12 + 6);
 
   // ── Barra de cumplimiento ──
   doc.setDrawColor(...C.lightGray);
@@ -179,10 +188,12 @@ export async function generarInformePDF(
       if (data.column.index === 2 && data.section === 'body') {
         const v = data.cell.text[0];
         data.cell.styles.fontStyle = 'bold';
-        if (v === 'Cumple')   data.cell.styles.textColor = C.green;
-        if (v === 'Parcial')  data.cell.styles.textColor = C.yellow;
-        if (v === 'Faltante') data.cell.styles.textColor = C.red;
-        if (v === 'Sin datos') data.cell.styles.textColor = C.gray;
+        if (v === 'Cumple')          data.cell.styles.textColor = C.green;
+        if (v === 'Parcial')         data.cell.styles.textColor = C.yellow;
+        if (v === 'Faltante')        data.cell.styles.textColor = C.red;
+        if (v === 'Sin datos')       data.cell.styles.textColor = C.gray;
+        if (v === 'Tipo incorrecto') data.cell.styles.textColor = C.gray;
+        if (v === 'Pendiente')       data.cell.styles.textColor = C.gray;
       }
     },
   });

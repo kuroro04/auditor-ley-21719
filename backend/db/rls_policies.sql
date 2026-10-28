@@ -114,19 +114,24 @@ ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS audit_log_select_tenant ON audit_log;
 CREATE POLICY audit_log_select_tenant ON audit_log
     FOR SELECT
-    USING (company_id = NULLIF(current_setting('app.current_company_id', true), '')::uuid);
+    USING (company_id::text = NULLIF(current_setting('app.current_company_id', true), ''));
 
 DROP POLICY IF EXISTS audit_log_insert_tenant ON audit_log;
 CREATE POLICY audit_log_insert_tenant ON audit_log
     FOR INSERT
     WITH CHECK (
-        company_id = NULLIF(current_setting('app.current_company_id', true), '')::uuid
+        company_id::text = NULLIF(current_setting('app.current_company_id', true), '')
         OR company_id IS NULL
     );
 
 GRANT SELECT, INSERT ON audit_log TO app_user;
 REVOKE UPDATE, DELETE ON audit_log FROM app_user;
-GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO app_user;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_class WHERE relkind = 'S' AND relname = 'audit_log_id_seq') THEN
+        EXECUTE 'GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO app_user';
+    END IF;
+END $$;
 
 -- 6. Fase 6 — último hash de la cadena, saltándose RLS. La cadena de hashes
 --    es GLOBAL: el evento N se encadena al N-1 sea de la empresa que sea.

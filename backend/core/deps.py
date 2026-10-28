@@ -6,7 +6,7 @@ import jwt
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
-from core.config import CLAMAV_HOST, CLAMAV_PORT, CLAMAV_TIMEOUT_SECONDS, COOKIE_NAME, TRUST_PROXY
+from core.config import CLAMAV_HOST, CLAMAV_PORT, CLAMAV_TIMEOUT_SECONDS, COOKIE_NAME, TRUST_PROXY, is_trusted_proxy
 from core.security import decode_access_token
 from db.database import get_db
 from db.tenant import set_tenant_context
@@ -51,22 +51,15 @@ def get_tenant_db(
 def client_ip(request: Request) -> Optional[str]:
     """IP de origen del cliente, para la bitácora de auditoría (Fase 6).
 
-    Solo lee X-Forwarded-For cuando TRUST_PROXY=true en el entorno, lo que
-    garantiza que hay un proxy de confianza delante que sobrescribe ese header
-    antes de reenviar la request. Sin esa garantía cualquier cliente podría
-    falsificar su IP en la bitácora de auditoría.
-    En desarrollo local y cuando la app queda expuesta directamente a internet
-    se usa request.client.host (la IP TCP real de quien se conecta).
+    Solo lee X-Forwarded-For cuando TRUST_PROXY=true y la conexión TCP proviene
+    de un proxy de confianza (is_trusted_proxy).
     """
-    if TRUST_PROXY:
+    client_host = request.client.host if request.client else None
+    if TRUST_PROXY and is_trusted_proxy(client_host, trust_proxy_enabled=TRUST_PROXY):
         forwarded = request.headers.get('x-forwarded-for')
         if forwarded:
-            # Leer el último valor: Nginx (con X-Forwarded-For $remote_addr) escribe
-            # solo su IP real aquí. En una cadena de proxies, el último valor es el
-            # añadido por el proxy más cercano a nosotros (el de confianza), mientras
-            # que los valores anteriores pueden haber sido fabricados por el cliente.
             return forwarded.split(',')[-1].strip()
-    return request.client.host if request.client else None
+    return client_host
 
 
 def get_clamav_client() -> clamd.ClamdNetworkSocket:

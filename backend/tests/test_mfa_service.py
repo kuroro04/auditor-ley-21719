@@ -84,6 +84,15 @@ def test_consumir_codigo_de_respaldo_valido_lo_elimina_de_la_lista():
     assert mfa.consume_backup_code(nuevo_almacen, codigos[0]) is not None
 
 
+def test_verify_code_rechaza_replay_de_mismo_codigo():
+    secreto = mfa.generate_totp_secret()
+    codigo_valido = pyotp.TOTP(secreto).now()
+
+    assert mfa.verify_code(secreto, codigo_valido) is True
+    # Con el mismo código pasado como last_code, debe ser rechazado
+    assert mfa.verify_code(secreto, codigo_valido, last_code=codigo_valido) is False
+
+
 def test_consumir_codigo_de_respaldo_invalido_devuelve_none():
     almacen = mfa.hash_backup_codes(mfa.generate_backup_codes(3))
 

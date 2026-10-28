@@ -51,6 +51,14 @@ def test_con_trust_proxy_sin_xff_cae_a_client_host(monkeypatch):
     assert _rate_limit_key(req) == '203.0.113.5'
 
 
+def test_con_trust_proxy_ignora_xff_si_proxy_no_es_confiable(monkeypatch):
+    # Si la petición llega de una IP externa que no está en KNOWN_PROXIES,
+    # no se confía en X-Forwarded-For (evita IP spoofing).
+    monkeypatch.setattr('core.limiter.TRUST_PROXY', True)
+    req = _make_request('198.51.100.22', xff='1.1.1.1')
+    assert _rate_limit_key(req) == '198.51.100.22'
+
+
 def test_sin_client_host_devuelve_fallback(monkeypatch):
     monkeypatch.setattr('core.limiter.TRUST_PROXY', False)
     req = MagicMock()

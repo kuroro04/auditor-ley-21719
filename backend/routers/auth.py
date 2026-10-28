@@ -205,8 +205,12 @@ def login_mfa(request: Request, payload: MfaLoginRequest, response: Response, db
         _rechazar(user_id=claims.get('sub'), company_id=claims.get('company_id'))
 
     secreto = mfa.decrypt_secret(user.mfa_secret_enc)
+    limpio_code = payload.code.strip().replace(' ', '')
+    if mfa.is_totp_replayed(user.id, limpio_code):
+        _rechazar(user_id=user.id, company_id=user.company_id)
+
     if mfa.verify_code(secreto, payload.code):
-        pass
+        mfa.mark_totp_consumed(user.id, limpio_code)
     else:
         # ¿Es un código de respaldo? Si coincide, se consume (un solo uso).
         nuevo_almacen = mfa.consume_backup_code(user.mfa_backup_codes, payload.code)
@@ -235,7 +239,8 @@ def me(current: CurrentUser = Depends(get_current_user), db: Session = Depends(g
 # --- Fase 5: administración del segundo factor (usuario ya autenticado) ---
 
 @router.post('/mfa/setup', response_model=MfaSetupResponse)
-def mfa_setup(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
+@limiter.limit('5/minute')
+def mfa_setup(request: Request, current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
     """Genera (o regenera) un secreto TOTP pendiente y devuelve los datos del QR.
 
     El secreto se guarda cifrado, pero mfa_enabled sigue en False hasta que
@@ -263,9 +268,10 @@ def mfa_setup(current: CurrentUser = Depends(get_current_user), db: Session = De
 
 
 @router.post('/mfa/activate', response_model=MfaActivateResponse)
+@limiter.limit('5/minute')
 def mfa_activate(
-    payload: MfaCodeRequest,
     request: Request,
+    payload: MfaCodeRequest,
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
 ):
@@ -370,4 +376,10 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
             )
             db.commit()
 
-    response.delete_cookie(COOKIE_NAME, path='/')
+    response.delete_cookie(
+        COOKIE_NAME,
+        path='/',
+        httponly=True,
+        samesite='lax',
+        secure=COOKIE_SECURE,
+    )

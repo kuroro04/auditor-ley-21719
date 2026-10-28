@@ -425,6 +425,30 @@ export function analyzeDocument(
     };
   }
 
+  // Documento rehidratado desde backend sin texto en memoria
+  if (doc.pending) {
+    return {
+      estado: 'pending',
+      cobertura: 0,
+      criterios: req.criterios.map(c => ({
+        name: c.name,
+        status: 'fail',
+        found: 'Documento registrado en el servidor — re-suba para nuevo análisis',
+        kwFound: 0,
+        kwTotal: c.keywords.length,
+        confianza: 'baja',
+        validado: c.validado,
+        negaciones: [],
+        frasesLegalesEncontradas: [],
+        requiereRevisionManual: false,
+        densidad: 0,
+        kwsEnContextoNormativo: [],
+        fragmentoDocumento: '',
+      })),
+      gap: `El documento "${doc.name}" está registrado en el servidor. Puede volver a subirlo localmente para ejecutar un nuevo diagnóstico.`,
+    };
+  }
+
   const texto = doc.text.toLowerCase();
   const palabras = texto.split(/\s+/);
 
@@ -451,7 +475,7 @@ export function analyzeDocument(
         kwsEnContextoNormativo: [],
         fragmentoDocumento: '',
       })),
-      gap: `El documento "${doc.name}" no parece ser una política de privacidad. ${clasificacionDocumento.razon}`,
+      gap: `El documento "${doc.name}" no parece ser un(a) ${req.nombre.toLowerCase()}. ${clasificacionDocumento.razon}`,
       clasificacionDocumento,
     };
   }

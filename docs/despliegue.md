@@ -20,7 +20,7 @@
 
 ### ¿Qué pasa si el servidor no tiene X?
 
-- **Sin 2 GB RAM:** ClamAV puede fallar en el arranque inicial (OOM). Solución: deshabilitar ClamAV temporalmente poniendo `CLAMAV_HOST` apuntando a un host que no existe; la app funciona pero sin escaneo antivirus.
+- **Sin 2 GB RAM:** ClamAV requiere al menos 2 GB de memoria para cargar su base de firmas (de lo contrario el SO lo mata por OOM). El servicio de carga de documentos es estrictamente *fail-closed*: si ClamAV está apagado o no responde, el backend rechaza incondicionalmente las subidas con HTTP 400. Por lo tanto, 2 GB de RAM son un requisito mandatorio en producción (en desarrollo/tests se utilizan mocks/fakes de prueba).
 - **Sin Docker:** Instalar `clamav` desde el gestor de paquetes del SO y arrancar `clamd` manualmente. Ver §4.
 - **Sin HTTPS:** La app no puede usarse con autenticación real. Opciones: Let's Encrypt + Nginx (gratuito), Cloudflare Tunnel, o pedir al profesor que exponga el dominio con TLS.
 - **Sin acceso SSH:** [PENDIENTE SÁBADO] — si solo hay panel de hosting, el procedimiento de despliegue cambia.

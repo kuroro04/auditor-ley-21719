@@ -51,7 +51,8 @@ def _matches_signature(header: bytes, signature: bytes) -> bool:
 def sanitize_filename(name: str) -> str:
     base = re.split(r'[\\/]', name)[-1]
     sin_control = re.sub(r'[\x00-\x1f\x7f]', '', base)
-    cleaned = re.sub(r'\s+', ' ', sin_control).strip()
+    sin_peligrosos = re.sub(r'["\';\r\n]', '', sin_control)
+    cleaned = re.sub(r'\s+', ' ', sin_peligrosos).strip()
     return cleaned or 'archivo'
 
 

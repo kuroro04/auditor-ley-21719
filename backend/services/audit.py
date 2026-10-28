@@ -284,10 +284,6 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
                 'verificar_cadena debe correr con el rol audit_verifier.'
             )
 
-    query = db.query(AuditLog).order_by(AuditLog.id.asc())
-    if desde_id is not None:
-        query = query.filter(AuditLog.id >= desde_id)
-
     hash_previo_esperado = HASH_GENESIS
     if desde_id is not None:
         anterior = (
@@ -299,10 +295,25 @@ def verificar_cadena(db: Session, desde_id: Optional[int] = None) -> ResultadoVe
         if anterior is not None:
             hash_previo_esperado = anterior.hash_evento
 
+    def _filas_en_lotes():
+        ultimo_id = None
+        while True:
+            q = db.query(AuditLog).order_by(AuditLog.id.asc())
+            if ultimo_id is not None:
+                q = q.filter(AuditLog.id > ultimo_id)
+            elif desde_id is not None:
+                q = q.filter(AuditLog.id >= desde_id)
+            lote = q.limit(1000).all()
+            if not lote:
+                break
+            for fila in lote:
+                yield fila
+            ultimo_id = lote[-1].id
+
     revisados = 0
     id_primero = None
     id_ultimo = None
-    for fila in query:
+    for fila in _filas_en_lotes():
         revisados += 1
         if id_primero is None:
             id_primero = fila.id

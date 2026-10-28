@@ -6,7 +6,9 @@ se evalúa en la Fase 6, de trazabilidad), pero deja registro sin tocar
 las políticas RLS de la Fase 3.
 """
 import json
+import logging
 from datetime import datetime, timezone
+from logging.handlers import RotatingFileHandler
 
 from core.config import SCAN_LOG_PATH
 from services.clamav_service import ScanResult
@@ -24,5 +26,21 @@ def log_scan_result(company_id: str, filename: str, result: ScanResult) -> None:
     # Bitácora del servidor: acá sí va el detalle técnico de un fallo.
     if result.detalle_interno:
         registro['detalle_interno'] = result.detalle_interno
-    with open(SCAN_LOG_PATH, 'a', encoding='utf-8') as f:
-        f.write(json.dumps(registro, ensure_ascii=False) + '\n')
+
+    line = json.dumps(registro, ensure_ascii=False)
+    handler = RotatingFileHandler(
+        SCAN_LOG_PATH,
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5,
+        encoding='utf-8',
+    )
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    logger = logging.getLogger(f"scan_audit_log_{SCAN_LOG_PATH}")
+    logger.setLevel(logging.INFO)
+    logger.handlers = [handler]
+    logger.propagate = False
+    try:
+        logger.info(line)
+    finally:
+        handler.close()
+        logger.handlers.clear()

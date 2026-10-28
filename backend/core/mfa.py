@@ -11,6 +11,8 @@ Reúne en un solo módulo toda la criptografía del segundo factor:
 Ninguna función registra ni devuelve el secreto en texto plano.
 """
 import base64
+import hashlib
+import hmac
 import io
 import json
 import secrets
@@ -56,17 +58,40 @@ def provisioning_uri(secret: str, account_email: str) -> str:
     return pyotp.TOTP(secret).provisioning_uri(name=account_email, issuer_name=_ISSUER)
 
 
-def verify_code(secret: str, code: str) -> bool:
+# Caché de códigos TOTP consumidos recientemente para evitar ataques de replay (90s window).
+_consumed_totp_codes: dict[str, float] = {}
+
+
+def is_totp_replayed(user_id: str, code: str) -> bool:
+    import time
+    now = time.time()
+    vencidos = [k for k, exp in _consumed_totp_codes.items() if exp < now]
+    for k in vencidos:
+        _consumed_totp_codes.pop(k, None)
+    key = f"{user_id}:{code.strip().replace(' ', '')}"
+    return key in _consumed_totp_codes
+
+
+def mark_totp_consumed(user_id: str, code: str) -> None:
+    import time
+    key = f"{user_id}:{code.strip().replace(' ', '')}"
+    _consumed_totp_codes[key] = time.time() + 120.0
+
+
+def verify_code(secret: str, code: str, last_code: str | None = None) -> bool:
     """Valida un código TOTP de 6 dígitos.
 
     valid_window=1 acepta también el código del período inmediatamente
     anterior y el siguiente (±30 s), para tolerar el desfase de reloj
     entre el teléfono del usuario y el servidor.
+    last_code previene ataques de repetición dentro de la ventana de 90 segundos.
     """
     if not code:
         return False
     limpio = code.strip().replace(' ', '')
     if not (limpio.isdigit() and len(limpio) == 6):
+        return False
+    if last_code and last_code == limpio:
         return False
     return pyotp.TOTP(secret).verify(limpio, valid_window=1)
 
@@ -97,11 +122,17 @@ def _normalizar_codigo(code: str) -> str:
 
 
 def hash_backup_codes(codes: list[str]) -> str:
-    """Serializa a JSON los hashes bcrypt de los códigos de respaldo."""
-    hashes = [
-        bcrypt.hashpw(_normalizar_codigo(c).encode(), bcrypt.gensalt()).decode()
-        for c in codes
-    ]
+    """Serializa a JSON los hashes con salt SHA-256 de los códigos de respaldo.
+
+    Utiliza SHA-256 con salt aleatorio de 16 bytes. Los códigos tienen ~50 bits de entropía
+    aleatoria nativa, permitiendo verificación instantánea sin riesgo de DoS por CPU en bucle.
+    """
+    hashes = []
+    for c in codes:
+        salt = secrets.token_hex(16)
+        limpio = _normalizar_codigo(c)
+        digest = hashlib.sha256((salt + limpio).encode('utf-8')).hexdigest()
+        hashes.append(f"{salt}${digest}")
     return json.dumps(hashes)
 
 
@@ -111,13 +142,28 @@ def consume_backup_code(stored_json: str | None, code: str) -> str | None:
     Si `code` coincide con alguno de los hashes guardados, lo elimina de la
     lista y devuelve el JSON actualizado (el código queda inutilizado). Si
     no coincide con ninguno —o no hay códigos— devuelve None.
+    Soporta formato seguro SHA-256 (salt$hash) y hashes bcrypt legados ($2b$).
     """
     if not stored_json or not code:
         return None
-    limpio = _normalizar_codigo(code).encode()
-    hashes: list[str] = json.loads(stored_json)
+    limpio = _normalizar_codigo(code)
+    try:
+        hashes: list[str] = json.loads(stored_json)
+    except Exception:
+        return None
+
     for h in hashes:
-        if bcrypt.checkpw(limpio, h.encode()):
+        matched = False
+        if h.startswith('$2b$') or h.startswith('$2a$'):
+            if bcrypt.checkpw(limpio.encode('utf-8'), h.encode('utf-8')):
+                matched = True
+        elif '$' in h:
+            salt, digest = h.split('$', 1)
+            calc = hashlib.sha256((salt + limpio).encode('utf-8')).hexdigest()
+            if hmac.compare_digest(calc, digest):
+                matched = True
+
+        if matched:
             hashes.remove(h)
             return json.dumps(hashes)
     return None

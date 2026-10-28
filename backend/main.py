@@ -92,11 +92,11 @@ def _migrar_columnas_nuevas() -> None:
     if 'onboarding_completed' not in columnas_users:
         with engine.begin() as conn:
             conn.execute(text(
-                'ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT 0'
+                'ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT false'
             ))
     # Fase 5 — columnas del segundo factor TOTP.
     nuevas_mfa = {
-        'mfa_enabled': 'ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT 0',
+        'mfa_enabled': 'ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT false',
         'mfa_secret_enc': 'ALTER TABLE users ADD COLUMN mfa_secret_enc VARCHAR',
         'mfa_backup_codes': 'ALTER TABLE users ADD COLUMN mfa_backup_codes VARCHAR',
     }

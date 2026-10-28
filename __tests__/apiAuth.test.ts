@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   completeOnboarding,
+  fetchMe,
   loginUser,
   loginWithMfa,
+  logoutUser,
   mfaActivate,
   mfaDisable,
   mfaSetup,
@@ -98,6 +100,48 @@ describe('lib/api/auth', () => {
     const [url, init] = fetchMock.mock.calls[0];
     expect(String(url)).toContain('/auth/complete-onboarding');
     expect(init.method).toBe('POST');
+  });
+
+  it('fetchMe llama a GET /auth/me y convierte snake_case a camelCase', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => DTO });
+    vi.stubGlobal('fetch', fetchMock);
+    const info = await fetchMe();
+    expect(info).toEqual({
+      email: 'admin@empresa.cl',
+      role: 'administrador',
+      companyId: 'c1',
+      companyNombre: 'Empresa Test',
+      companySector: 'tecnologia',
+      onboardingCompleted: false,
+      mfaEnabled: false,
+    });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/auth/me');
+    expect(['GET', undefined]).toContain(init?.method);
+  });
+
+  it('fetchMe lanza ApiError cuando el backend responde 401', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false, status: 401, json: async () => ({ detail: 'Sesión inválida' }),
+    }));
+    await expect(fetchMe()).rejects.toMatchObject({ status: 401 });
+  });
+
+  it('logoutUser hace POST a /auth/logout', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => undefined });
+    vi.stubGlobal('fetch', fetchMock);
+    await logoutUser();
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toContain('/auth/logout');
+    expect(init.method).toBe('POST');
+  });
+
+  it('logoutUser incluye credentials:"include" para que el backend lea la cookie', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 204, json: async () => undefined });
+    vi.stubGlobal('fetch', fetchMock);
+    await logoutUser();
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init).toMatchObject({ credentials: 'include' });
   });
 
   it('registerCompany envía nombre_empresa en snake_case al backend', async () => {

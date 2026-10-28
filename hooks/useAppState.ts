@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useCallback, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { Screen, ActiveTab, UploadedDoc, RequisitoResult, UserRole, AuditEvent, Sector, HistorialSnapshot } from '@/lib/types';
@@ -14,10 +14,12 @@ import {
   completeOnboarding,
   loginUser,
   loginWithMfa,
+  logoutUser,
   registerCompany as registerCompanyApi,
   type RegisterPayload,
   type SessionInfo,
 } from '@/lib/api/auth';
+import type { DocumentInfo } from '@/lib/api/documents';
 import { enriquecerConSemantica } from '@/lib/semantic/semanticMatcher';
 
 export type AuthSource = 'backend' | 'demo' | null;
@@ -99,6 +101,11 @@ export function useAppState() {
   // (100% local, sin backend) — usado por UploadView para decidir si además
   // de guardar localmente debe subir el archivo original al servidor.
   const [authSource, setAuthSource] = useState<AuthSource>(null);
+  // Ref para leer authSource en callbacks sin ponerlo en sus deps: evita que
+  // un cambio de sesión invalide identidades memorizadas (mismo patrón que
+  // el fix de companyId en finishAnalysis). Se sincroniza en cada render.
+  const authSourceRef = useRef<AuthSource>(null);
+  authSourceRef.current = authSource;
   const [uploadedDocs, setUploadedDocs] = useState<Record<string, UploadedDoc>>({});
   const [results, setResults] = useState<Record<string, RequisitoResult>>({});
   const [analyzed, setAnalyzed] = useState(false);
@@ -253,29 +260,61 @@ export function useAppState() {
     setActiveTab('subir');
   }, [nuevaGeneracionAnalisis]);
 
-  const logout = useCallback(() => {
-    // Primero, antes de limpiar el estado: ningún resultado semántico de esta
-    // sesión puede escribirse después del logout.
+  const hydrateBackendDocuments = useCallback((docs: DocumentInfo[], session: SessionInfo) => {
+    const ctx: TenantContext = {
+      companyId: session.companyId,
+      companyName: session.companyNombre,
+      role: session.role,
+      usuario: session.companyNombre,
+    };
+    const docsObj: Record<string, UploadedDoc> = {};
+    docs.forEach(d => {
+      const upDoc: UploadedDoc = {
+        name: d.filename,
+        text: '',
+        wordCount: 0,
+        extractedFully: true,
+        extractMethod: 'Sincronizado desde servidor',
+        pending: true,
+      };
+      saveDocument(ctx, d.reqId, upDoc);
+      docsObj[d.reqId] = upDoc;
+    });
+    setUploadedDocs(prev => ({ ...docsObj, ...prev }));
+    const res = computeResults(docsObj);
+    setResults(prev => ({ ...res, ...prev }));
+  }, []);
+
+  const logout = useCallback(async () => {
+    const source = authSourceRef.current;
+    // Invalida inmediatamente cualquier enriquecimiento semántico en curso:
+    // antes de la petición de red y de la limpieza del estado.
     nuevaGeneracionAnalisis();
-    setCompanyName('');
-    setCompanyId('');
-    setSecurityEvents([]);
-    setRole('administrador');
-    setSector('otro');
-    setAuthSource(null);
-    setMfaEnabled(false);
-    setPendingMfaToken(null);
-    setUploadedDocs({});
-    setResults({});
-    setPreviousResults({});
-    setAnalyzed(false);
-    setScreen('landing');
-    setActiveTab('subir');
-    setAuditLog([]);
-    setSnapshots([]);
-    setTourActive(false);
-    setTourStep(0);
-    auditCounter = 0;
+    try {
+      if (source === 'backend' || source === null) await logoutUser();
+    } catch (err) {
+      console.error('[logout] logoutUser() falló:', err);
+    } finally {
+      setCompanyName('');
+      setCompanyId('');
+      setSecurityEvents([]);
+      setRole('administrador');
+      setSector('otro');
+      setAuthSource(null);
+      setMfaEnabled(false);
+      setPendingMfaToken(null);
+      setUploadedDocs({});
+      setResults({});
+      setPreviousResults({});
+      setAnalyzed(false);
+      setScreen('landing');
+      setActiveTab('subir');
+      setAuditLog([]);
+      setSnapshots([]);
+      setTourActive(false);
+      setTourStep(0);
+      auditCounter = 0;
+    }
   }, [nuevaGeneracionAnalisis]);
 
   // Avisa al backend que el usuario ya vio (o cerró) el tour, para que no
@@ -418,6 +457,7 @@ export function useAppState() {
     screen, activeTab, companyName, companyId, role, sector, authSource, uploadedDocs, results,
     previousResults, analyzed, auditLog, securityEvents, snapshots, tourActive, tourStep,
     mfaEnabled,
+    applySession, hydrateBackendDocuments,
     login, completeMfaLogin, notifyMfaChanged, registerCompany, demo, logout, uploadDoc,
     startAnalysis, finishAnalysis,
     switchTab, logDownload, logUploadRejected, advanceTour, skipTour, openTour,

@@ -55,7 +55,7 @@ describe('aislamiento de la capa semántica en segundo plano', () => {
     await flush();
     expect(pendientes.length).toBeGreaterThan(0);
 
-    act(() => result.current.logout());
+    await act(async () => { await result.current.logout(); });
     pendientes.forEach(p => p.resolver(obsoleto(p)));
     await flush();
 
@@ -71,7 +71,7 @@ describe('aislamiento de la capa semántica en segundo plano', () => {
     await flush();
     const deLaSesionAnterior = [...pendientes];
 
-    act(() => result.current.logout());
+    await act(async () => { await result.current.logout(); });
     act(() => result.current.demo('auditor'));
     await flush();
     const resultadosNuevaSesion = result.current.results;
