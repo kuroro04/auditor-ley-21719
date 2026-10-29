@@ -6,7 +6,6 @@
  * Los fixtures en __tests__/fixtures/ se generan con scripts/generate-test-fixtures.mjs.
  */
 import { describe, it, expect } from 'vitest';
-// @ts-expect-error — importación del build legacy de pdfjs-dist para Node.js
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import readXlsxFileNode from 'read-excel-file/node';
 import { readFileSync } from 'fs';
