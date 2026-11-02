@@ -2,6 +2,7 @@
 import { ACTION_PLANS } from '@/lib/actionPlans';
 import type { CriterioResult } from '@/lib/types';
 import TemplateDropdown from './TemplateDropdown';
+import { obtenerGuiaClausula, type ClausulaEjemplo } from '@/lib/guiaClausulas';
 
 interface ActionPlanProps {
   reqId: string;
@@ -10,6 +11,7 @@ interface ActionPlanProps {
   onToast: (msg: string, type: 'green' | 'blue' | 'yellow') => void;
   onTriggerUpload: () => void;
   canEdit: boolean;
+  onVerGuia?: (guia: ClausulaEjemplo, criterioName: string) => void;
 }
 
 export default function ActionPlan({
@@ -19,6 +21,7 @@ export default function ActionPlan({
   onToast,
   onTriggerUpload,
   canEdit,
+  onVerGuia,
 }: ActionPlanProps) {
   const plan = ACTION_PLANS[reqId];
   if (!plan) return null;
@@ -64,14 +67,32 @@ export default function ActionPlan({
             </div>
             {criteriosFaltantes.length > 0 ? (
               <ul className="action-step-criterios">
-                {criteriosFaltantes.map((c, i) => (
-                  <li key={i} className={`action-criterio-item ${c.status}`}>
-                    <span className="action-criterio-dot">
-                      {c.status === 'fail' ? '✕' : '~'}
-                    </span>
-                    <span>{c.name}</span>
-                  </li>
-                ))}
+                {criteriosFaltantes.map((c, i) => {
+                  const guia = obtenerGuiaClausula(reqId, c.name);
+                  return (
+                    <li key={i} className={`action-criterio-item ${c.status}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span className="action-criterio-dot">
+                          {c.status === 'fail' ? '✕' : '~'}
+                        </span>
+                        <span>{c.name}</span>
+                      </div>
+                      {guia && onVerGuia && (
+                        <button
+                          type="button"
+                          className="btn-ver-ejemplo"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onVerGuia(guia, c.name);
+                          }}
+                          title="Ver ejemplo de redacción recomendado para esta cláusula"
+                        >
+                          <span>💡</span> Ver cláusula sugerida
+                        </button>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             ) : (
               <div className="action-step-desc">

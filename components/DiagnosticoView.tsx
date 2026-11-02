@@ -11,6 +11,9 @@ import ActionPlan from './ActionPlan';
 import { calcPct } from '@/lib/metrics';
 import { CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { LockIcon } from './Icons';
+import ModalGuiaClausula from './ModalGuiaClausula';
+import ModalVisorTexto from './ModalVisorTexto';
+import { type ClausulaEjemplo } from '@/lib/guiaClausulas';
 
 interface DiagnosticoViewProps {
   results: Record<string, RequisitoResult>;
@@ -38,6 +41,16 @@ export default function DiagnosticoView({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingReqId = useRef<string | null>(null);
   const [uploadError, setUploadError] = useState<{ reqId: string; failure: UploadFailure } | null>(null);
+
+  // Estados interactivos Opción 1: Filtro de estado y Modales
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'criticos' | 'amarillos' | 'cumplidos'>('todos');
+  const [modalGuia, setModalGuia] = useState<{ guia: ClausulaEjemplo; criterioName: string } | null>(null);
+  const [modalVisor, setModalVisor] = useState<{
+    titulo: string;
+    nombreArchivo: string;
+    texto: string;
+    terminoResaltado?: string;
+  } | null>(null);
 
   // Permisos por rol
   const canEdit     = role === 'administrador';                          // subir docs
