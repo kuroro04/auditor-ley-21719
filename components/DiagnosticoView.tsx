@@ -284,14 +284,69 @@ export default function DiagnosticoView({
       {/* Comparación con el sector */}
       <SectorComparisonCard sector={sector} companyCumplimiento={pct} />
 
-      {/* Detalle por requisito */}
-      <div className="section-hdr">
-        <h3>Detalle por requisito legal</h3>
-        <span>Haga clic en cada requisito para ver el detalle</span>
+      {/* Detalle por requisito con Barra de Filtros */}
+      <div className="section-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+        <div>
+          <h3>Detalle por requisito legal</h3>
+          <span>Haga clic en cada requisito para ver el detalle y sugerencias de corrección</span>
+        </div>
+
+        {/* Filtros rápidos por estado */}
+        <div className="filter-pill-group">
+          <button
+            type="button"
+            className={`filter-pill ${filtroEstado === 'todos' ? 'active' : ''}`}
+            onClick={() => setFiltroEstado('todos')}
+          >
+            Todos ({sorted.length})
+          </button>
+          <button
+            type="button"
+            className={`filter-pill criticos ${filtroEstado === 'criticos' ? 'active' : ''}`}
+            onClick={() => setFiltroEstado('criticos')}
+          >
+            Críticos ({red + (wrong_type || 0)})
+          </button>
+          <button
+            type="button"
+            className={`filter-pill amarillos ${filtroEstado === 'amarillos' ? 'active' : ''}`}
+            onClick={() => setFiltroEstado('amarillos')}
+          >
+            Por revisar ({yellow})
+          </button>
+          <button
+            type="button"
+            className={`filter-pill cumplidos ${filtroEstado === 'cumplidos' ? 'active' : ''}`}
+            onClick={() => setFiltroEstado('cumplidos')}
+          >
+            Cumplidos ({green})
+          </button>
+        </div>
       </div>
 
       <div className="brechas-list">
-        {sorted.map(r => {
+        {(() => {
+          const filtered = sorted.filter(r => {
+            const estado = results[r.id]?.estado;
+            if (filtroEstado === 'todos') return true;
+            if (filtroEstado === 'criticos') return estado === 'red' || estado === 'wrong_type';
+            if (filtroEstado === 'amarillos') return estado === 'yellow';
+            if (filtroEstado === 'cumplidos') return estado === 'green';
+            return true;
+          });
+
+          if (filtered.length === 0) {
+            return (
+              <div className="empty-filter-state">
+                <p>No hay requisitos en la categoría seleccionada.</p>
+                <button type="button" className="btn-clear-filter" onClick={() => setFiltroEstado('todos')}>
+                  Ver todos los requisitos
+                </button>
+              </div>
+            );
+          }
+
+          return filtered.map(r => {
           const res = results[r.id];
           if (!res) return null;
           const { estado, cobertura, criterios, gap } = res;
@@ -337,6 +392,29 @@ export default function DiagnosticoView({
 
                   {uploadError?.reqId === r.id && (
                     <UploadErrorAlert failure={uploadError.failure} onDismiss={() => setUploadError(null)} />
+                  )}
+
+                  {uploadedDocs[r.id] && uploadedDocs[r.id].text && (
+                    <div className="doc-evidence-bar">
+                      <div className="doc-evidence-info">
+                        <span className="doc-evidence-name">📄 {uploadedDocs[r.id].name}</span>
+                        <span className="doc-evidence-words">({uploadedDocs[r.id].wordCount?.toLocaleString('es-CL')} palabras analizadas)</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-open-visor"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setModalVisor({
+                            titulo: r.nombre,
+                            nombreArchivo: uploadedDocs[r.id].name,
+                            texto: uploadedDocs[r.id].text,
+                          });
+                        }}
+                      >
+                        🔍 Abrir visor del documento
+                      </button>
+                    </div>
                   )}
 
                   {prevRes && (
@@ -478,7 +556,26 @@ export default function DiagnosticoView({
                             {/* Fragmento EXACTO del documento que respalda la detección */}
                             {mostrarFragmento && (
                               <div className="criterio-fragmento">
-                                <span className="criterio-fragmento-label">El documento dice:</span>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span className="criterio-fragmento-label">El documento dice:</span>
+                                  {uploadedDocs[r.id]?.text && (
+                                    <button
+                                      type="button"
+                                      className="btn-criterio-ver-en-doc"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setModalVisor({
+                                          titulo: `${r.nombre} — ${c.name}`,
+                                          nombreArchivo: uploadedDocs[r.id].name,
+                                          texto: uploadedDocs[r.id].text,
+                                          terminoResaltado: c.fragmentoDocumento,
+                                        });
+                                      }}
+                                    >
+                                      🔍 Ver en documento completo
+                                    </button>
+                                  )}
+                                </div>
                                 <blockquote>“{c.fragmentoDocumento}”</blockquote>
                               </div>
                             )}
@@ -534,6 +631,7 @@ export default function DiagnosticoView({
                           onToast={onToast}
                           onTriggerUpload={() => triggerUpload(r.id)}
                           canEdit={canEdit}
+                          onVerGuia={(guia, criterioName) => setModalGuia({ guia, criterioName })}
                         />
                       )}
                     </>
@@ -571,7 +669,8 @@ export default function DiagnosticoView({
               )}
             </div>
           );
-        })}
+          });
+        })()}
       </div>
 
       {/* Panel de accion */}
@@ -627,6 +726,27 @@ export default function DiagnosticoView({
           </div>
         )}
       </div>
+
+      {/* Modales Interactivos de la Opción 1 */}
+      {modalGuia && (
+        <ModalGuiaClausula
+          guia={modalGuia.guia}
+          criterioName={modalGuia.criterioName}
+          onClose={() => setModalGuia(null)}
+          onToast={onToast}
+        />
+      )}
+
+      {modalVisor && (
+        <ModalVisorTexto
+          titulo={modalVisor.titulo}
+          nombreArchivo={modalVisor.nombreArchivo}
+          texto={modalVisor.texto}
+          terminoResaltado={modalVisor.terminoResaltado}
+          onClose={() => setModalVisor(null)}
+          onToast={onToast}
+        />
+      )}
 
       <input ref={fileInputRef} type="file" aria-label="Seleccionar documento para subir" style={{ display: 'none' }}
         accept=".pdf,.doc,.docx,.xlsx,.txt" onChange={handleFile} />
