@@ -62,6 +62,10 @@ async def upload_document(
     db: Session = Depends(get_tenant_db),
     clamav_client=Depends(get_clamav_client),
 ):
+    # Mismo criterio que la UI: solo el administrador gestiona documentos.
+    if current.role != 'administrador':
+        raise HTTPException(status_code=403, detail='Solo el administrador puede subir documentos')
+
     content = await _read_limited(file, MAX_UPLOAD_BYTES)
     ip = client_ip(request)
     # Carga segura (Fase 4): cuarentena -> validación MIME/magic bytes ->
@@ -185,6 +189,7 @@ def _metadatos_documento(doc: Document) -> dict:
 
 
 @router.get('/{doc_id}/download')
+@limiter.limit('30/minute')
 def download_document(
     doc_id: str,
     request: Request,
@@ -225,6 +230,7 @@ def download_document(
 
 
 @router.delete('/{doc_id}', status_code=204)
+@limiter.limit('10/minute')
 def delete_document(
     doc_id: str,
     request: Request,

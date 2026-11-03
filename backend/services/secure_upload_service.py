@@ -17,7 +17,7 @@ from typing import Optional
 
 from services.clamav_service import ESTADO_INFECTADO, ESTADO_LIMPIO, scan_with_client
 from services.file_security_service import check_file_security, detected_mime, sanitize_filename
-from services.quarantine_service import secure_delete, write_to_quarantine
+from services.quarantine_service import ensure_quarantine_dir, secure_delete, write_to_quarantine
 from services.scan_audit_log import log_scan_result
 
 # Motivo de rechazo, para la bitácora de auditoría.
@@ -41,17 +41,19 @@ class UploadOutcome:
 
 
 def process_secure_upload(company_id: str, filename: str, content: bytes, clamav_client) -> UploadOutcome:
+    ensure_quarantine_dir(company_id)
     safe_name = sanitize_filename(filename)
     sha256 = hashlib.sha256(content).hexdigest()
-    quarantine_path = write_to_quarantine(company_id, safe_name, content)
 
+    # Validación en memoria (tipo, extensión, magic bytes, tamaño) antes de tocar disco
     security_result = check_file_security(safe_name, len(content), content[:8])
     if not security_result.accepted:
-        secure_delete(quarantine_path)
         return UploadOutcome(
             False, security_result.reason, safe_name, sha256, len(content),
             motivo_rechazo=MOTIVO_VALIDACION,
         )
+
+    quarantine_path = write_to_quarantine(company_id, safe_name, content)
 
     scan_result = scan_with_client(clamav_client, content)
     log_scan_result(company_id, safe_name, scan_result)

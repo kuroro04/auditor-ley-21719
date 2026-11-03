@@ -7,7 +7,7 @@ class RegisterRequest(BaseModel):
     rut: str
     nombre_empresa: str = Field(min_length=1)
     email: EmailStr
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=8, max_length=72)
     sector: Optional[str] = None
 
 

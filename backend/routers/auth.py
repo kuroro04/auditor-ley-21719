@@ -302,6 +302,7 @@ def mfa_activate(
 
 
 @router.post('/mfa/disable', status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit('5/minute')
 def mfa_disable(
     payload: MfaDisableRequest,
     request: Request,

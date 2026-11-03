@@ -21,6 +21,8 @@ function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   });
 }
 
+const MAX_PDF_PAGES = 300;
+
 async function extractPdfText(file: File): Promise<string> {
   const pdfjsLib = await import('pdfjs-dist');
   // pdfjs-dist 4.x+ ships an ESM worker (.mjs); the legacy .js no longer exists.
@@ -30,8 +32,9 @@ async function extractPdfText(file: File): Promise<string> {
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
   const pdf = await loadingTask.promise;
 
+  const totalPages = Math.min(pdf.numPages, MAX_PDF_PAGES);
   const pages: string[] = [];
-  for (let i = 1; i <= pdf.numPages; i++) {
+  for (let i = 1; i <= totalPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
     const pageText = content.items

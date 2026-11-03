@@ -3,7 +3,9 @@ import io
 import clamd as clamd_lib
 
 import main as main_module
+from core.config import COOKIE_NAME
 from core.deps import get_clamav_client
+from core.security import create_access_token
 from services.clamav_service import DETALLE_ESCANER_NO_DISPONIBLE
 from tests.fakes import FakeClamdCaido
 
@@ -111,3 +113,15 @@ def test_empresa_b_no_ve_documentos_de_empresa_a(client):
     res = client.get('/documents')
     assert res.status_code == 200
     assert res.json() == []
+
+
+def test_subir_documento_con_rol_no_admin_devuelve_403(client):
+    token = create_access_token('user-1', 'comp-1', 'visualizador')
+    client.cookies.set(COOKIE_NAME, token)
+    res = client.post(
+        '/documents/upload',
+        data={'req_id': 'politica_privacidad'},
+        files={'file': ('politica.pdf', io.BytesIO(PDF_BYTES), 'application/pdf')},
+    )
+    assert res.status_code == 403
+    assert 'administrador' in res.json()['detail']

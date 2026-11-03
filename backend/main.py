@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from core.config import APP_ENV, COOKIE_NAME, FRONTEND_ORIGIN, STORAGE_DIR, TESTING
+from core.config import APP_ENV, COOKIE_NAME, COOKIE_SECURE, FRONTEND_ORIGIN, STORAGE_DIR, TESTING
 from core.limiter import limiter
 from db.database import Base, engine
 from db import models  # noqa: F401 — registra los modelos en Base antes de create_all
@@ -37,9 +37,22 @@ app.add_middleware(
     # Obligatorio para que la cookie httpOnly de sesión viaje en las
     # peticiones fetch(..., { credentials: 'include' }) del frontend.
     allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_methods=['GET', 'POST', 'DELETE', 'OPTIONS', 'PATCH', 'PUT'],
+    allow_headers=['Content-Type', 'Cookie', 'Authorization', 'X-Requested-With', 'Accept'],
 )
+
+
+# ── Cabeceras de Seguridad HTTP ───────────────────────────────────────────────
+@app.middleware('http')
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'camera=(), microphone=(), geolocation=(), payment=()'
+    if COOKIE_SECURE:
+        response.headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+    return response
 
 
 # ── Protección CSRF ────────────────────────────────────────────────────────────

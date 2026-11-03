@@ -18,6 +18,10 @@ def _carpeta_de_empresa(base: Path, company_id: str) -> Path:
     return carpeta
 
 
+def ensure_quarantine_dir(company_id: str) -> Path:
+    return _carpeta_de_empresa(QUARANTINE_DIR, company_id)
+
+
 def write_to_quarantine(company_id: str, filename: str, content: bytes) -> Path:
     carpeta = _carpeta_de_empresa(QUARANTINE_DIR, company_id)
     ruta = carpeta / f'{uuid.uuid4()}_{filename}'
