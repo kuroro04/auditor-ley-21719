@@ -2,10 +2,14 @@
 import { type ReactNode } from 'react';
 import type { AuditEvent, UserRole } from '@/lib/types';
 import type { SecurityEvent } from '@/lib/tenant/guard';
+import { exportarAuditoriaCSV, exportarAuditoriaJSON } from '@/lib/auditExport';
 
 interface RegistroViewProps {
   auditLog: AuditEvent[];
   securityEvents: SecurityEvent[];
+  companyName?: string;
+  companyId?: string;
+  onToast?: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -60,7 +64,13 @@ function formatTs(iso: string): { date: string; time: string } {
   };
 }
 
-export default function RegistroView({ auditLog, securityEvents }: RegistroViewProps) {
+export default function RegistroView({
+  auditLog,
+  securityEvents,
+  companyName,
+  companyId,
+  onToast,
+}: RegistroViewProps) {
   return (
     <div className="registro-view">
       <div className="registro-hdr">
@@ -68,7 +78,35 @@ export default function RegistroView({ auditLog, securityEvents }: RegistroViewP
           <h2>Registro de auditoría</h2>
           <p>Historial de acciones y trazabilidad de su empresa</p>
         </div>
-        <div className="registro-count">{auditLog.length} evento{auditLog.length !== 1 ? 's' : ''}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div className="registro-count">{auditLog.length} evento{auditLog.length !== 1 ? 's' : ''}</div>
+          {auditLog.length > 0 && (
+            <>
+              <button
+                type="button"
+                className="btn-export-audit"
+                onClick={() => {
+                  exportarAuditoriaCSV(auditLog, companyName || 'empresa');
+                  onToast?.('Registro de auditoría descargado en CSV', 'green');
+                }}
+                title="Descargar eventos en formato CSV para Microsoft Excel"
+              >
+                📥 Exportar CSV
+              </button>
+              <button
+                type="button"
+                className="btn-export-audit btn-export-audit--json"
+                onClick={() => {
+                  exportarAuditoriaJSON(auditLog, securityEvents, companyName || 'empresa', companyId);
+                  onToast?.('Registro de auditoría descargado en JSON (SHA-256)', 'green');
+                }}
+                title="Descargar trazabilidad criptográfica estructurada en JSON para compliance"
+              >
+                📥 Exportar JSON
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {auditLog.length === 0 ? (

@@ -215,7 +215,13 @@ export default function AppShell({
           <RiesgosView results={results} analyzed={analyzed} />
         )}
         {activeTab === 'registro' && canSeeRegistro && (
-          <RegistroView auditLog={auditLog} securityEvents={securityEvents} />
+          <RegistroView
+            auditLog={auditLog}
+            securityEvents={securityEvents}
+            companyName={companyName}
+            companyId={companyId}
+            onToast={onToast}
+          />
         )}
         {activeTab === 'historial' && (
           <HistorialView snapshots={snapshots} />

@@ -878,6 +878,58 @@ html, body {
 .btn-report:hover  { background: var(--navy2); box-shadow: 0 4px 16px rgba(15,30,61,0.24); transform: translateY(-1px); }
 .btn-report:active { transform: scale(0.98); box-shadow: none; background: var(--navy3); }
 
+.btn-report--executive {
+  background: #1e3a8a;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(30, 58, 138, 0.25);
+}
+.btn-report--executive:hover {
+  background: #172554;
+  box-shadow: 0 4px 16px rgba(23, 37, 84, 0.35);
+}
+
+.btn-report--secondary {
+  background: #ffffff;
+  color: var(--navy);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.btn-report--secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--navy);
+  color: var(--navy2);
+}
+
+.btn-export-audit {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sora), 'Sora', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--navy);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease-out);
+}
+.btn-export-audit:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+.btn-export-audit--json {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+.btn-export-audit--json:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
 /* ═══════════════════════════════════════════════════════════
    ANALYZING SCREEN
    ═══════════════════════════════════════════════════════════ */

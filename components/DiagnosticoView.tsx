@@ -145,7 +145,7 @@ export default function DiagnosticoView({
   });
   const plazoReqs = REQUISITOS.filter(r => results[r.id]?.estado !== 'green');
 
-  const handleDownload = async () => {
+  const handleDownload = async (tipo: 'executive' | 'technical' = 'executive') => {
     if (!canDownload) {
       onToast('El rol visualizador no puede descargar informes', 'yellow');
       return;
@@ -158,11 +158,17 @@ export default function DiagnosticoView({
       onToast('No se pudo registrar la exportación en la bitácora; el informe no se generó', 'yellow');
       return;
     }
-    onToast('Generando informe PDF...', 'blue');
+    onToast(tipo === 'executive' ? 'Generando informe ejecutivo para directorio...' : 'Generando informe técnico detallado...', 'blue');
     try {
-      const { generarInformePDF } = await import('@/lib/pdfExport');
-      await generarInformePDF(companyName, results, uploadedDocs);
-      onToast('Informe PDF descargado', 'green');
+      if (tipo === 'executive') {
+        const { generarInformeEjecutivoPDF } = await import('@/lib/pdfExport');
+        await generarInformeEjecutivoPDF(companyName, results, uploadedDocs, sector);
+        onToast('Informe ejecutivo para directorio descargado', 'green');
+      } else {
+        const { generarInformePDF } = await import('@/lib/pdfExport');
+        await generarInformePDF(companyName, results, uploadedDocs);
+        onToast('Informe técnico detallado descargado', 'green');
+      }
     } catch {
       onToast('Error al generar el informe PDF', 'yellow');
     }
@@ -709,13 +715,28 @@ export default function DiagnosticoView({
       {/* CTA descarga informe */}
       <div className="diag-cta">
         <div>
-          <h3>Descargue su informe de cumplimiento</h3>
-          <p>Documento PDF listo para presentar a directorio, abogados o la APDP</p>
+          <h3>Descargue sus informes de cumplimiento</h3>
+          <p>Documentos PDF oficiales listos para presentar al Directorio o ante la Agencia de Protección de Datos (APDP)</p>
         </div>
         {canDownload ? (
-          <button className="btn-report" onClick={handleDownload}>
-            Descargar informe PDF
-          </button>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="btn-report btn-report--executive"
+              onClick={() => handleDownload('executive')}
+              title="Resumen conciso con matriz de multas en CLP, benchmark sectorial y bloque de firmas para Directorio"
+            >
+              📊 Informe Ejecutivo (Directorio)
+            </button>
+            <button
+              type="button"
+              className="btn-report btn-report--secondary"
+              onClick={() => handleDownload('technical')}
+              title="Auditoría técnica exhaustiva con detalle por cláusula y evidencia detectada"
+            >
+              📑 Informe Técnico Detallado
+            </button>
+          </div>
         ) : (
           <div className="role-lock-btn" title="El rol visualizador no puede descargar informes">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

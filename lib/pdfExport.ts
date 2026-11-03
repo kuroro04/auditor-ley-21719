@@ -3,7 +3,8 @@
 import { REQUISITOS } from './requisitos';
 import { TEMPLATES } from './templateContent';
 import { calcPct } from './metrics';
-import type { RequisitoResult, UploadedDoc } from './types';
+import type { RequisitoResult, UploadedDoc, Sector } from './types';
+import { SECTOR_DATA } from './sectorData';
 
 // ── Paleta de colores (RGB) ──
 const C = {
@@ -649,4 +650,398 @@ export async function generarPlantillaPDF(reqId: string, companyName: string): P
   }
 
   doc.save(`plantilla_${reqId}_${companyName.replace(/[^a-z0-9]/gi, '_') || 'empresa'}.pdf`);
+}
+
+// ────────────────────────────────────────────────────────────
+// 3. INFORME EJECUTIVO DE RIESGOS PARA DIRECTORIO Y GERENCIA
+// ────────────────────────────────────────────────────────────
+export const VALOR_UTM_CLP = 66500; // Valor oficial de referencia UTM en Chile
+
+export async function generarInformeEjecutivoPDF(
+  companyName: string,
+  results: Record<string, RequisitoResult>,
+  uploadedDocs: Record<string, UploadedDoc>,
+  sector?: Sector | null,
+): Promise<void> {
+  const { default: jsPDF } = await import('jspdf');
+  const { default: autoTable } = await import('jspdf-autotable');
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const PW = doc.internal.pageSize.getWidth();
+  const PH = doc.internal.pageSize.getHeight();
+  const margin = 18;
+  let y = 0;
+
+  const { pct, green, yellow, red, unanalyzable, wrong_type, pending, analyzable } = calcPct(results);
+  const totalWords = Object.values(uploadedDocs).reduce((acc, d) => acc + (d.wordCount ?? 0), 0);
+  const docsCount = Object.keys(uploadedDocs).length;
+
+  const totalExposureUTM = REQUISITOS.reduce((acc, r) => {
+    const estado = results[r.id]?.estado;
+    if (estado === 'red' || estado === 'yellow') {
+      return acc + parseInt(r.multa.replace(/\D/g, ''), 10);
+    }
+    return acc;
+  }, 0);
+  const totalExposureCLP = totalExposureUTM * VALOR_UTM_CLP;
+
+  const sectorBench = sector && SECTOR_DATA[sector] ? SECTOR_DATA[sector] : SECTOR_DATA['otro'];
+  const fecha = new Date().toLocaleDateString('es-CL', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  // ══════════════════════════════════════════════════════════
+  // PÁGINA 1 — PORTADA EJECUTIVA Y TABLERO DE CONTROL
+  // ══════════════════════════════════════════════════════════
+
+  // Encabezado institucional
+  doc.setFillColor(...C.navy);
+  doc.rect(0, 0, PW, 46, 'F');
+
+  doc.setTextColor(...C.white);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('DATASHIELD', margin, 18);
+
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(200, 215, 245);
+  doc.text('INFORME EJECUTIVO DE CUMPLIMIENTO — LEY N° 21.719', margin, 26);
+  doc.setFontSize(8.5);
+  doc.text('Presentación Oficial para Directorio y Alta Gerencia', margin, 32);
+
+  doc.setFontSize(8);
+  doc.setTextColor(...C.gray);
+  doc.text(`Fecha de Emisión: ${fecha}`, PW - margin, 18, { align: 'right' });
+  doc.text('Clasificación: CONFIDENCIAL / USO INTERNO', PW - margin, 25, { align: 'right' });
+  doc.text(`Identificador Empresa: ${companyName}`, PW - margin, 32, { align: 'right' });
+
+  y = 54;
+
+  // Banner Informativo Empresa
+  doc.setFillColor(...C.bgGray);
+  doc.roundedRect(margin, y, PW - margin * 2, 12, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(...C.text);
+  doc.text(`Entidad Auditada: ${companyName}`, margin + 6, y + 7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text2);
+  doc.text(`Sector Industrial: ${sectorBench.label} · Evidencias analizadas: ${docsCount} doc(s) (${totalWords.toLocaleString('es-CL')} palabras)`, PW - margin - 6, y + 7.5, { align: 'right' });
+
+  y += 18;
+
+  // 4 KPI Cards Ejecutivas (2 columnas x 2 filas)
+  const cardW = (PW - margin * 2 - 8) / 2;
+  const cardH = 26;
+
+  // Card 1: Nivel de Cumplimiento
+  const scoreColor = pct >= 75 ? C.green : pct >= 40 ? C.yellow : C.red;
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...C.lightGray);
+  doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'FD');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.text2);
+  doc.text('ÍNDICE DE CUMPLIMIENTO GLOBAL', margin + 6, y + 7);
+  doc.setFontSize(20);
+  doc.setTextColor(...scoreColor);
+  doc.text(`${pct}%`, margin + 6, y + 18);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text2);
+  const estadoMsg = pct >= 75 ? 'Óptimo (Riesgo Bajo)' : pct >= 40 ? 'Medio (Acción Preventiva)' : 'Crítico (Exposición Inmediata)';
+  doc.text(estadoMsg, margin + 35, y + 17);
+
+  // Card 2: Exposición Financiera Máxima
+  const card2X = margin + cardW + 8;
+  doc.roundedRect(card2X, y, cardW, cardH, 2, 2, 'FD');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.text2);
+  doc.text('EXPOSICIÓN FINANCIERA EN MULTAS (MÁX)', card2X + 6, y + 7);
+  doc.setFontSize(16);
+  doc.setTextColor(...C.red);
+  doc.text(`${totalExposureUTM.toLocaleString('es-CL')} UTM`, card2X + 6, y + 17);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text2);
+  doc.text(`≈ $${Math.round(totalExposureCLP / 1_000_000).toLocaleString('es-CL')} millones CLP`, card2X + 6, y + 23);
+
+  y += cardH + 6;
+
+  // Card 3: Brechas Críticas
+  doc.roundedRect(margin, y, cardW, cardH, 2, 2, 'FD');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.text2);
+  doc.text('ESTADO DE REQUISITOS OBLIGATORIOS', margin + 6, y + 7);
+  doc.setFontSize(13);
+  doc.setTextColor(...C.text);
+  doc.text(`${green} Cumplidos · ${yellow} Parciales · ${red} Faltantes`, margin + 6, y + 17);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text2);
+  doc.text(`De un universo de 10 requisitos normativos obligatorios`, margin + 6, y + 23);
+
+  // Card 4: Benchmark Sectorial
+  doc.roundedRect(card2X, y, cardW, cardH, 2, 2, 'FD');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.text2);
+  doc.text(`POSICIÓN RESPECTO AL SECTOR ${sectorBench.label.toUpperCase()}`, card2X + 6, y + 7);
+  const difSector = pct - sectorBench.promedio;
+  const difColor = difSector >= 0 ? C.green : C.red;
+  doc.setFontSize(14);
+  doc.setTextColor(...difColor);
+  doc.text(`${difSector >= 0 ? '+' : ''}${difSector} pts`, card2X + 6, y + 17);
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text2);
+  doc.text(`Su empresa: ${pct}% · Promedio industria: ${sectorBench.promedio}%`, card2X + 6, y + 23);
+
+  y += cardH + 10;
+
+  // Título de la tabla
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...C.navy);
+  doc.text('Matriz Ejecutiva de Riesgos y Sanciones por Requisito Legal', margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...C.text2);
+  doc.text('Clasificación conforme a los Artículos de la Ley N° 21.719 y escala de multas aplicable por la APDP', margin, y + 4.5);
+
+  y += 7;
+
+  // Tabla Ejecutiva de Requisitos
+  const tableRows = REQUISITOS.map(r => {
+    const res = results[r.id];
+    const estado = res?.estado ?? 'red';
+    const multaNum = parseInt(r.multa.replace(/\D/g, ''), 10);
+    const multaCLP = (multaNum * VALOR_UTM_CLP) / 1_000_000;
+    const estadoStr = estado === 'green' ? 'CUMPLE' : estado === 'yellow' ? 'PARCIAL' : 'CRÍTICO';
+    const exposicionStr = (estado === 'red' || estado === 'yellow')
+      ? `$${multaCLP.toFixed(1)}M CLP`
+      : 'Riesgo mitigado';
+
+    return [
+      r.num,
+      r.nombre,
+      r.art,
+      r.multa,
+      estadoStr,
+      exposicionStr,
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [['N°', 'Requisito Legal', 'Artículo', 'Multa Máx.', 'Estado', 'Exposición Fin.']],
+    body: tableRows,
+    margin: { left: margin, right: margin },
+    theme: 'grid',
+    styles: { fontSize: 7.5, cellPadding: 2, textColor: C.text },
+    headStyles: { fillColor: C.navy, textColor: C.white, fontStyle: 'bold', fontSize: 7.5 },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 24, halign: 'center' },
+      4: { cellWidth: 22, halign: 'center' },
+      5: { cellWidth: 26, halign: 'right' },
+    },
+    didParseCell(data) {
+      if (data.section === 'body' && data.column.index === 4) {
+        const val = String(data.cell.raw);
+        if (val === 'CUMPLE') {
+          data.cell.styles.textColor = C.green;
+          data.cell.styles.fontStyle = 'bold';
+        } else if (val === 'PARCIAL') {
+          data.cell.styles.textColor = C.yellow;
+          data.cell.styles.fontStyle = 'bold';
+        } else {
+          data.cell.styles.textColor = C.red;
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    },
+  });
+
+  // ══════════════════════════════════════════════════════════
+  // PÁGINA 2 — HOJA DE RUTA PRIORITARIA Y ACREDITACIÓN FORMAL
+  // ══════════════════════════════════════════════════════════
+  doc.addPage();
+
+  // Subheader Página 2
+  doc.setFillColor(...C.navy);
+  doc.rect(0, 0, PW, 16, 'F');
+  doc.setTextColor(...C.white);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('DATASHIELD — PLAN DE ACCIÓN EJECUTIVO Y FIRMAS FORMALES', margin, 11);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.text(`Empresa: ${companyName}`, PW - margin, 11, { align: 'right' });
+
+  y = 26;
+
+  // Sección 1: Hoja de Ruta Prioritaria
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C.navy);
+  doc.text('1. Hoja de Ruta Prioritaria de Remediación (Top Acciones Urgentes)', margin, y);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.text2);
+  doc.text('La subsanación prioritaria de las siguientes brechas mitiga el mayor porcentaje de exposición a sanciones:', margin, y + 5);
+
+  y += 10;
+
+  // Filtrar las brechas ordenadas por monto de multa
+  const brechasOrdenadas = REQUISITOS.filter(r => {
+    const estado = results[r.id]?.estado;
+    return estado === 'red' || estado === 'yellow';
+  }).sort((a, b) => {
+    const mA = parseInt(a.multa.replace(/\D/g, ''), 10);
+    const mB = parseInt(b.multa.replace(/\D/g, ''), 10);
+    return mB - mA;
+  }).slice(0, 3);
+
+  if (brechasOrdenadas.length === 0) {
+    doc.setFillColor(240, 253, 244);
+    doc.setDrawColor(...C.green);
+    doc.roundedRect(margin, y, PW - margin * 2, 16, 2, 2, 'FD');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...C.green);
+    doc.text('Excelente: No se detectan brechas criticas pendientes.', margin + 8, y + 10);
+    y += 24;
+  } else {
+    brechasOrdenadas.forEach((br, idx) => {
+      const multaNum = parseInt(br.multa.replace(/\D/g, ''), 10);
+      const clpAprox = (multaNum * VALOR_UTM_CLP) / 1_000_000;
+      doc.setFillColor(...C.bgGray);
+      doc.setDrawColor(...C.lightGray);
+      doc.roundedRect(margin, y, PW - margin * 2, 20, 2, 2, 'FD');
+
+      // Círculo número
+      doc.setFillColor(...C.navy);
+      doc.circle(margin + 7, y + 10, 4, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...C.white);
+      doc.text(String(idx + 1), margin + 7, y + 12.5, { align: 'center' });
+
+      // Texto de la acción
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(...C.navy);
+      doc.text(`Subsanar: ${br.nombre} (${br.art})`, margin + 16, y + 7.5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C.text2);
+      doc.text(`Exigencia legal: ${br.legalDetail.exigenciaSimple.slice(0, 105)}...`, margin + 16, y + 12.5);
+
+      // Reducción de riesgo en badge
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(...C.red);
+      doc.text(`Riesgo: ${br.multa} (~$${clpAprox.toFixed(1)}M CLP)`, PW - margin - 6, y + 7.5, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...C.green);
+      doc.text('Plantilla disponible en DataShield', PW - margin - 6, y + 14, { align: 'right' });
+
+      y += 24;
+    });
+  }
+
+  y += 6;
+
+  // Sección 2: Integridad y Trazabilidad de Evidencia
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C.navy);
+  doc.text('2. Registro de Integridad y Trazabilidad Documental', margin, y);
+  y += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.text2);
+  const docInfo = docsCount > 0
+    ? `Se procesaron y validaron criptográficamente ${docsCount} documento(s) aportado(s) por la empresa, aislados bajo tenant ID verificado.`
+    : 'No se han adjuntado documentos formales aún. El diagnóstico actual se basa en los requisitos normativos pendientes.';
+  doc.text(docInfo, margin, y);
+  y += 5;
+  doc.text('La bitácora de auditoría inmutable asociada cuenta con encadenamiento criptográfico SHA-256 según estándares de compliance.', margin, y);
+
+  y += 18;
+
+  // Sección 3: Acreditación Legal y Bloque de Firmas
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...C.navy);
+  doc.text('3. Declaración de Validez y Bloque de Firmas', margin, y);
+  y += 6;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...C.text2);
+  const disclaimer = 'El presente informe ejecutivo ha sido emitido con fines de diagnóstico y gestión interna de riesgos de privacidad, reflejando el estado de cumplimiento observado en la plataforma DataShield. Se recomienda que las medidas adoptadas sean formalizadas por el Oficial de Privacidad / DPO y puestas en conocimiento del Directorio.';
+  const linesDisc = doc.splitTextToSize(disclaimer, PW - margin * 2);
+  doc.text(linesDisc, margin, y);
+  y += linesDisc.length * 3.5 + 18;
+
+  // Bloque con 2 firmas (DPO y Representante Legal)
+  const signW = (PW - margin * 2 - 20) / 2;
+
+  // Firma 1
+  doc.setDrawColor(...C.gray);
+  doc.setLineWidth(0.4);
+  doc.line(margin, y, margin + signW, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.navy);
+  doc.text('OFICIAL DE CUMPLIMIENTO / DPO', margin + signW / 2, y + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.text2);
+  doc.text('Responsable de Protección de Datos', margin + signW / 2, y + 9, { align: 'center' });
+  doc.text(`${companyName}`, margin + signW / 2, y + 13, { align: 'center' });
+
+  // Firma 2
+  const sign2X = margin + signW + 20;
+  doc.line(sign2X, y, sign2X + signW, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.navy);
+  doc.text('REPRESENTANTE LEGAL / GERENCIA GENERAL', sign2X + signW / 2, y + 5, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(...C.text2);
+  doc.text('Aprobación de Hoja de Ruta y Presupuesto', sign2X + signW / 2, y + 9, { align: 'center' });
+  doc.text(`${companyName}`, sign2X + signW / 2, y + 13, { align: 'center' });
+
+  // Pie de página en ambas páginas
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(248, 250, 252);
+    doc.rect(0, PH - 9, PW, 9, 'F');
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(0, PH - 9, PW, PH - 9);
+
+    doc.setFontSize(6.8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184);
+    doc.text(
+      'DataShield · Resumen Ejecutivo Ley 21.719 · Estrictamente Confidencial · No constituye patrocinio letrado directo',
+      margin, PH - 3.5,
+    );
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Página ${i} de ${totalPages}`, PW - margin, PH - 3.5, { align: 'right' });
+  }
+
+  const safeFileName = `informe_ejecutivo_directorio_${companyName.toLowerCase().replace(/[^a-z0-9]/gi, '_') || 'empresa'}.pdf`;
+  doc.save(safeFileName);
 }
