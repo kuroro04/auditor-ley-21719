@@ -1,8 +1,13 @@
 'use client';
-import type { HistorialSnapshot } from '@/lib/types';
+import { useState } from 'react';
+import type { HistorialSnapshot, RequisitoResult } from '@/lib/types';
+import ModalComparadorVersiones from './ModalComparadorVersiones';
 
 interface HistorialViewProps {
   snapshots: HistorialSnapshot[];
+  currentResults?: Record<string, RequisitoResult>;
+  previousResults?: Record<string, RequisitoResult>;
+  companyName?: string;
 }
 
 // Dimensiones del área de trazado SVG
@@ -22,7 +27,19 @@ function fechaCorta(iso: string): string {
   return d.toLocaleDateString('es-CL', { day: '2-digit', month: 'short' });
 }
 
-export default function HistorialView({ snapshots }: HistorialViewProps) {
+export default function HistorialView({
+  snapshots,
+  currentResults,
+  previousResults,
+  companyName,
+}: HistorialViewProps) {
+  const [showComparator, setShowComparator] = useState(false);
+  const hasComparatorData = Boolean(
+    currentResults &&
+    previousResults &&
+    Object.keys(previousResults).length > 0
+  );
+
   // Estado vacío: nunca se ejecutó ningún análisis
   if (snapshots.length === 0) {
     return (
@@ -94,6 +111,16 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
               ? `Retrocedió ${Math.abs(delta)}% desde el último análisis (${penultimo.pct}% → ${ultimo.pct}%)`
               : `Sin cambios respecto al último análisis (${ultimo.pct}%)`}
           </span>
+          {hasComparatorData && (
+            <button
+              type="button"
+              className="btn-comparar-pill"
+              style={{ marginLeft: 'auto', background: 'var(--white)', borderColor: '#cbd5e1' }}
+              onClick={() => setShowComparator(true)}
+            >
+              ⚖️ Ver comparador detallado
+            </button>
+          )}
         </div>
       )}
 
@@ -208,6 +235,14 @@ export default function HistorialView({ snapshots }: HistorialViewProps) {
         </table>
       </div>
 
+      {showComparator && currentResults && previousResults && (
+        <ModalComparadorVersiones
+          currentResults={currentResults}
+          previousResults={previousResults}
+          companyName={companyName || 'la empresa'}
+          onClose={() => setShowComparator(false)}
+        />
+      )}
     </div>
   );
 }

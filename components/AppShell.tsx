@@ -224,7 +224,12 @@ export default function AppShell({
           />
         )}
         {activeTab === 'historial' && (
-          <HistorialView snapshots={snapshots} />
+          <HistorialView
+            snapshots={snapshots}
+            currentResults={results}
+            previousResults={previousResults}
+            companyName={companyName}
+          />
         )}
       </div>
 

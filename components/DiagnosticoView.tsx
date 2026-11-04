@@ -13,6 +13,8 @@ import { CHECKLIST_VERSION_LABEL } from '@/lib/requisitos';
 import { LockIcon } from './Icons';
 import ModalGuiaClausula from './ModalGuiaClausula';
 import ModalVisorTexto from './ModalVisorTexto';
+import TableroSubsanacion from './TableroSubsanacion';
+import ModalComparadorVersiones from './ModalComparadorVersiones';
 import { type ClausulaEjemplo } from '@/lib/guiaClausulas';
 
 interface DiagnosticoViewProps {
@@ -51,6 +53,10 @@ export default function DiagnosticoView({
     texto: string;
     terminoResaltado?: string;
   } | null>(null);
+
+  // Estados interactivos Opción 3: Modo de vista (Lista vs Tablero) y Modal Comparador
+  const [modoVista, setModoVista] = useState<'lista' | 'tablero'>('lista');
+  const [showComparator, setShowComparator] = useState(false);
 
   // Permisos por rol
   const canEdit     = role === 'administrador';                          // subir docs
@@ -208,6 +214,13 @@ export default function DiagnosticoView({
               <span className={`score-version-delta ${versionDelta >= 0 ? 'positivo' : 'negativo'}`}>
                 {versionDelta >= 0 ? '+' : ''}{versionDelta}%
               </span>
+              <button
+                type="button"
+                className="btn-comparar-hero"
+                onClick={() => setShowComparator(true)}
+              >
+                ⚖️ Ver comparador detallado
+              </button>
             </div>
           )}
           {unanalyzable > 0 && (
@@ -290,8 +303,66 @@ export default function DiagnosticoView({
       {/* Comparación con el sector */}
       <SectorComparisonCard sector={sector} companyCumplimiento={pct} />
 
-      {/* Detalle por requisito con Barra de Filtros */}
-      <div className="section-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      {/* Selector de Modo de Vista: Lista Detallada vs Tablero de Subsanación (Opción 3) */}
+      <div className="view-mode-selector-bar">
+        <div className="view-mode-toggle-group" role="tablist" aria-label="Modo de vista del diagnóstico">
+          <button
+            type="button"
+            className={`view-mode-btn ${modoVista === 'lista' ? 'active' : ''}`}
+            onClick={() => setModoVista('lista')}
+            role="tab"
+            aria-selected={modoVista === 'lista'}
+          >
+            📋 Lista Detallada
+          </button>
+          <button
+            type="button"
+            className={`view-mode-btn ${modoVista === 'tablero' ? 'active' : ''}`}
+            onClick={() => setModoVista('tablero')}
+            role="tab"
+            aria-selected={modoVista === 'tablero'}
+          >
+            📌 Tablero de Subsanación
+          </button>
+        </div>
+
+        {hasPrevResults && (
+          <button
+            type="button"
+            className="btn-comparar-pill"
+            onClick={() => setShowComparator(true)}
+            title="Comparar resultados de la versión anterior frente a la actual"
+          >
+            ⚖️ Comparar con versión anterior ({versionDelta >= 0 ? `+${versionDelta}%` : `${versionDelta}%`})
+          </button>
+        )}
+      </div>
+
+      {modoVista === 'tablero' ? (
+        <TableroSubsanacion
+          results={results}
+          uploadedDocs={uploadedDocs}
+          companyName={companyName}
+          role={role}
+          canEdit={canEdit}
+          canDownload={canDownload}
+          onTriggerUpload={triggerUpload}
+          onSelectReq={(reqId) => {
+            setModoVista('lista');
+            setOpenCards(new Set([reqId]));
+            setTimeout(() => {
+              const el = document.getElementById(`brecha-${reqId}`);
+              el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+          }}
+          onToast={onToast}
+          onOpenComparator={() => setShowComparator(true)}
+          hasPrevResults={hasPrevResults}
+        />
+      ) : (
+        <>
+          {/* Detalle por requisito con Barra de Filtros */}
+          <div className="section-hdr" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h3>Detalle por requisito legal</h3>
           <span>Haga clic en cada requisito para ver el detalle y sugerencias de corrección</span>
@@ -375,7 +446,7 @@ export default function DiagnosticoView({
             : [];
 
           return (
-            <div key={r.id} className={`brecha-card ${stateClass}${isOpen ? ' open' : ''}`}>
+            <div key={r.id} id={`brecha-${r.id}`} className={`brecha-card ${stateClass}${isOpen ? ' open' : ''}`}>
               <div className="brecha-header" onClick={() => toggleCard(r.id)}>
                 <div className="brecha-estado">{icon}</div>
                 <div className="brecha-info">
@@ -678,6 +749,8 @@ export default function DiagnosticoView({
           });
         })()}
       </div>
+      </>
+      )}
 
       {/* Panel de accion */}
       <div className="action-panel">
@@ -766,6 +839,16 @@ export default function DiagnosticoView({
           terminoResaltado={modalVisor.terminoResaltado}
           onClose={() => setModalVisor(null)}
           onToast={onToast}
+        />
+      )}
+
+      {/* Modal Comparador de Versiones (Opción 3) */}
+      {showComparator && (
+        <ModalComparadorVersiones
+          currentResults={results}
+          previousResults={previousResults}
+          companyName={companyName}
+          onClose={() => setShowComparator(false)}
         />
       )}
 
