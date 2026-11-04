@@ -45,8 +45,8 @@ def process_secure_upload(company_id: str, filename: str, content: bytes, clamav
     safe_name = sanitize_filename(filename)
     sha256 = hashlib.sha256(content).hexdigest()
 
-    # Validación en memoria (tipo, extensión, magic bytes, tamaño) antes de tocar disco
-    security_result = check_file_security(safe_name, len(content), content[:8])
+    # Validación en memoria (tipo, extensión, magic bytes, tamaño y estructura OpenXML) antes de tocar disco
+    security_result = check_file_security(safe_name, len(content), content[:8], full_content=content)
     if not security_result.accepted:
         return UploadOutcome(
             False, security_result.reason, safe_name, sha256, len(content),

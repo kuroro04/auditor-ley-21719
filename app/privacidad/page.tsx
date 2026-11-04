@@ -68,19 +68,48 @@ export default function PrivacidadPage() {
           <p>Para consultas o ejercicio de derechos: <a href="mailto:privacidad@datashield.cl">privacidad@datashield.cl</a></p>
         </Section>
 
-        <Section title="2. Datos que recopilamos">
-          <p>La plataforma recopila y trata los siguientes datos:</p>
+        <Section title="2. Datos que recopilamos y modalidades de operación">
+          <p>La plataforma ofrece dos modalidades de operación claramente diferenciadas:</p>
+          <div style={{
+            background: 'var(--surface-muted, #f8fafc)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+          }}>
+            <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--navy)' }}>
+              A. Modo Evaluación / Demostración Local (Sin autenticación en servidor):
+            </p>
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text2)' }}>
+              El análisis léxico y semántico de documentos se ejecuta <strong>100% dentro de su navegador web</strong> (Web Workers y modelos en memoria local). Ningún archivo ni texto extraído sale de su equipo ni se transmite a servidores remotos.
+            </p>
+          </div>
+
+          <div style={{
+            background: 'var(--surface-muted, #f8fafc)',
+            border: '1px solid var(--border)',
+            borderRadius: '8px',
+            padding: '16px',
+            marginBottom: '16px',
+          }}>
+            <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--navy)' }}>
+              B. Modo Plataforma Empresarial Autenticada (SaaS con cuenta corporativa):
+            </p>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', color: 'var(--text2)' }}>
+              Al iniciar sesión con una cuenta registrada, los documentos subidos se transfieren de forma segura mediante HTTPS para escaneo antivirus obligatorio (ClamAV en sandbox), control de integridad criptográfica (SHA-256) y almacenamiento cifrado en reposo en el repositorio privado de su empresa.
+            </p>
+          </div>
+
+          <p>En el modo autenticado, la plataforma recopila y trata los siguientes datos:</p>
           <Table rows={[
             ['Categoría', 'Dato específico', 'Momento de recopilación'],
             ['Identificación del representante', 'Correo electrónico', 'Registro de cuenta'],
             ['Identificación de empresa', 'RUT de empresa, nombre, sector', 'Registro de cuenta'],
-            ['Documentos de cumplimiento', 'Contenido textual extraído de los documentos subidos (PDF, Word, Excel)', 'Carga de documentos'],
-            ['Registro de actividad', 'IP de origen, fecha/hora, tipo de acción', 'Cada acción en la plataforma (bitácora de auditoría)'],
+            ['Documentos de cumplimiento', 'Archivos de políticas/contratos y texto extraído para verificación de requisitos', 'Carga de documentos en modo autenticado'],
+            ['Registro de actividad', 'IP de origen, fecha/hora, hash SHA-256 de archivos, tipo de acción', 'Bitácora de auditoría (eventos certificados por servidor y reportados)'],
           ]} />
           <p style={{ marginTop: '12px' }}>
-            <strong>Documentos originales:</strong> los archivos que usted sube son procesados para extraer
-            su texto. El texto extraído se utiliza para el análisis; los archivos originales se eliminan
-            tras el procesamiento y no se almacenan de forma permanente.
+            <strong>Control y eliminación de documentos:</strong> en el modo autenticado, los archivos quedan aislados bajo las políticas RLS de su empresa y pueden ser eliminados en cualquier momento por el usuario administrador desde la sección de documentos.
           </p>
         </Section>
 

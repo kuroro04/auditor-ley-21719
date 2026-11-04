@@ -97,27 +97,28 @@ def _migrar_columnas_nuevas() -> None:
     # El proyecto todavía no usa Alembic: create_all() crea tablas que faltan,
     # pero no agrega columnas nuevas a tablas que ya existían antes del cambio
     # de modelo. Este parche mínimo evita que una base SQLite de desarrollo
-    # creada antes de agregar `onboarding_completed` quede rota.
-    inspector = inspect(engine)
-    if 'users' not in inspector.get_table_names():
-        return
-    columnas_users = {c['name'] for c in inspector.get_columns('users')}
-    if 'onboarding_completed' not in columnas_users:
-        with engine.begin() as conn:
-            conn.execute(text(
-                'ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT false'
-            ))
-    # Fase 5 — columnas del segundo factor TOTP.
-    nuevas_mfa = {
-        'mfa_enabled': 'ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT false',
-        'mfa_secret_enc': 'ALTER TABLE users ADD COLUMN mfa_secret_enc VARCHAR',
-        'mfa_backup_codes': 'ALTER TABLE users ADD COLUMN mfa_backup_codes VARCHAR',
-    }
-    faltantes = [sql for col, sql in nuevas_mfa.items() if col not in columnas_users]
-    if faltantes:
-        with engine.begin() as conn:
-            for sql in faltantes:
-                conn.execute(text(sql))
+    # creada antes de agregar nuevas columnas quede rota.
+    try:
+        inspector = inspect(engine)
+        if 'users' not in inspector.get_table_names():
+            return
+        columnas_users = {c['name'] for c in inspector.get_columns('users')}
+        nuevas = {
+            'onboarding_completed': 'ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN NOT NULL DEFAULT false',
+            'mfa_enabled': 'ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN NOT NULL DEFAULT false',
+            'mfa_secret_enc': 'ALTER TABLE users ADD COLUMN mfa_secret_enc VARCHAR',
+            'mfa_backup_codes': 'ALTER TABLE users ADD COLUMN mfa_backup_codes VARCHAR',
+            'last_totp_step': 'ALTER TABLE users ADD COLUMN last_totp_step INTEGER',
+            'token_version': 'ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 1',
+        }
+        faltantes = [sql for col, sql in nuevas.items() if col not in columnas_users]
+        if faltantes:
+            with engine.begin() as conn:
+                for sql in faltantes:
+                    conn.execute(text(sql))
+    except Exception:
+        # En PostgreSQL donde el usuario de la app no sea owner de la tabla o en esquemas ya gestionados
+        pass
 
 
 @app.on_event('startup')

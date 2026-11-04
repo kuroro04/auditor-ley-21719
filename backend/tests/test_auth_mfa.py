@@ -179,6 +179,36 @@ def test_codigo_de_respaldo_sirve_una_sola_vez_en_el_segundo_paso(client):
     assert segundo.status_code == 401
 
 
+def test_totp_replay_rechazado_por_paso_de_tiempo_persistido_incluso_sin_cache_memoria(client):
+    # Hallazgo DS-03: Si un worker se reinicia o es atendido por otro proceso
+    # donde _consumed_totp_codes está vacío, user.last_totp_step en la base de datos
+    # previene el replay del mismo código o ventana de tiempo (RFC 6238 Secc. 5.2).
+    from core import mfa
+    _registrar(client, email='anti-replay@empresatest.cl', rut='22.222.222-2')
+    secret, _ = _activar_mfa(client)
+    client.post('/auth/logout')
+
+    # Login paso 1
+    login1 = client.post('/auth/login', json={'email': 'anti-replay@empresatest.cl', 'password': PASSWORD})
+    mfa_token1 = login1.json()['mfa_token']
+    codigo_usado = pyotp.TOTP(secret).now()
+
+    # Consumir el código en el primer inicio de sesión
+    res1 = client.post('/auth/login/mfa', json={'mfa_token': mfa_token1, 'code': codigo_usado})
+    assert res1.status_code == 200
+    client.post('/auth/logout')
+
+    # Simular reinicio de servidor / worker alternativo limpiando el diccionario en memoria
+    mfa._consumed_totp_codes.clear()
+
+    # Reintento de login usando el mismo código
+    login2 = client.post('/auth/login', json={'email': 'anti-replay@empresatest.cl', 'password': PASSWORD})
+    mfa_token2 = login2.json()['mfa_token']
+    res2 = client.post('/auth/login/mfa', json={'mfa_token': mfa_token2, 'code': codigo_usado})
+    # Debe ser rechazado porque user.last_totp_step >= step en la base de datos
+    assert res2.status_code == 401
+
+
 # --- Desactivación ------------------------------------------------------------
 
 def test_disable_con_password_correcta_desactiva_mfa(client):

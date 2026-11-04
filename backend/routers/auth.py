@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -66,7 +67,8 @@ def _session_response(user: User, company: Company) -> SessionResponse:
 
 
 def _issue_session(response: Response, user: User, company: Company) -> SessionResponse:
-    token = create_access_token(user.id, company.id, user.role)
+    version = getattr(user, 'token_version', 1) or 1
+    token = create_access_token(user.id, company.id, user.role, token_version=version)
     _set_session_cookie(response, token)
     return _session_response(user, company)
 
@@ -209,7 +211,9 @@ def login_mfa(request: Request, payload: MfaLoginRequest, response: Response, db
     if mfa.is_totp_replayed(user.id, limpio_code):
         _rechazar(user_id=user.id, company_id=user.company_id)
 
-    if mfa.verify_code(secreto, payload.code):
+    valid_totp, matched_step = mfa.verify_totp_step(secreto, limpio_code, last_step=user.last_totp_step)
+    if valid_totp and matched_step is not None:
+        user.last_totp_step = matched_step
         mfa.mark_totp_consumed(user.id, limpio_code)
     else:
         # ¿Es un código de respaldo? Si coincide, se consume (un solo uso).
@@ -364,15 +368,20 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
             claims = None
         if claims and not claims.get('mfa_pending'):
             company_id = claims.get('company_id')
+            user_id = claims.get('sub')
             if company_id:
                 # Igual que en login/mfa: un company_id no nulo necesita el
                 # contexto de tenant fijado para pasar la política de INSERT
                 # de audit_log. logout usa get_db (no get_tenant_db), así que
                 # nadie lo fijó todavía en esta request.
                 set_tenant_context(db, company_id)
+            if user_id:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
             audit.registrar_evento(
                 db, audit.EVENTO_CIERRE_SESION, 'exito',
-                user_id=claims.get('sub'), company_id=company_id,
+                user_id=user_id, company_id=company_id,
                 ip_origen=client_ip(request),
             )
             db.commit()

@@ -14,9 +14,17 @@ def verify_password(password: str, password_hash: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), password_hash.encode('utf-8'))
 
 
-def create_access_token(user_id: str, company_id: str, role: str) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {'sub': user_id, 'company_id': company_id, 'role': role, 'exp': expire}
+def create_access_token(user_id: str, company_id: str, role: str, token_version: int = 1) -> str:
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(minutes=config.ACCESS_TOKEN_EXPIRE_MINUTES)
+    payload = {
+        'sub': user_id,
+        'company_id': company_id,
+        'role': role,
+        'exp': expire,
+        'iat': int(now.timestamp()),
+        'ver': token_version,
+    }
     return jwt.encode(payload, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
 

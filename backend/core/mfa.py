@@ -78,22 +78,50 @@ def mark_totp_consumed(user_id: str, code: str) -> None:
     _consumed_totp_codes[key] = time.time() + 120.0
 
 
-def verify_code(secret: str, code: str, last_code: str | None = None) -> bool:
+def verify_totp_step(secret: str, code: str, last_step: int | None = None) -> tuple[bool, int | None]:
+    """Valida un código TOTP de 6 dígitos bajo RFC 6238 y previene replay multi-worker (DS-03).
+
+    Evalúa los time-steps [0, -1, +1] respecto al tiempo actual para tolerar desfase de reloj (±30 s).
+    Si se proporciona `last_step` (persistido en la base de datos para el usuario),
+    cualquier time-step menor o igual a `last_step` es estrictamente rechazado (RFC 6238 Secc. 5.2).
+    Devuelve (True, matched_step) si es válido, o (False, None) si no es válido o ya fue consumido.
+    """
+    if not code:
+        return False, None
+    limpio = code.strip().replace(' ', '')
+    if not (limpio.isdigit() and len(limpio) == 6):
+        return False, None
+
+    totp = pyotp.TOTP(secret)
+    import time
+    now_ts = time.time()
+    current_step = int(now_ts / totp.interval)
+
+    # Evaluar ventana ±1: paso actual (0), paso anterior (-1), paso posterior (+1)
+    for offset in (0, -1, 1):
+        step = current_step + offset
+        if last_step is not None and step <= last_step:
+            continue
+        if totp.generate_otp(step) == limpio:
+            return True, step
+
+    return False, None
+
+
+def verify_code(secret: str, code: str, last_code: str | None = None, last_step: int | None = None) -> bool:
     """Valida un código TOTP de 6 dígitos.
 
     valid_window=1 acepta también el código del período inmediatamente
     anterior y el siguiente (±30 s), para tolerar el desfase de reloj
     entre el teléfono del usuario y el servidor.
-    last_code previene ataques de repetición dentro de la ventana de 90 segundos.
+    last_code y last_step previenen ataques de repetición.
     """
-    if not code:
+    valid, _ = verify_totp_step(secret, code, last_step=last_step)
+    if not valid:
         return False
-    limpio = code.strip().replace(' ', '')
-    if not (limpio.isdigit() and len(limpio) == 6):
+    if last_code and last_code == code.strip().replace(' ', ''):
         return False
-    if last_code and last_code == limpio:
-        return False
-    return pyotp.TOTP(secret).verify(limpio, valid_window=1)
+    return True
 
 
 def qr_svg_data_uri(otpauth_uri: str) -> str:

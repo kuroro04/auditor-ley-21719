@@ -52,6 +52,11 @@ class User(Base):
     mfa_enabled = Column(Boolean, nullable=False, default=False)
     mfa_secret_enc = Column(String, nullable=True)
     mfa_backup_codes = Column(String, nullable=True)
+    # Hallazgo DS-03: Paso de tiempo TOTP (RFC 6238) consumido para evitar repetición multi-worker
+    last_totp_step = Column(Integer, nullable=True)
+
+    # Hallazgo DS-02: Versión de sesión para invalidar JWTs tras logout en servidor
+    token_version = Column(Integer, nullable=False, default=1)
 
     created_at = Column(DateTime, default=_utcnow)
 

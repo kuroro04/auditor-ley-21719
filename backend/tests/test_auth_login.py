@@ -50,3 +50,22 @@ def test_logout_borra_la_cookie_de_sesion(client):
 
     me_despues = client.get('/auth/me')
     assert me_despues.status_code == 401
+
+
+def test_token_reutilizado_despues_de_logout_es_rechazado_por_el_servidor(client):
+    # Hallazgo DS-02: Un token robado o reutilizado después de /logout debe ser
+    # invalidado en el servidor aunque su firma criptográfica y tiempo exp sigan vigentes.
+    _registrar(client, email='revocado@empresatest.cl')
+    login_res = client.post('/auth/login', json={'email': 'revocado@empresatest.cl', 'password': 'Clave-Segura123!'})
+    assert login_res.status_code == 200
+    token_original = login_res.cookies['access_token']
+
+    # Se ejecuta el cierre de sesión en servidor
+    logout_res = client.post('/auth/logout')
+    assert logout_res.status_code == 204
+
+    # El atacante o cliente intenta reutilizar el token original forzando la cookie
+    client.cookies.set('access_token', token_original)
+    me_reintento = client.get('/auth/me')
+    assert me_reintento.status_code == 401
+    assert 'invalidada tras cierre de sesión' in me_reintento.json()['detail']

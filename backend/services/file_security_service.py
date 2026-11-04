@@ -1,11 +1,17 @@
+import io
 import re
+import zipfile
 from dataclasses import dataclass
+from typing import Optional
 
 # Espejo en Python de lib/fileSecurity.ts — mismas extensiones permitidas,
 # extensiones peligrosas, firmas binarias y límite de tamaño, para que el
 # backend rechace exactamente lo mismo que ya rechaza el cliente.
 
 MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  # 50 MB
+MAX_OOXML_UNCOMPRESSED_BYTES = 100 * 1024 * 1024  # 100 MB límite total de descompresión
+MAX_OOXML_FILES_COUNT = 1000  # Máximo de archivos dentro del paquete OpenXML
+MAX_OOXML_COMPRESSION_RATIO = 50  # Máxima relación de compresión para evitar zip bombs
 
 DANGEROUS_EXTENSIONS = {
     'exe', 'js', 'mjs', 'cjs', 'bat', 'cmd', 'sh', 'msi', 'msc', 'scr',
@@ -73,7 +79,72 @@ def _has_dangerous_double_extension(name: str) -> bool:
     return any(p in DANGEROUS_EXTENSIONS for p in parts[1:-1])
 
 
-def check_file_security(filename: str, size: int, header: bytes) -> FileSecurityResult:
+def validate_ooxml_structure(content: bytes, ext: str) -> FileSecurityResult:
+    """Inspección profunda de paquetes OpenXML (DOCX / XLSX) — Hallazgo DS-05.
+
+    Verifica que:
+    1. Sea un archivo ZIP válido.
+    2. No contenga secuencias de escape de ruta (directory traversal).
+    3. No supere los umbrales seguros de descompresión (defensa anti Zip-Bomb).
+    4. Contenga la estructura mínima obligatoria de Open Packaging Conventions:
+       - [Content_Types].xml
+       - word/document.xml (para docx) o xl/workbook.xml (para xlsx).
+    """
+    try:
+        buffer = io.BytesIO(content)
+        if not zipfile.is_zipfile(buffer):
+            return FileSecurityResult(False, f'El archivo .{ext} no es un archivo ZIP / OpenXML válido')
+
+        with zipfile.ZipFile(buffer, 'r') as zf:
+            infolist = zf.infolist()
+            if len(infolist) > MAX_OOXML_FILES_COUNT:
+                return FileSecurityResult(False, f'El archivo .{ext} contiene demasiadas entradas ({len(infolist)})')
+
+            total_uncompressed = 0
+            names = set()
+
+            for info in infolist:
+                # 1. Sanitización de rutas internas
+                if '..' in info.filename or info.filename.startswith('/') or info.filename.startswith('\\') or '\x00' in info.filename:
+                    return FileSecurityResult(False, f'El archivo .{ext} contiene rutas internas no permitidas (path traversal)')
+
+                total_uncompressed += info.file_size
+                names.add(info.filename)
+
+            # 2. Protección contra Zip-Bomb
+            if total_uncompressed > MAX_OOXML_UNCOMPRESSED_BYTES:
+                return FileSecurityResult(False, f'El tamaño descomprimido del archivo .{ext} supera el límite de seguridad (100 MB)')
+
+            ratio = total_uncompressed / max(1, len(content))
+            if len(content) > 1024 and ratio > MAX_OOXML_COMPRESSION_RATIO:
+                return FileSecurityResult(False, f'Relación de compresión anómala detectada ({ratio:.1f}x) — potencial zip bomb')
+
+            # 3. Validación de estructura OpenXML
+            if '[Content_Types].xml' not in names:
+                return FileSecurityResult(False, f'El archivo .{ext} carece del descriptor obligatorio [Content_Types].xml')
+
+            if ext == 'docx':
+                has_doc = any(n.startswith('word/document') and n.endswith('.xml') for n in names)
+                if not has_doc:
+                    return FileSecurityResult(False, 'El archivo .docx carece de la parte principal (word/document.xml)')
+
+            if ext == 'xlsx':
+                has_sheet = any(n.startswith('xl/workbook') and n.endswith('.xml') for n in names)
+                if not has_sheet:
+                    return FileSecurityResult(False, 'El archivo .xlsx carece del libro principal (xl/workbook.xml)')
+
+    except (zipfile.BadZipFile, zipfile.LargeZipFile, Exception) as e:
+        return FileSecurityResult(False, f'Error al inspeccionar estructura OpenXML: {e}')
+
+    return FileSecurityResult(True, 'Estructura OpenXML válida')
+
+
+def check_file_security(
+    filename: str,
+    size: int,
+    header: bytes,
+    full_content: Optional[bytes] = None,
+) -> FileSecurityResult:
     ext = _get_extension(filename)
 
     if size == 0:
@@ -92,8 +163,14 @@ def check_file_security(filename: str, size: int, header: bytes) -> FileSecurity
 
     if ext == 'pdf' and not _matches_signature(header, SIGNATURES['pdf']):
         return FileSecurityResult(False, 'El contenido del archivo no coincide con un PDF válido')
-    if ext in ('docx', 'xlsx') and not _matches_signature(header, SIGNATURES['zip']):
-        return FileSecurityResult(False, 'El contenido del archivo no coincide con un documento Office válido')
+    if ext in ('docx', 'xlsx'):
+        if not _matches_signature(header, SIGNATURES['zip']):
+            return FileSecurityResult(False, 'El contenido del archivo no coincide con un documento Office válido')
+        if full_content is not None:
+            ooxml_res = validate_ooxml_structure(full_content, ext)
+            if not ooxml_res.accepted:
+                return ooxml_res
+
     if ext in ('doc', 'xls') and not _matches_signature(header, SIGNATURES['ole2']):
         return FileSecurityResult(False, 'El contenido del archivo no coincide con un documento Office (formato antiguo) válido')
     if ext == 'txt':
