@@ -9,13 +9,15 @@ GRANT CONNECT ON DATABASE postgres TO app_user;
 GRANT USAGE ON SCHEMA public TO app_user;
 GRANT SELECT, INSERT, UPDATE, DELETE ON companies, users, documents TO app_user;
 
--- 1b. Fase 5 — columnas del segundo factor TOTP. Idempotente (IF NOT EXISTS):
+-- 1b. Fase 5 y Hardening DS-02/03 — columnas de seguridad, MFA y control de sesión.
 --     create_all() de setup_rls.py crea tablas nuevas pero no agrega columnas
 --     a `users` si ya existía. Deben crearse ANTES de get_user_by_email, que
 --     las selecciona.
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled boolean NOT NULL DEFAULT false;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_secret_enc text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_backup_codes text;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_totp_step integer;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS token_version integer NOT NULL DEFAULT 1;
 
 -- 2. Activar RLS en las tablas con datos por tenant.
 --    `companies` queda fuera a propósito: es el registro de tenants, no
@@ -57,6 +59,7 @@ RETURNS TABLE (
     id text, company_id text, email text, password_hash text,
     role text, onboarding_completed boolean,
     mfa_enabled boolean, mfa_secret_enc text, mfa_backup_codes text,
+    last_totp_step integer, token_version integer,
     created_at timestamptz
 )
 LANGUAGE sql
@@ -64,9 +67,12 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
     SELECT id, company_id, email, password_hash, role, onboarding_completed,
-           mfa_enabled, mfa_secret_enc, mfa_backup_codes, created_at
+           mfa_enabled, mfa_secret_enc, mfa_backup_codes,
+           last_totp_step, token_version,
+           created_at
     FROM users
-    WHERE email = p_email;
+    WHERE lower(email) = lower(p_email)
+    LIMIT 1;
 $$;
 
 REVOKE ALL ON FUNCTION get_user_by_email(text) FROM PUBLIC;
