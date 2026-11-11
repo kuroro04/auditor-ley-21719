@@ -13,7 +13,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${sora.variable} ${sourceSerif.variable} ${jetbrains.variable}`}>
+    <html lang="es" className={`${sora.variable} ${sourceSerif.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var pref = localStorage.getItem('datashield_theme') || 'system';
+                  var isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  var target = isDark ? 'dark' : 'light';
+                  document.documentElement.setAttribute('data-theme', target);
+                  document.documentElement.style.colorScheme = target;
+                } catch(e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body style={{ fontFamily: 'var(--font-sora), Sora, sans-serif' }}>
         {children}
       </body>

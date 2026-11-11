@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { CopyPill } from './CopyPill';
 import type { UserRole, Sector, CompanyProfile, TeamMember } from '@/lib/types';
 import type { AuthSource } from '@/hooks/useAppState';
 import type { SecurityEvent } from '@/lib/tenant/guard';
@@ -325,17 +326,7 @@ export default function PerfilEmpresaView({
               </div>
               <div className="perfil-info-item">
                 <span className="info-label">ID de Tenant Aislado:</span>
-                <div className="info-val-with-copy">
-                  <span className="font-mono text-xs">{profile?.id || companyId}</span>
-                  <button
-                    type="button"
-                    className="btn-copy-id"
-                    onClick={() => copyToClipboard(profile?.id || companyId)}
-                    title="Copiar ID"
-                  >
-                    📋 Copiar
-                  </button>
-                </div>
+                <CopyPill text={profile?.id || companyId} ariaLabel="Copiar ID de tenant aislado" />
               </div>
               <div className="perfil-info-item">
                 <span className="info-label">Métricas de la Empresa:</span>

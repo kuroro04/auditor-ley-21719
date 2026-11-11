@@ -2965,3 +2965,331 @@ html, body {
   width: 90%;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   OPCIÓN 5: PULIDO VISUAL, MICRO-INTERACCIONES Y MODO OSCURO
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── TOKENS MODO OSCURO (Cybersecurity / LegalTech Grade) ── */
+[data-theme="dark"] {
+  --navy-950: #030712;
+  --navy-900: #070d1a;
+  --navy-800: #0d1728;
+  --navy-700: #13223b;
+  --navy-600: #1c3154;
+  --navy-500: #294675;
+  --navy-400: #496ea6;
+  --navy-300: #789ecf;
+  --navy-200: #abc6ea;
+  --navy-100: #dbe6f7;
+  --navy-50:  #eff4fc;
+
+  --gray-900: #f8fafc;
+  --gray-800: #f1f5f9;
+  --gray-700: #e2e8f0;
+  --gray-600: #cbd5e1;
+  --gray-500: #94a3b8;
+  --gray-400: #64748b;
+  --gray-300: #475569;
+  --gray-200: #334155;
+  --gray-150: #1e293b;
+  --gray-100: #151f33;
+  --gray-50:  #0f172a;
+  --gray-25:  #0a1120;
+
+  /* Semantic - Deep, rich cyber-legal slate */
+  --bg:       #090e1a;
+  --white:    #0f182b;
+  --surface:  #14223a;
+  --surface2: #1b2d4b;
+  --border:   #213658;
+  --border2:  #2d4974;
+
+  /* Brand Inverted for dark mode readability */
+  --navy:  #e6efff;
+  --navy2: #c8dcfa;
+  --navy3: #a1c3f2;
+
+  /* Accent */
+  --blue:      #3b82f6;
+  --blue-mid:  #60a5fa;
+  --blue-dark: #2563eb;
+  --blue-dim:  rgba(59,130,246,0.16);
+  --blue-dim2: rgba(59,130,246,0.26);
+
+  /* Text - High contrast AAA/AA */
+  --text:  #f1f5f9;
+  --text2: #94a3b8;
+  --text3: #64748b;
+
+  /* Status - Calibrated for dark background with glow */
+  --green:        #34d399;
+  --green-bg:     rgba(16,185,129,0.14);
+  --green-border: rgba(52,211,153,0.36);
+
+  --yellow:        #fbbf24;
+  --yellow-bg:     rgba(245,158,11,0.14);
+  --yellow-border: rgba(251,191,36,0.36);
+
+  --red:        #f87171;
+  --red-bg:     rgba(239,68,68,0.14);
+  --red-border: rgba(248,113,113,0.36);
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow:    0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.35);
+  --shadow-lg: 0 10px 28px rgba(0,0,0,0.7), 0 3px 8px rgba(0,0,0,0.45);
+  --shadow-xl: 0 22px 50px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.55);
+}
+
+/* Ajustes específicos de componentes en Modo Oscuro */
+[data-theme="dark"] .app-header {
+  background: var(--white);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .app-nav {
+  background: var(--white);
+  border-bottom-color: var(--border);
+}
+
+[data-theme="dark"] .header-brand-icon {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+}
+
+[data-theme="dark"] .modal-backdrop {
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+[data-theme="dark"] .modal-card,
+[data-theme="dark"] .card,
+[data-theme="dark"] .perfil-card,
+[data-theme="dark"] .action-plan-card,
+[data-theme="dark"] .audit-table-wrap,
+[data-theme="dark"] .team-table-wrap {
+  background: var(--white);
+  border-color: var(--border);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border2);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+}
+
+[data-theme="dark"] .toast {
+  background: var(--white);
+  border-color: var(--border2);
+  box-shadow: var(--shadow-xl);
+}
+
+/* ── ANIMACIÓN DE TRANSICIÓN DE PESTAÑAS ── */
+@keyframes tabEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app-tab-panel {
+  animation: tabEnter 0.22s var(--ease-out) both;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-tab-panel {
+    animation: none !important;
+  }
+}
+
+/* ── SELECTOR DE TEMA (ThemeToggle) ── */
+.theme-toggle-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease-out);
+}
+
+.theme-toggle-btn:hover {
+  background: var(--border);
+  color: var(--navy);
+  transform: translateY(-1px);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.96);
+}
+
+.theme-icon.sun {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.4));
+  transition: transform 0.25s var(--ease-out);
+}
+
+.theme-icon.moon {
+  color: #818cf8;
+  filter: drop-shadow(0 0 4px rgba(129, 140, 248, 0.4));
+  transition: transform 0.25s var(--ease-out);
+}
+
+.theme-toggle-btn:hover .theme-icon {
+  transform: rotate(15deg);
+}
+
+.theme-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  background: var(--white);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  z-index: 200;
+  animation: slideUp 0.16s var(--ease-out) both;
+}
+
+.theme-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 11px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--dur) var(--ease-out), color var(--dur) var(--ease-out);
+}
+
+.theme-menu-item:hover {
+  background: var(--surface2);
+  color: var(--navy);
+}
+
+.theme-menu-item.active {
+  background: var(--blue-dim);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.theme-check {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+/* ── BOTÓN DE COPIADO CON FEEDBACK MICRO-INTERACTIVO (CopyPill) ── */
+.copy-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  font-family: var(--font-jetbrains), monospace;
+  font-size: 11.5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease-out);
+}
+
+.copy-pill:hover {
+  background: var(--border);
+  color: var(--navy);
+  border-color: var(--border2);
+  transform: translateY(-1px);
+}
+
+.copy-pill:active {
+  transform: scale(0.97);
+}
+
+.copy-pill.copied {
+  background: var(--green-bg);
+  color: var(--green);
+  border-color: var(--green-border);
+}
+
+.copy-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.copy-pill-icon.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.copy-feedback-label {
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-sora), sans-serif;
+}
+
+/* ── RETROALIMENTACIÓN TÁCTIL Y MICRO-ELEVACIÓN ── */
+button:active {
+  transform: scale(0.985);
+}
+
+.criterio-card,
+.subsanacion-card,
+.perfil-card,
+.action-plan-card {
+  transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), border-color 0.18s var(--ease-out);
+}
+
+.subsanacion-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--border2);
+}
+
+.nav-tab-badge {
+  transition: transform 0.2s var(--ease-out);
+}
+
+.nav-tab:hover .nav-tab-badge {
+  transform: scale(1.08);
+}
+
+

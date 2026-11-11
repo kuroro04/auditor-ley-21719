@@ -11,6 +11,7 @@ import type { SecurityEvent } from '@/lib/tenant/guard';
 import OnboardingTour from './OnboardingTour';
 import HistorialView from './HistorialView';
 import PerfilEmpresaView from './PerfilEmpresaView';
+import { ThemeToggle } from './ThemeToggle';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
 import { useSemanticModel } from '@/hooks/useSemanticModel';
 
@@ -146,6 +147,7 @@ export default function AppShell({
               {mfaEnabled ? '🔒 Seguridad' : 'Seguridad'}
             </button>
           )}
+          <ThemeToggle />
           <button className="btn-logout" onClick={() => void onLogout()}>Salir</button>
         </div>
       </header>
@@ -195,68 +197,70 @@ export default function AppShell({
         </div>
       </nav>
 
-      {/* Content */}
+      {/* Content con animación de transición fluida entre pestañas */}
       <div className="app-content">
-        {activeTab === 'subir' && (
-          <UploadView
-            uploadedDocs={uploadedDocs}
-            role={role}
-            authSource={authSource}
-            onUpload={onUpload}
-            onUploadRejected={onUploadRejected}
-            onStartAnalysis={onStartAnalysis}
-            onToast={(msg, type) => onToast(msg, type)}
-          />
-        )}
-        {activeTab === 'diagnostico' && analyzed && (
-          <DiagnosticoView
-            results={results}
-            previousResults={previousResults}
-            uploadedDocs={uploadedDocs}
-            companyName={companyName}
-            companyId={companyId}
-            sector={sector}
-            role={role}
-            authSource={authSource}
-            onUpload={onUpload}
-            onUploadRejected={onUploadRejected}
-            onDownload={onDownload}
-            onToast={(msg, type) => onToast(msg, type)}
-          />
-        )}
-        {activeTab === 'riesgos' && (
-          <RiesgosView results={results} analyzed={analyzed} />
-        )}
-        {activeTab === 'registro' && canSeeRegistro && (
-          <RegistroView
-            auditLog={auditLog}
-            securityEvents={securityEvents}
-            companyName={companyName}
-            companyId={companyId}
-            onToast={onToast}
-          />
-        )}
-        {activeTab === 'historial' && (
-          <HistorialView
-            snapshots={snapshots}
-            currentResults={results}
-            previousResults={previousResults}
-            companyName={companyName}
-          />
-        )}
-        {activeTab === 'empresa' && (
-          <PerfilEmpresaView
-            companyName={companyName}
-            companyId={companyId}
-            sector={sector}
-            role={role}
-            authSource={authSource}
-            mfaEnabled={mfaEnabled}
-            securityEvents={securityEvents}
-            onOpenMfa={() => setMfaOpen(true)}
-            onToast={onToast}
-          />
-        )}
+        <div className="app-tab-panel" key={activeTab}>
+          {activeTab === 'subir' && (
+            <UploadView
+              uploadedDocs={uploadedDocs}
+              role={role}
+              authSource={authSource}
+              onUpload={onUpload}
+              onUploadRejected={onUploadRejected}
+              onStartAnalysis={onStartAnalysis}
+              onToast={(msg, type) => onToast(msg, type)}
+            />
+          )}
+          {activeTab === 'diagnostico' && analyzed && (
+            <DiagnosticoView
+              results={results}
+              previousResults={previousResults}
+              uploadedDocs={uploadedDocs}
+              companyName={companyName}
+              companyId={companyId}
+              sector={sector}
+              role={role}
+              authSource={authSource}
+              onUpload={onUpload}
+              onUploadRejected={onUploadRejected}
+              onDownload={onDownload}
+              onToast={(msg, type) => onToast(msg, type)}
+            />
+          )}
+          {activeTab === 'riesgos' && (
+            <RiesgosView results={results} analyzed={analyzed} />
+          )}
+          {activeTab === 'registro' && canSeeRegistro && (
+            <RegistroView
+              auditLog={auditLog}
+              securityEvents={securityEvents}
+              companyName={companyName}
+              companyId={companyId}
+              onToast={onToast}
+            />
+          )}
+          {activeTab === 'historial' && (
+            <HistorialView
+              snapshots={snapshots}
+              currentResults={results}
+              previousResults={previousResults}
+              companyName={companyName}
+            />
+          )}
+          {activeTab === 'empresa' && (
+            <PerfilEmpresaView
+              companyName={companyName}
+              companyId={companyId}
+              sector={sector}
+              role={role}
+              authSource={authSource}
+              mfaEnabled={mfaEnabled}
+              securityEvents={securityEvents}
+              onOpenMfa={() => setMfaOpen(true)}
+              onToast={onToast}
+            />
+          )}
+        </div>
       </div>
 
       {/* Tour guiado: solo activo en la pestaña inicial; desaparece al cambiar de sección */}
