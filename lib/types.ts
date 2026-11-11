@@ -126,7 +126,26 @@ export interface HistorialSnapshot {
 }
 
 export type Screen = 'landing' | 'app' | 'analyzing';
-export type ActiveTab = 'subir' | 'diagnostico' | 'registro' | 'riesgos' | 'historial';
+export type ActiveTab = 'subir' | 'diagnostico' | 'registro' | 'riesgos' | 'historial' | 'empresa';
+
+export interface CompanyProfile {
+  id: string;
+  rut: string;
+  nombre: string;
+  sector?: string;
+  created_at?: string;
+  total_users: number;
+  total_documents: number;
+}
+
+export interface TeamMember {
+  id: string;
+  email: string;
+  role: UserRole;
+  mfa_enabled: boolean;
+  onboarding_completed: boolean;
+  created_at?: string;
+}
 
 export interface ToastItem {
   id: number;

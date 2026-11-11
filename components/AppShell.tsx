@@ -10,6 +10,7 @@ import type { AuthSource } from '@/hooks/useAppState';
 import type { SecurityEvent } from '@/lib/tenant/guard';
 import OnboardingTour from './OnboardingTour';
 import HistorialView from './HistorialView';
+import PerfilEmpresaView from './PerfilEmpresaView';
 import { ScaleIcon, FolderOpenIcon, ClipboardListIcon } from './Icons';
 import { useSemanticModel } from '@/hooks/useSemanticModel';
 
@@ -41,7 +42,7 @@ interface AppShellProps {
   onAdvanceTour: () => void;
   onSkipTour: () => void;
   onOpenTour: () => void;
-  onToast: (msg: string, type: 'green' | 'yellow' | 'blue') => void;
+  onToast: (msg: string, type: 'green' | 'yellow' | 'blue' | 'red') => void;
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -115,7 +116,15 @@ export default function AppShell({
             </div>
           )}
           <div className="header-role-badge">{ROLE_LABELS[role]}</div>
-          <div className="header-company" title="Identificador de empresa (tenant) de la sesión actual">
+          <div
+            className="header-company"
+            title="Ver y configurar perfil corporativo y equipo"
+            style={{ cursor: 'pointer' }}
+            onClick={() => onSwitchTab('empresa')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSwitchTab('empresa'); }}
+          >
             <div className="header-company-dot" />
             <span>{companyName}</span>
             <span className="header-company-id">ID: {companyId}</span>
@@ -180,6 +189,10 @@ export default function AppShell({
             </span>
           )}
         </div>
+        <div className={`nav-tab${activeTab === 'empresa' ? ' active' : ''}`} {...tabA11yProps('empresa')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><line x1="15" y1="22" x2="15" y2="22.01"/><line x1="9" y1="18" x2="9" y2="18.01"/><line x1="15" y1="18" x2="15" y2="18.01"/><line x1="9" y1="14" x2="9" y2="14.01"/><line x1="15" y1="14" x2="15" y2="14.01"/><line x1="9" y1="10" x2="9" y2="10.01"/><line x1="15" y1="10" x2="15" y2="10.01"/><line x1="9" y1="6" x2="9" y2="6.01"/><line x1="15" y1="6" x2="15" y2="6.01"/></svg>
+          Mi Empresa y Equipo
+        </div>
       </nav>
 
       {/* Content */}
@@ -229,6 +242,19 @@ export default function AppShell({
             currentResults={results}
             previousResults={previousResults}
             companyName={companyName}
+          />
+        )}
+        {activeTab === 'empresa' && (
+          <PerfilEmpresaView
+            companyName={companyName}
+            companyId={companyId}
+            sector={sector}
+            role={role}
+            authSource={authSource}
+            mfaEnabled={mfaEnabled}
+            securityEvents={securityEvents}
+            onOpenMfa={() => setMfaOpen(true)}
+            onToast={onToast}
           />
         )}
       </div>

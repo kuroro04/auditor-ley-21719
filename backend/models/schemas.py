@@ -83,6 +83,50 @@ class ClientEventRequest(BaseModel):
     evento: Literal['diagnostico_ejecutado', 'exportacion_resultados']
 
 
+# --- Opción 4: Gestión de Roles, Permisos y Perfil Corporativo ---
+
+class CompanyOut(BaseModel):
+    id: str
+    rut: str
+    nombre: str
+    sector: Optional[str] = None
+    created_at: Optional[str] = None
+    total_users: int = 1
+    total_documents: int = 0
+
+
+class CompanyUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, min_length=2, max_length=150)
+    sector: Optional[str] = None
+
+
+class TeamUserOut(BaseModel):
+    id: str
+    email: str
+    role: str
+    mfa_enabled: bool = False
+    onboarding_completed: bool = False
+    created_at: Optional[str] = None
+
+
+class CreateTeamUserRequest(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8)
+    role: Literal['administrador', 'auditor', 'visualizador'] = 'visualizador'
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_bytes(cls, v: str) -> str:
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('La contraseña no puede superar los 72 bytes en formato UTF-8')
+        return v
+
+
+class UpdateUserRoleRequest(BaseModel):
+    role: Literal['administrador', 'auditor', 'visualizador']
+
+
+
 class DocumentOut(BaseModel):
     id: str
     req_id: str

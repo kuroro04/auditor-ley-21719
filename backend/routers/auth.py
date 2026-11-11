@@ -17,9 +17,12 @@ from core.security import (
 )
 from core import mfa
 from db.database import get_db
-from db.models import Company, User
+from db.models import Company, Document, User
 from db.tenant import find_user_by_email, set_tenant_context
 from models.schemas import (
+    CompanyOut,
+    CompanyUpdate,
+    CreateTeamUserRequest,
     LoginRequest,
     MfaActivateResponse,
     MfaCodeRequest,
@@ -29,6 +32,8 @@ from models.schemas import (
     MfaSetupResponse,
     RegisterRequest,
     SessionResponse,
+    TeamUserOut,
+    UpdateUserRoleRequest,
 )
 from services import audit
 from services.rut_service import is_valid_rut, normalize_rut
@@ -414,3 +419,197 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
         samesite='lax',
         secure=COOKIE_SECURE,
     )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Opción 4: Gestión de Roles, Permisos y Perfil Corporativo
+# ═══════════════════════════════════════════════════════════════════════════
+
+@router.get('/company', response_model=CompanyOut)
+def get_company_profile(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
+    company = db.query(Company).filter(Company.id == current.company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail='Empresa no encontrada')
+    total_users = db.query(User).filter(User.company_id == current.company_id).count()
+    total_documents = db.query(Document).filter(Document.company_id == current.company_id).count()
+    return CompanyOut(
+        id=company.id,
+        rut=company.rut,
+        nombre=company.nombre,
+        sector=company.sector,
+        created_at=company.created_at.isoformat() if company.created_at else None,
+        total_users=total_users,
+        total_documents=total_documents,
+    )
+
+
+@router.put('/company', response_model=CompanyOut)
+def update_company_profile(
+    payload: CompanyUpdate,
+    request: Request,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_tenant_db),
+):
+    if current.role != 'administrador':
+        raise HTTPException(status_code=403, detail='Solo el administrador puede actualizar los datos de la empresa')
+    company = db.query(Company).filter(Company.id == current.company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail='Empresa no encontrada')
+
+    if payload.nombre is not None:
+        company.nombre = payload.nombre.strip()
+    if payload.sector is not None:
+        company.sector = payload.sector.strip()
+
+    audit.registrar_evento(
+        db, audit.EVENTO_EMPRESA_ACTUALIZADA, 'exito',
+        user_id=current.user_id, company_id=current.company_id,
+        ip_origen=client_ip(request),
+        detalle={'nombre_nuevo': company.nombre, 'sector_nuevo': company.sector},
+    )
+    db.commit()
+
+    total_users = db.query(User).filter(User.company_id == current.company_id).count()
+    total_documents = db.query(Document).filter(Document.company_id == current.company_id).count()
+    return CompanyOut(
+        id=company.id,
+        rut=company.rut,
+        nombre=company.nombre,
+        sector=company.sector,
+        created_at=company.created_at.isoformat() if company.created_at else None,
+        total_users=total_users,
+        total_documents=total_documents,
+    )
+
+
+@router.get('/users', response_model=list[TeamUserOut])
+def list_team_users(current: CurrentUser = Depends(get_current_user), db: Session = Depends(get_tenant_db)):
+    if current.role not in ('administrador', 'auditor'):
+        raise HTTPException(status_code=403, detail='No tiene permisos para ver el equipo')
+    users = db.query(User).filter(User.company_id == current.company_id).order_by(User.created_at.asc()).all()
+    return [
+        TeamUserOut(
+            id=u.id,
+            email=u.email,
+            role=u.role,
+            mfa_enabled=bool(u.mfa_enabled),
+            onboarding_completed=bool(u.onboarding_completed),
+            created_at=u.created_at.isoformat() if u.created_at else None,
+        )
+        for u in users
+    ]
+
+
+@router.post('/users', response_model=TeamUserOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit('10/hour')
+def create_team_user(
+    request: Request,
+    payload: CreateTeamUserRequest,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_tenant_db),
+):
+    if current.role != 'administrador':
+        raise HTTPException(status_code=403, detail='Solo el administrador puede agregar usuarios')
+    email_normalizado = payload.email.lower()
+
+    if db.query(User).filter(User.email == email_normalizado).first():
+        raise HTTPException(status_code=409, detail='Ese correo ya está registrado en el sistema')
+
+    nuevo_user = User(
+        id=str(uuid.uuid4()),
+        company_id=current.company_id,
+        email=email_normalizado,
+        password_hash=hash_password(payload.password),
+        role=payload.role,
+        token_version=1,
+    )
+    db.add(nuevo_user)
+    audit.registrar_evento(
+        db, audit.EVENTO_USUARIO_CREADO, 'exito',
+        user_id=current.user_id, company_id=current.company_id,
+        ip_origen=client_ip(request),
+        detalle={'email_nuevo_usuario': email_normalizado, 'rol_asignado': payload.role},
+    )
+    db.commit()
+
+    return TeamUserOut(
+        id=nuevo_user.id,
+        email=nuevo_user.email,
+        role=nuevo_user.role,
+        mfa_enabled=False,
+        onboarding_completed=False,
+        created_at=nuevo_user.created_at.isoformat() if nuevo_user.created_at else None,
+    )
+
+
+@router.patch('/users/{user_id}/role', response_model=TeamUserOut)
+def update_user_role(
+    user_id: str,
+    payload: UpdateUserRoleRequest,
+    request: Request,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_tenant_db),
+):
+    if current.role != 'administrador':
+        raise HTTPException(status_code=403, detail='Solo el administrador puede modificar roles')
+
+    user = db.query(User).filter(User.id == user_id, User.company_id == current.company_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail='Usuario no encontrado en esta empresa')
+
+    if user.id == current.user_id and payload.role != 'administrador':
+        admin_count = db.query(User).filter(
+            User.company_id == current.company_id,
+            User.role == 'administrador',
+        ).count()
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=400,
+                detail='No puedes cambiar tu propio rol: debe existir al menos un administrador activo en la empresa.',
+            )
+
+    rol_anterior = user.role
+    user.role = payload.role
+    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
+
+    audit.registrar_evento(
+        db, audit.EVENTO_ROL_USUARIO_ACTUALIZADO, 'exito',
+        user_id=current.user_id, company_id=current.company_id,
+        ip_origen=client_ip(request),
+        detalle={'usuario_afectado': user.email, 'rol_anterior': rol_anterior, 'rol_nuevo': payload.role},
+    )
+    db.commit()
+
+    return TeamUserOut(
+        id=user.id,
+        email=user.email,
+        role=user.role,
+        mfa_enabled=bool(user.mfa_enabled),
+        onboarding_completed=bool(user.onboarding_completed),
+        created_at=user.created_at.isoformat() if user.created_at else None,
+    )
+
+
+@router.post('/revoke-sessions')
+def revoke_other_sessions(
+    request: Request,
+    response: Response,
+    current: CurrentUser = Depends(get_current_user),
+    db: Session = Depends(get_tenant_db),
+):
+    user = db.query(User).filter(User.id == current.user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail='Sesión inválida')
+
+    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
+    audit.registrar_evento(
+        db, audit.EVENTO_SESIONES_REVOCADAS, 'exito',
+        user_id=user.id, company_id=user.company_id, ip_origen=client_ip(request),
+    )
+    db.commit()
+
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    if company:
+        _issue_session(response, user, company)
+
+    return {'ok': True, 'token_version': user.token_version, 'message': 'Sesiones en otros dispositivos revocadas exitosamente.'}
