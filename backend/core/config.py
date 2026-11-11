@@ -3,9 +3,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Cargar backend/.env explícitamente desde BASE_DIR y luego del entorno de trabajo
+load_dotenv(BASE_DIR / '.env')
+load_dotenv()
 
 # Modo de excepción explícito para pytest: conftest.py lo activa antes de
 # importar la app, para que los tests nunca dependan de un backend/.env real.
