@@ -18,7 +18,7 @@ import services.quarantine_service as qs
 from core.config import COOKIE_NAME
 from core.deps import get_clamav_client
 from core.security import create_access_token
-from db.models import AuditLog, Document
+from db.models import AuditLog, Document, User
 from services import audit
 from tests.fakes import FakeClamdCaido
 
@@ -376,7 +376,10 @@ def test_solo_el_administrador_puede_eliminar(client):
     company_id = _registrar(client)
     doc_id = _subir(client).json()['id']
     user_id = _eventos(client, audit.EVENTO_EMPRESA_REGISTRADA)[0].user_id
-    client.cookies.set(COOKIE_NAME, create_access_token(user_id, company_id, 'auditor'))
+    db = _db(client)
+    user = db.query(User).filter(User.id == user_id).first()
+    user.role = 'auditor'
+    db.commit()
 
     res = client.delete(f'/documents/{doc_id}')
 

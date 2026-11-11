@@ -115,9 +115,21 @@ def test_empresa_b_no_ve_documentos_de_empresa_a(client):
     assert res.json() == []
 
 
+from db.database import get_db
+from db.models import User
+from main import app
+
+def _db(client):
+    return next(app.dependency_overrides[get_db]())
+
+
 def test_subir_documento_con_rol_no_admin_devuelve_403(client):
-    token = create_access_token('user-1', 'comp-1', 'visualizador')
-    client.cookies.set(COOKIE_NAME, token)
+    _registrar_y_login(client, '11.111.111-1', 'admin@a.cl')
+    db = _db(client)
+    user = db.query(User).filter(User.email == 'admin@a.cl').first()
+    user.role = 'visualizador'
+    db.commit()
+
     res = client.post(
         '/documents/upload',
         data={'req_id': 'politica_privacidad'},

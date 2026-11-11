@@ -42,15 +42,25 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> Current
     # Fijar contexto RLS para permitir consulta a users en PostgreSQL
     set_tenant_context(db, company_id)
 
+    # Hallazgo A02: Validar existencia real del usuario y correspondencia de empresa
     user = db.query(User).filter(User.id == user_id).first()
-    if user is not None:
-        # Hallazgo DS-02: Verificación de revocación de token (cierre de sesión en servidor)
-        token_ver = payload.get('ver')
-        user_ver = getattr(user, 'token_version', 1) or 1
-        if token_ver is not None and token_ver != user_ver:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Sesión invalidada tras cierre de sesión')
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Usuario inexistente o dado de baja')
 
-    return CurrentUser(user_id=user_id, company_id=company_id, role=payload.get('role', ''))
+    if user.company_id != company_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Contexto de organización inválido')
+
+    # Hallazgo A03: Exigir versión de sesión en JWT (rechaza tokens legados) y validar revocación
+    token_ver = payload.get('ver')
+    if token_ver is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Token sin versión de sesión válida')
+
+    user_ver = getattr(user, 'token_version', 1) or 1
+    if token_ver != user_ver:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Sesión invalidada tras cierre de sesión')
+
+    # Hallazgo A02: Obtener el rol actual directamente de la base de datos (no del JWT desactualizado)
+    return CurrentUser(user_id=user.id, company_id=user.company_id, role=user.role)
 
 
 def get_tenant_db(

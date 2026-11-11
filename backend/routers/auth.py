@@ -202,7 +202,11 @@ def login_mfa(request: Request, payload: MfaLoginRequest, response: Response, db
     if not claims.get('mfa_pending'):
         _rechazar(user_id=claims.get('sub'), company_id=claims.get('company_id'))
 
-    user = db.query(User).filter(User.id == claims['sub']).first()
+    # Hallazgo A04: Bloqueo de fila en PostgreSQL para verificación atómica de TOTP contra repetición multi-worker
+    query = db.query(User).filter(User.id == claims['sub'])
+    if db.get_bind().dialect.name == 'postgresql':
+        query = query.with_for_update()
+    user = query.first()
     if not user or not user.mfa_enabled or not user.mfa_secret_enc:
         _rechazar(user_id=claims.get('sub'), company_id=claims.get('company_id'))
 
@@ -275,6 +279,7 @@ def mfa_setup(request: Request, current: CurrentUser = Depends(get_current_user)
 @limiter.limit('5/minute')
 def mfa_activate(
     request: Request,
+    response: Response,
     payload: MfaCodeRequest,
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
@@ -295,12 +300,19 @@ def mfa_activate(
     codigos = mfa.generate_backup_codes(10)
     user.mfa_backup_codes = mfa.hash_backup_codes(codigos)
     user.mfa_enabled = True
+    # Hallazgo A04: Rotar token_version para revocar sesiones antiguas previas a MFA
+    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
+    user.last_totp_step = None
 
     audit.registrar_evento(
         db, audit.EVENTO_MFA_ACTIVADO, 'exito',
         user_id=user.id, company_id=user.company_id, ip_origen=client_ip(request),
     )
     db.commit()
+
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    if company:
+        _issue_session(response, user, company)
 
     return MfaActivateResponse(backup_codes=codigos)
 
@@ -310,6 +322,7 @@ def mfa_activate(
 def mfa_disable(
     payload: MfaDisableRequest,
     request: Request,
+    response: Response,
     current: CurrentUser = Depends(get_current_user),
     db: Session = Depends(get_tenant_db),
 ):
@@ -335,12 +348,18 @@ def mfa_disable(
     user.mfa_enabled = False
     user.mfa_secret_enc = None
     user.mfa_backup_codes = None
+    # Hallazgo A04: Rotar token_version al desactivar MFA
+    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
+    user.last_totp_step = None
 
     audit.registrar_evento(
         db, audit.EVENTO_MFA_DESACTIVADO, 'exito',
         user_id=user.id, company_id=user.company_id, ip_origen=client_ip(request),
     )
     db.commit()
+    company = db.query(Company).filter(Company.id == user.company_id).first()
+    if company:
+        _issue_session(response, user, company)
 
 
 @router.post('/complete-onboarding', status_code=status.HTTP_204_NO_CONTENT)
@@ -369,22 +388,24 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
         if claims and not claims.get('mfa_pending'):
             company_id = claims.get('company_id')
             user_id = claims.get('sub')
+            token_ver = claims.get('ver')
             if company_id:
                 # Igual que en login/mfa: un company_id no nulo necesita el
                 # contexto de tenant fijado para pasar la política de INSERT
                 # de audit_log. logout usa get_db (no get_tenant_db), así que
                 # nadie lo fijó todavía en esta request.
                 set_tenant_context(db, company_id)
-            if user_id:
+            if user_id and token_ver is not None:
                 user = db.query(User).filter(User.id == user_id).first()
-                if user:
-                    user.token_version = (getattr(user, 'token_version', 1) or 1) + 1
-            audit.registrar_evento(
-                db, audit.EVENTO_CIERRE_SESION, 'exito',
-                user_id=user_id, company_id=company_id,
-                ip_origen=client_ip(request),
-            )
-            db.commit()
+                # Hallazgo A03: Solo incrementar si la versión presentada coincide con la versión activa
+                if user and (getattr(user, 'token_version', 1) or 1) == token_ver:
+                    user.token_version = token_ver + 1
+                    audit.registrar_evento(
+                        db, audit.EVENTO_CIERRE_SESION, 'exito',
+                        user_id=user_id, company_id=company_id,
+                        ip_origen=client_ip(request),
+                    )
+                    db.commit()
 
     response.delete_cookie(
         COOKIE_NAME,

@@ -3,22 +3,31 @@
 import type { AuditEvent } from './types';
 import type { SecurityEvent } from './tenant/guard';
 
+// Hallazgo A15: Neutralizar ejecución de fórmulas (CWE-1236) al abrir en Excel / LibreOffice
+function escapeCsvCell(val: string | number | undefined): string {
+  if (val === undefined || val === null || val === '') return '""';
+  let str = String(val);
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'` + str;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
 export function exportarAuditoriaCSV(auditLog: AuditEvent[], companyName: string): void {
   const headers = ['ID', 'Fecha', 'Hora', 'Usuario', 'Rol', 'Acción', 'Archivo', 'Detalle'];
   const rows = auditLog.map(ev => {
     const d = new Date(ev.timestamp);
     const date = d.toLocaleDateString('es-CL');
     const time = d.toLocaleTimeString('es-CL');
-    const escape = (s: string | undefined) => `"${(s ?? '').replace(/"/g, '""')}"`;
     return [
-      ev.id,
-      escape(date),
-      escape(time),
-      escape(ev.usuario),
-      escape(ev.rol),
-      escape(ev.accion),
-      escape(ev.archivo ?? '—'),
-      escape(ev.detalle ?? ''),
+      escapeCsvCell(ev.id),
+      escapeCsvCell(date),
+      escapeCsvCell(time),
+      escapeCsvCell(ev.usuario),
+      escapeCsvCell(ev.rol),
+      escapeCsvCell(ev.accion),
+      escapeCsvCell(ev.archivo ?? '—'),
+      escapeCsvCell(ev.detalle ?? ''),
     ].join(';');
   });
 
@@ -55,7 +64,8 @@ export function exportarAuditoriaJSON(
     resumen: {
       total_eventos_auditoria: auditLog.length,
       total_eventos_seguridad_multitenant: securityEvents.length,
-      estado_trazabilidad: 'Criptográficamente inmutable — SHA-256',
+      // Hallazgo A16: Distinguir fielmente el registro local del cliente de la cadena criptográfica del backend
+      estado_trazabilidad: 'Registro local de actividad — generado por el cliente',
     },
     eventos_auditoria: auditLog,
     eventos_seguridad_multitenant: securityEvents,

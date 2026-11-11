@@ -386,6 +386,16 @@ export function useAppState() {
     const ctx: TenantContext = { companyId, companyName: currentUser, role: currentRole, usuario: currentUser };
     saveDocument(ctx, reqId, doc);
     setUploadedDocs(prev => ({ ...prev, [reqId]: doc }));
+    // Hallazgo A18: Al cargar o reemplazar un documento, invalidar inmediatamente su diagnóstico previo
+    setResults(prev => ({
+      ...prev,
+      [reqId]: {
+        estado: 'pending',
+        cobertura: 0,
+        criterios: [],
+        gap: `Documento "${doc.name}" actualizado. Pendiente de nuevo análisis.`,
+      },
+    }));
     addAuditEvent('subió documento', currentRole, currentUser, doc.name);
     // Refleja en la UI cualquier evento de seguridad relacionado con esta empresa
     // (quedará vacío mientras no exista ningún intento de acceso cruzado).

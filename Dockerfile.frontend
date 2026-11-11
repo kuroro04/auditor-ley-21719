@@ -3,19 +3,25 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev
+# Hallazgo A07: --ignore-scripts para evitar MODULE_NOT_FOUND antes de copiar scripts/
+RUN npm ci --omit=dev --ignore-scripts
 
 # ── Stage 2: build de Next.js ─────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 COPY . .
+# Descargar modelo local antes de compilar
+RUN node scripts/fetch-embedding-model.mjs
 # Copiar el worker de PDF y los archivos WASM al directorio public antes del build
 RUN node next.config.mjs 2>/dev/null || true
 
+# Hallazgo A10: Inyectar variable pública durante el build de Next.js
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 

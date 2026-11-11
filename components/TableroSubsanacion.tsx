@@ -298,19 +298,19 @@ export default function TableroSubsanacion({
             </div>
             <span className="tablero-col-count green">{reqsCumplidos.length}</span>
           </div>
-          <p className="tablero-col-desc">Documentos que satisfacen el 100% de los criterios exigidos por la ley.</p>
+          <p className="tablero-col-desc">Documentos en cumplimiento normativo conforme (cobertura ≥ 75%).</p>
 
           <div className="tablero-cards-list">
             {reqsCumplidos.filter(coincideFiltro).length === 0 ? (
               <div className="tablero-empty-col">
                 <span>📋</span>
-                <p>Aún no hay documentos completados al 100%.</p>
+                <p>Aún no hay documentos en estado conforme.</p>
               </div>
             ) : (
               reqsCumplidos.filter(coincideFiltro).map(r => {
                 const doc = uploadedDocs[r.id];
                 const res = results[r.id];
-                const cob = res?.cobertura ?? 100;
+                const cob = res?.cobertura ?? 75;
                 return (
                   <div key={r.id} className="tablero-card green">
                     <div className="tablero-card-top">
@@ -329,9 +329,9 @@ export default function TableroSubsanacion({
                     </div>
 
                     <div className="tablero-card-prog-wrap">
-                      <div className="tablero-card-pct" style={{ color: 'var(--green)' }}>100% cumplimiento</div>
+                      <div className="tablero-card-pct" style={{ color: 'var(--green)' }}>{cob}% cumplimiento</div>
                       <div className="tablero-card-bar">
-                        <div className="tablero-card-bar-fill green" style={{ width: '100%' }} />
+                        <div className="tablero-card-bar-fill green" style={{ width: `${Math.min(100, Math.max(0, cob))}%` }} />
                       </div>
                     </div>
 

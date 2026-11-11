@@ -23,32 +23,49 @@ function readAsArrayBuffer(file: File): Promise<ArrayBuffer> {
 
 const MAX_PDF_PAGES = 300;
 
-async function extractPdfText(file: File): Promise<string> {
+interface PdfExtractionResult {
+  text: string;
+  numPages: number;
+  extractedFully: boolean;
+}
+
+async function extractPdfText(file: File): Promise<PdfExtractionResult> {
   const pdfjsLib = await import('pdfjs-dist');
   // pdfjs-dist 4.x+ ships an ESM worker (.mjs); the legacy .js no longer exists.
   pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 
   const arrayBuffer = await readAsArrayBuffer(file);
   const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) });
-  const pdf = await loadingTask.promise;
+  try {
+    const pdf = await loadingTask.promise;
+    const numPages = pdf.numPages;
+    const totalPages = Math.min(numPages, MAX_PDF_PAGES);
+    const pages: string[] = [];
+    for (let i = 1; i <= totalPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: unknown) => {
+          if (item && typeof item === 'object' && 'str' in item) {
+            return (item as { str: string }).str;
+          }
+          return '';
+        })
+        .join(' ');
+      pages.push(pageText);
+    }
 
-  const totalPages = Math.min(pdf.numPages, MAX_PDF_PAGES);
-  const pages: string[] = [];
-  for (let i = 1; i <= totalPages; i++) {
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item: unknown) => {
-        if (item && typeof item === 'object' && 'str' in item) {
-          return (item as { str: string }).str;
-        }
-        return '';
-      })
-      .join(' ');
-    pages.push(pageText);
+    return {
+      text: pages.join('\n'),
+      numPages,
+      extractedFully: numPages <= MAX_PDF_PAGES,
+    };
+  } finally {
+    // Hallazgo A21: Liberar recursos explícitamente en el navegador
+    try {
+      loadingTask.destroy();
+    } catch {}
   }
-
-  return pages.join('\n');
 }
 
 async function extractDocxText(file: File): Promise<string> {
@@ -102,12 +119,17 @@ export async function extractDocumentText(
     let rawText = '';
     let method = '';
 
+    let extractedFully = true;
     if (ext === 'txt') {
       rawText = await readAsText(file);
       method = 'texto plano';
     } else if (ext === 'pdf') {
-      rawText = await extractPdfText(file);
-      method = 'PDF';
+      const pdfRes = await extractPdfText(file);
+      rawText = pdfRes.text;
+      extractedFully = pdfRes.extractedFully;
+      method = pdfRes.extractedFully
+        ? 'PDF'
+        : `PDF (primeras ${MAX_PDF_PAGES} de ${pdfRes.numPages} págs)`;
     } else if (ext === 'docx' || ext === 'doc') {
       rawText = await extractDocxText(file);
       method = 'Word';
@@ -136,7 +158,7 @@ export async function extractDocumentText(
       name: safeName,
       text: rawText.toLowerCase(),
       wordCount,
-      extractedFully: true,
+      extractedFully,
       extractMethod: method,
       scanned: false,
     };

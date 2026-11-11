@@ -3,14 +3,33 @@ import { REQUISITOS } from '@/lib/requisitos';
 import { calcPct } from '@/lib/metrics';
 import type { RequisitoResult } from '@/lib/types';
 
+function makeCriterio(name: string, status: 'ok' | 'warn' | 'fail', found = 'Encontrado'): import('@/lib/types').CriterioResult {
+  return {
+    name,
+    status,
+    found,
+    kwFound: status === 'ok' ? 3 : status === 'warn' ? 1 : 0,
+    kwTotal: 3,
+    confianza: status === 'ok' ? 'alta' : status === 'warn' ? 'media' : 'baja',
+    validado: status === 'ok',
+    negaciones: [],
+    frasesLegalesEncontradas: [],
+    requiereRevisionManual: status === 'warn',
+    densidad: 1,
+    origenDeteccion: 'reglas',
+    kwsEnContextoNormativo: [],
+    fragmentoDocumento: found,
+  };
+}
+
 describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Versiones', () => {
   const mockCurrent: Record<string, RequisitoResult> = {
     politica_privacidad: {
       estado: 'green',
       cobertura: 100,
       criterios: [
-        { name: 'Identidad y contacto del responsable de datos', status: 'ok', detail: 'Encontrado' },
-        { name: 'Finalidad y propósito del tratamiento', status: 'ok', detail: 'Encontrado' },
+        makeCriterio('Identidad y contacto del responsable de datos', 'ok'),
+        makeCriterio('Finalidad y propósito del tratamiento', 'ok'),
       ],
       gap: '',
     },
@@ -18,8 +37,8 @@ describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Version
       estado: 'yellow',
       cobertura: 60,
       criterios: [
-        { name: 'Manifestación de voluntad libre e informada', status: 'ok', detail: 'Encontrado' },
-        { name: 'Finalidades específicas delimitadas', status: 'warn', detail: 'Revisión requerida' },
+        makeCriterio('Manifestación de voluntad libre e informada', 'ok'),
+        makeCriterio('Finalidades específicas delimitadas', 'warn', 'Revisión requerida'),
       ],
       gap: 'Falta delimitar finalidades específicas',
     },
@@ -27,7 +46,7 @@ describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Version
       estado: 'red',
       cobertura: 20,
       criterios: [
-        { name: 'Canal formal para recibir solicitudes', status: 'fail', detail: 'No encontrado' },
+        makeCriterio('Canal formal para recibir solicitudes', 'fail', 'No encontrado'),
       ],
       gap: 'Documento faltante',
     },
@@ -38,8 +57,8 @@ describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Version
       estado: 'yellow',
       cobertura: 50,
       criterios: [
-        { name: 'Identidad y contacto del responsable de datos', status: 'ok', detail: 'Encontrado' },
-        { name: 'Finalidad y propósito del tratamiento', status: 'fail', detail: 'No encontrado' },
+        makeCriterio('Identidad y contacto del responsable de datos', 'ok'),
+        makeCriterio('Finalidad y propósito del tratamiento', 'fail', 'No encontrado'),
       ],
       gap: '',
     },
@@ -47,7 +66,7 @@ describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Version
       estado: 'red',
       cobertura: 0,
       criterios: [
-        { name: 'Manifestación de voluntad libre e informada', status: 'fail', detail: 'No encontrado' },
+        makeCriterio('Manifestación de voluntad libre e informada', 'fail', 'No encontrado'),
       ],
       gap: '',
     },
@@ -55,7 +74,7 @@ describe('Opción 3: Lógica del Tablero de Subsanación y Comparador de Version
       estado: 'red',
       cobertura: 0,
       criterios: [
-        { name: 'Canal formal para recibir solicitudes', status: 'fail', detail: 'No encontrado' },
+        makeCriterio('Canal formal para recibir solicitudes', 'fail', 'No encontrado'),
       ],
       gap: '',
     },

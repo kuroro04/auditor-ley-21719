@@ -1,0 +1,34 @@
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+
+# Bases de datos y almacenamiento de documentos
+backend/backend.db*
+backend/storage/
+backend/quarantine/
+backend/logs/
+
+# Dependencias y cachés
+node_modules/
+backend/venv/
+__pycache__/
+*/__pycache__/
+*.pyc
+.pytest_cache/
+.coverage
+.next/
+out/
+build/
+dist/
+
+# Git y herramientas
+.git/
+.github/
+.vscode/
+.idea/
+.claude-plugin/
+scratch/
+*.log

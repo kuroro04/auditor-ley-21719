@@ -599,10 +599,15 @@ export function buildRequisitoResult(
 
   if (cobertura >= 75 && !tieneEvidenciaSemantica) {
     estado = 'green';
+    const failItems = criterios.filter(c => c.status === 'fail');
     const warnItems = criterios.filter(c => c.status === 'warn');
-    gap = warnItems.length > 0
-      ? `Documento en cumplimiento (${cobertura}%). Puede reforzar: ${warnItems.map(c => c.name).slice(0, 2).join(', ')}.`
-      : `Su documento cumple todos los criterios del ${req.art}.`;
+    if (failItems.length > 0) {
+      gap = `Cumplimiento mayoritario (${cobertura}%) del ${req.art}. Criterios pendientes: ${failItems.map(c => c.name).join(', ')}.`;
+    } else if (warnItems.length > 0) {
+      gap = `Documento en cumplimiento (${cobertura}%). Puede reforzar: ${warnItems.map(c => c.name).slice(0, 2).join(', ')}.`;
+    } else {
+      gap = `Su documento cumple todos los criterios del ${req.art}.`;
+    }
   } else if (cobertura >= 35) {
     estado = 'yellow';
     const faltantes = criterios.filter(c => c.status !== 'ok').map(c => c.name).slice(0, 3);

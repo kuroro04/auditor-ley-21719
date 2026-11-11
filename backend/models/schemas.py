@@ -1,19 +1,34 @@
 from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class RegisterRequest(BaseModel):
     rut: str
     nombre_empresa: str = Field(min_length=1)
     email: EmailStr
-    password: str = Field(min_length=8, max_length=72)
+    password: str = Field(min_length=8)
     sector: Optional[str] = None
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_bytes(cls, v: str) -> str:
+        # Bcrypt limita estrictamente a 72 bytes. Evitar error 500 no controlado.
+        if len(v.encode('utf-8')) > 72:
+            raise ValueError('La contraseña no puede superar los 72 bytes en formato UTF-8')
+        return v
 
 
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+    @field_validator('password')
+    @classmethod
+    def validate_password_length(cls, v: str) -> str:
+        if len(v.encode('utf-8')) > 128:
+            raise ValueError('Contraseña demasiado larga')
+        return v
 
 
 class SessionResponse(BaseModel):

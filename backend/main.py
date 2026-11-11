@@ -124,8 +124,9 @@ def _migrar_columnas_nuevas() -> None:
 @app.on_event('startup')
 def on_startup():
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
-    Base.metadata.create_all(bind=engine)
-    _migrar_columnas_nuevas()
+    if not TESTING:
+        Base.metadata.create_all(bind=engine)
+        _migrar_columnas_nuevas()
 
 
 @app.on_event('shutdown')

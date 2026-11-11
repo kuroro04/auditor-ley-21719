@@ -119,18 +119,16 @@ def validate_ooxml_structure(content: bytes, ext: str) -> FileSecurityResult:
             if len(content) > 1024 and ratio > MAX_OOXML_COMPRESSION_RATIO:
                 return FileSecurityResult(False, f'Relación de compresión anómala detectada ({ratio:.1f}x) — potencial zip bomb')
 
-            # 3. Validación de estructura OpenXML
+            # 3. Validación de estructura OpenXML estricta (ECMA-376 / OPC)
             if '[Content_Types].xml' not in names:
                 return FileSecurityResult(False, f'El archivo .{ext} carece del descriptor obligatorio [Content_Types].xml')
 
             if ext == 'docx':
-                has_doc = any(n.startswith('word/document') and n.endswith('.xml') for n in names)
-                if not has_doc:
+                if 'word/document.xml' not in names:
                     return FileSecurityResult(False, 'El archivo .docx carece de la parte principal (word/document.xml)')
 
             if ext == 'xlsx':
-                has_sheet = any(n.startswith('xl/workbook') and n.endswith('.xml') for n in names)
-                if not has_sheet:
+                if 'xl/workbook.xml' not in names:
                     return FileSecurityResult(False, 'El archivo .xlsx carece del libro principal (xl/workbook.xml)')
 
     except (zipfile.BadZipFile, zipfile.LargeZipFile, Exception) as e:

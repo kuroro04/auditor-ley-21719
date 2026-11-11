@@ -18,6 +18,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        # Hallazgo A10: URL pública inyectada durante la compilación del frontend
+        NEXT_PUBLIC_API_URL: http://localhost:8000
     container_name: datashield-frontend
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
@@ -34,6 +37,11 @@ services:
     container_name: datashield-backend
     env_file:
       - backend/.env
+    # Hallazgo A09: Persistencia declarada de almacenamiento, cuarentena y logs
+    volumes:
+      - datashield-storage:/app/storage
+      - datashield-quarantine:/app/quarantine
+      - datashield-logs:/app/logs
     environment:
       # El backend necesita conocer la IP del proxy de confianza: Nginx/el
       # propio compose llega al backend desde la red interna de Docker.
@@ -66,3 +74,6 @@ services:
 
 volumes:
   clamav-db:
+  datashield-storage:
+  datashield-quarantine:
+  datashield-logs:

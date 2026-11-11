@@ -11,14 +11,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # importar la app, para que los tests nunca dependan de un backend/.env real.
 TESTING = os.getenv('TESTING') == '1'
 
-_DEFAULT_SECRET_KEY = 'dev-secret-change-me'
+_DEFAULT_SECRET_KEYS = {
+    'dev-secret-change-me',
+    'change-me-in-production-use-a-long-random-string',
+}
 _secret_key = os.getenv('SECRET_KEY')
-if not TESTING and (not _secret_key or _secret_key == _DEFAULT_SECRET_KEY):
+if not TESTING and (not _secret_key or _secret_key in _DEFAULT_SECRET_KEYS or len(_secret_key) < 32):
     raise RuntimeError(
-        "SECRET_KEY no está definida (o quedó en el valor de ejemplo del código). "
-        "Define una clave real y secreta en backend/.env antes de arrancar el backend."
+        "SECRET_KEY no está definida, es demasiado corta (< 32 caracteres) "
+        "o quedó en un valor de ejemplo. Define una clave real y segura en backend/.env."
     )
-SECRET_KEY = _secret_key or _DEFAULT_SECRET_KEY
+SECRET_KEY = _secret_key or 'dev-secret-change-me'
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
 # Fase 5 — vida del token intermedio del login con MFA: solo sirve para
@@ -30,10 +33,11 @@ MFA_CHALLENGE_EXPIRE_MINUTES = 5
 # (nunca se guarda en texto plano). Fail-closed igual que SECRET_KEY: sin ella
 # el backend no arranca en producción. En los tests se genera una efímera:
 # los secretos MFA de prueba viven solo en la base en memoria de cada test.
+_REJECTED_MFA_KEYS = {'change-me-generate-a-fernet-key'}
 _mfa_enc_key = os.getenv('MFA_ENC_KEY')
-if not TESTING and not _mfa_enc_key:
+if not TESTING and (not _mfa_enc_key or _mfa_enc_key in _REJECTED_MFA_KEYS):
     raise RuntimeError(
-        "MFA_ENC_KEY no está definida. Genera una con:\n"
+        "MFA_ENC_KEY no está definida o quedó en el valor de ejemplo. Genera una con:\n"
         "  python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"\n"
         "y ponla en backend/.env antes de arrancar el backend."
     )
@@ -68,6 +72,10 @@ if not TESTING and _cookie_secure is None:
     )
 # En producción (HTTPS) debe ser 'true' para que la cookie solo viaje por TLS.
 COOKIE_SECURE = (_cookie_secure or 'false').lower() == 'true'
+if not TESTING and APP_ENV == 'production' and not COOKIE_SECURE:
+    raise RuntimeError(
+        "COOKIE_SECURE debe ser 'true' cuando ENVIRONMENT=production para garantizar que la cookie solo viaje por TLS/HTTPS."
+    )
 COOKIE_NAME = 'access_token'
 COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8  # 8 horas, igual que ACCESS_TOKEN_EXPIRE_MINUTES
 

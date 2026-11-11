@@ -75,6 +75,11 @@ export async function enriquecerConSemantica(
   doc: UploadedDoc,
   extractorTextos: ExtractorTextos = embed,
 ): Promise<RequisitoResult> {
+  // Hallazgo A14: Preservar invariantes; nunca enriquecer documentos de tipo incorrecto ni estados no analizables
+  if (resultado.estado === 'wrong_type' || resultado.estado === 'unanalyzable' || resultado.estado === 'pending') {
+    return resultado;
+  }
+
   const pendientes = resultado.criterios
     .map((c, i) => ({ c, i }))
     .filter(({ c }) => c.status !== 'ok');
@@ -126,5 +131,15 @@ export async function enriquecerConSemantica(
     }
   });
 
-  return buildRequisitoResult(req, nuevosCriterios, doc);
+  const enriquecido = buildRequisitoResult(req, nuevosCriterios, doc);
+  // Hallazgo A14: Preservar la clasificación del documento y capar casos dudosos
+  if (resultado.clasificacionDocumento) {
+    enriquecido.clasificacionDocumento = resultado.clasificacionDocumento;
+    if (resultado.clasificacionDocumento.tipo === 'dudoso' && enriquecido.estado === 'green') {
+      enriquecido.estado = 'yellow';
+      enriquecido.gap = `Cumplimiento condicionado (${enriquecido.cobertura}%): la estructura del documento es dudosa y requiere validación legal humana.`;
+    }
+  }
+
+  return enriquecido;
 }

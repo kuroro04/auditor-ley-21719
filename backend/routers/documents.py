@@ -16,6 +16,7 @@ from services.file_security_service import sanitize_filename
 from services import quarantine_service as qs
 from services.quarantine_service import clean_destination, move_to_clean, secure_delete
 from services.secure_upload_service import process_secure_upload
+from starlette.concurrency import run_in_threadpool
 
 
 async def _read_limited(file: UploadFile, limit: int) -> bytes:
@@ -72,7 +73,14 @@ async def upload_document(
     # escaneo ClamAV. Fail-closed: si ClamAV no responde, outcome.accepted
     # queda en False igual que si estuviera infectado. Un archivo aceptado
     # sigue en cuarentena hasta más abajo.
-    outcome = process_secure_upload(current.company_id, file.filename or 'archivo', content, clamav_client)
+    # Hallazgo A12: Ejecutar pipeline bloqueante de I/O y socket en threadpool para no congelar el event loop
+    outcome = await run_in_threadpool(
+        process_secure_upload,
+        current.company_id,
+        file.filename or 'archivo',
+        content,
+        clamav_client,
+    )
 
     # En `detalle` solo metadatos del archivo, nunca su contenido.
     metadatos = {
